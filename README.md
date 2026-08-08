@@ -5,8 +5,11 @@
 ## 项目组成
 
 - `backend`：后端项目。
-- `frontend-user`：用户端 App、H5 或 Web 项目。
+- `frontend-web`：用户 Web 商城。
+- `frontend-app`：Flutter Android App。
+- `frontend-miniapp`：微信原生小程序。
 - `frontend-admin`：管理员及商家管理端。
+- `deploy`：Docker Compose 及 MySQL、Redis、Elasticsearch、Kibana、Filebeat 部署配置。
 - `database`：数据库建表、初始化和迁移脚本。
 - `docs`：需求、架构、接口和协作文档。
 
