@@ -1,0 +1,33 @@
+# Java / Spring Boot
+backend/target/
+*.class
+*.jar
+*.war
+*.log
+
+# Node.js / Vue
+**/node_modules/
+**/dist/
+**/.vite/
+
+# Flutter / Dart
+**/.dart_tool/
+**/.packages
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE and operating system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
