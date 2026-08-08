@@ -27,6 +27,12 @@ application-local.yaml
 *.pem
 *.key
 
+# Local Codex context (kept on the project administrator's machine only)
+/AGENTS.md
+/docs/project-context.md
+/docs/requirements-baseline.md
+/docs/progress.md
+
 # IDE and operating system files
 .idea/
 .vscode/
