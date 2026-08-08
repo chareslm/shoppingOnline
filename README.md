@@ -1,28 +1,20 @@
-# Shopping Online
+# 电商平台课程设计
 
-一个面向课程设计的多商家综合电商平台，覆盖用户购物、商家经营与平台治理。
+本项目为五人合作开发的综合电商平台课程设计。
 
-## 技术方向
+## 项目组成
 
-- 后端：Java 21、Spring Boot 3、MySQL、Redis、RabbitMQ。
-- Web：Vue 3、TypeScript、Vite。
-- App：Flutter、Dart。
-- 基础能力：JWT 认证与 RBAC 权限、审计日志、商品搜索、交易、支付模拟、聊天与消息。
+- `backend`：后端项目。
+- `frontend-user`：用户端 App、H5 或 Web 项目。
+- `frontend-admin`：管理员及商家管理端。
+- `database`：数据库建表、初始化和迁移脚本。
+- `docs`：需求、架构、接口和协作文档。
 
-## 目录说明
+## Git 分支
 
-```text
-backend/       后端模块化单体
-web-user/      用户 Web 端
-web-merchant/  商家 Web 端
-web-admin/     管理员 Web 端
-app-user/      用户 App
-app-merchant/  商家 App
-docs/          架构、接口、数据库和协作文档
-```
+- `main`：稳定版本。
+- `develop`：开发集成版本。
+- `feature/*`：功能开发分支。
+- `fix/*`：Bug 修复分支。
 
-## 团队协作
-
-日常开发从 `develop` 分支创建 `feature/*` 分支。不得直接向 `main` 或 `develop` 推送。
-
-详细规则见 [docs/git-workflow.md](docs/git-workflow.md)，模块分工见 [docs/architecture/module-ownership.md](docs/architecture/module-ownership.md)。
+日常开发从 `develop` 创建功能分支，并通过 Pull Request 合并回 `develop`。详细规则见 [docs/git-workflow.md](docs/git-workflow.md)。
