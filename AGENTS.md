@@ -43,6 +43,7 @@ docs/             需求、接口、架构和协作文档
 
 ## 文档位置
 
+- `docs/requirements-baseline.md`：项目需求基线、范围、关键流程和验收目标；开始任何业务开发前应阅读。
 - `docs/git-workflow.md`：完整 Git 协作规范。
 - `docs/architecture/module-ownership.md`：模块分工及跨模块边界。
 - `docs/project-context.md`：项目决策与当前状态记录。
