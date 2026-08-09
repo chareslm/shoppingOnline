@@ -5,6 +5,10 @@ spring:
     url: ${DB_URL:}
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: 2
   data:
     redis:
       host: ${REDIS_HOST:127.0.0.1}
@@ -14,6 +18,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
@@ -25,6 +33,10 @@ security:
     secret: ${JWT_SECRET:}
     access-token-ttl: PT30M
     refresh-token-ttl: P7D
+  bootstrap-super-admin:
+    enabled: ${BOOTSTRAP_SUPER_ADMIN_ENABLED:false}
+    username: ${BOOTSTRAP_SUPER_ADMIN_USERNAME:}
+    password: ${BOOTSTRAP_SUPER_ADMIN_PASSWORD:}
 
 management:
   endpoints:
