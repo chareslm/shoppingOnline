@@ -1,0 +1,11 @@
+# Copy this file to application-local.yml and replace placeholders locally.
+# Do not commit application-local.yml.
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/shopping?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: change-me
+
+security:
+  jwt:
+    secret: replace-with-a-random-secret-of-at-least-32-bytes
