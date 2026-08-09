@@ -9,3 +9,11 @@ spring:
 security:
   jwt:
     secret: replace-with-a-random-secret-of-at-least-32-bytes
+  bootstrap-super-admin:
+    enabled: false
+    username:
+    password:
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173

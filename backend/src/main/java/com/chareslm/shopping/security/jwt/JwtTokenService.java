@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class JwtTokenService {
@@ -33,6 +34,7 @@ public class JwtTokenService {
                 .claim("username", loginUser.username())
                 .claim("roles", loginUser.roles())
                 .claim("permissions", loginUser.permissions())
+                .claim("tokenType", "access")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(properties.accessTokenTtl())))
                 .signWith(signingKey)
@@ -42,6 +44,9 @@ public class JwtTokenService {
     @SuppressWarnings("unchecked")
     public LoginUser parseAccessToken(String token) {
         Claims claims = Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload();
+        if (!"access".equals(claims.get("tokenType", String.class))) {
+            throw new IllegalArgumentException("Not an access token");
+        }
         List<String> roles = claims.get("roles", List.class);
         List<String> permissions = claims.get("permissions", List.class);
         return new LoginUser(
@@ -50,5 +55,39 @@ public class JwtTokenService {
                 roles == null ? Set.of() : Set.copyOf(roles),
                 permissions == null ? Set.of() : Set.copyOf(permissions)
         );
+    }
+
+    public IssuedRefreshToken createRefreshToken(Long userId, Long deviceId) {
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(properties.refreshTokenTtl());
+        String tokenId = UUID.randomUUID().toString();
+        String token = Jwts.builder()
+                .subject(String.valueOf(userId))
+                .id(tokenId)
+                .claim("tokenType", "refresh")
+                .claim("deviceId", deviceId)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiresAt))
+                .signWith(signingKey)
+                .compact();
+        return new IssuedRefreshToken(token, tokenId, expiresAt);
+    }
+
+    public RefreshTokenClaims parseRefreshToken(String token) {
+        Claims claims = Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload();
+        if (!"refresh".equals(claims.get("tokenType", String.class)) || claims.getId() == null) {
+            throw new IllegalArgumentException("Not a refresh token");
+        }
+        Number deviceId = claims.get("deviceId", Number.class);
+        if (deviceId == null) {
+            throw new IllegalArgumentException("Refresh token does not contain a device id");
+        }
+        return new RefreshTokenClaims(Long.valueOf(claims.getSubject()), deviceId.longValue(), claims.getId());
+    }
+
+    public record IssuedRefreshToken(String token, String tokenId, Instant expiresAt) {
+    }
+
+    public record RefreshTokenClaims(Long userId, Long deviceId, String tokenId) {
     }
 }

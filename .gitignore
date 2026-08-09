@@ -32,6 +32,8 @@ application-local.yaml
 /docs/project-context.md
 /docs/requirements-baseline.md
 /docs/progress.md
+/docs/technical-architecture.md
+/docs/backend-package-architecture.md
 
 # IDE and operating system files
 .idea/

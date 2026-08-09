@@ -15,8 +15,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException exception,
                                                                        HttpServletRequest request) {
-        return ResponseEntity.badRequest()
+        return ResponseEntity.status(resolveStatus(exception.getCode()))
                 .body(ApiResponse.failure(exception.getCode(), exception.getMessage(), request.getHeader("X-Trace-Id")));
+    }
+
+    private static HttpStatus resolveStatus(int code) {
+        return switch (code) {
+            case 40101, 40102 -> HttpStatus.UNAUTHORIZED;
+            case 40301, 40302 -> HttpStatus.FORBIDDEN;
+            case 40401 -> HttpStatus.NOT_FOUND;
+            case 40901 -> HttpStatus.CONFLICT;
+            case 42301 -> HttpStatus.LOCKED;
+            default -> HttpStatus.BAD_REQUEST;
+        };
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
