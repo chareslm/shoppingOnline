@@ -142,6 +142,15 @@ textarea { resize: vertical; }
 .login-card input { min-height: 50px; }
 .login-card .notice { margin-bottom: 16px; }
 .login-footnote { margin: 16px 0 0; text-align: center; color: #8b948f; font-size: 12px; }
+.login-switch { margin: 20px 0 0; text-align: center; color: var(--muted); font-size: 14px; }
+.login-switch a { color: var(--green); font-weight: 800; }
+.register-panel { padding-top: 28px; padding-bottom: 28px; }
+.register-card { width: min(560px, 100%); }
+.register-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.register-grid label { margin: 0; }
+.register-grid .full { grid-column: 1 / -1; }
+.register-card .notice { margin-top: 18px; }
+.register-card .primary-button { margin-top: 18px; }
 
 @media (max-width: 900px) {
   .topbar { padding: 0 20px; gap: 16px; }
@@ -159,6 +168,7 @@ textarea { resize: vertical; }
   .login-story { min-height: 360px; padding: 36px; }
   .login-story > div > p:last-child, .trust-row { display: none; }
   .login-panel { padding: 48px 24px; }
+  .register-panel { padding-top: 36px; padding-bottom: 36px; }
 }
 
 @media (max-width: 640px) {
@@ -175,6 +185,8 @@ textarea { resize: vertical; }
   .tag-list { justify-content: flex-start; }
   .login-story { min-height: 280px; }
   .login-story h1 { font-size: 38px; }
+  .register-grid { grid-template-columns: 1fr; }
+  .register-grid .full { grid-column: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { readApiError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
@@ -10,6 +10,12 @@ const router = useRouter()
 const identifier = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const successMessage = ref('')
+
+onMounted(() => {
+  if (typeof route.query.identifier === 'string') identifier.value = route.query.identifier
+  if (route.query.registered === '1') successMessage.value = '注册成功，请使用新账号登录'
+})
 
 async function submit() {
   errorMessage.value = ''
@@ -44,10 +50,12 @@ async function submit() {
         <p class="muted">使用用户名、邮箱或手机号登录</p>
         <label>账号<input v-model="identifier" autocomplete="username" required placeholder="用户名 / 邮箱 / 手机号" /></label>
         <label>密码<input v-model="password" type="password" autocomplete="current-password" required placeholder="请输入密码" /></label>
+        <p v-if="successMessage" class="notice success">{{ successMessage }}</p>
         <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
         <button class="primary-button wide" type="submit" :disabled="auth.loading">
           {{ auth.loading ? '正在登录…' : '登录' }}
         </button>
+        <p class="login-switch">还没有账号？<router-link to="/register">立即注册</router-link></p>
         <p class="login-footnote">登录即表示该浏览器将作为一个独立设备保存会话。</p>
       </form>
     </section>

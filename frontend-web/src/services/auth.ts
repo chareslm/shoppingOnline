@@ -1,8 +1,11 @@
 import { http, unwrap } from '@/services/http'
 import type { ApiResponse } from '@/types/api'
-import type { AuthenticatedUser, LoginRequest, LoginResponse } from '@/types/auth'
+import type { AuthenticatedUser, LoginRequest, LoginResponse, RegisteredUser, RegisterRequest } from '@/types/auth'
 
 export const authApi = {
+  async register(payload: RegisterRequest) {
+    return unwrap((await http.post<ApiResponse<RegisteredUser>>('/api/auth/register', payload)).data)
+  },
   async login(payload: LoginRequest) {
     return unwrap((await http.post<ApiResponse<LoginResponse>>('/api/auth/login/password', payload)).data)
   },

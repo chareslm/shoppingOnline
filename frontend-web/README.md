@@ -1,6 +1,6 @@
 # 用户 Web
 
-普通消费者使用的 Vue 3 + TypeScript Web 客户端。当前提供登录、Token 自动刷新、个人资料、收货地址和通知偏好。
+普通消费者使用的 Vue 3 + TypeScript Web 客户端。当前提供注册、登录、Token 自动刷新、个人资料、收货地址和通知偏好。
 
 ```powershell
 npm install

@@ -18,3 +18,16 @@ export interface LoginResponse extends AuthenticatedUser {
   refreshToken: string
   expiresInSeconds: number
 }
+
+export interface RegisterRequest {
+  username?: string
+  email?: string
+  phone?: string
+  password: string
+}
+
+export interface RegisteredUser {
+  userId: number
+  username: string | null
+  status: string
+}
