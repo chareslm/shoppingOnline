@@ -1,4 +1,4 @@
-package com.chareslm.shopping.auth.entity;
+package com.chareslm.shopping.user.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -11,4 +11,8 @@ import lombok.Setter;
 public class UserPreference {
     @TableId
     private Long userId;
+    private Boolean marketingEnabled;
+    private Boolean orderNotificationEnabled;
+    private Boolean systemNotificationEnabled;
+    private String extraPreferences;
 }
