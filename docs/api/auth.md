@@ -110,7 +110,7 @@
 
 ## 跨域访问
 
-开发环境默认仅允许 `http://localhost:5173` 访问 API。部署或使用其他前端端口时，通过 `CORS_ALLOWED_ORIGINS` 配置精确的逗号分隔来源列表；接口不允许携带跨域 Cookie。
+开发环境默认允许管理端 `http://localhost:5173`、用户 Web `http://localhost:5174` 及二者对应的 `127.0.0.1` 回环来源访问 API。部署或使用其他前端端口时，通过 `CORS_ALLOWED_ORIGINS` 配置精确的逗号分隔来源列表；接口不允许携带跨域 Cookie。
 
 ## 高风险角色变更
 
