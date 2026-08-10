@@ -39,6 +39,8 @@ h1, h2, p { margin-top: 0; }
 .table-pagination { justify-content: flex-end; padding: 18px 20px; }
 .assignment-form { margin-top: 20px; }
 .assignment-form .el-checkbox-group { display: grid; gap: 10px; }
+.password-form { margin-top: 20px; }
+.password-hint { color: #64748b; font-size: 13px; line-height: 1.6; margin-bottom: 0; }
 
 .login-page { background: linear-gradient(135deg, #14213d 0%, #1d4ed8 100%); display: grid; grid-template-columns: minmax(0, 1fr) 420px; min-height: 100vh; padding: 8vw max(7vw, 32px); place-items: center; gap: 56px; }
 .login-intro { color: #eff6ff; max-width: 520px; }

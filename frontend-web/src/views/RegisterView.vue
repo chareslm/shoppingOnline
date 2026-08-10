@@ -18,8 +18,11 @@ function validate() {
   if (!username && !email && !phone) return '用户名、邮箱和手机号至少填写一项'
   if (username && !/^[A-Za-z][A-Za-z0-9_]{2,63}$/.test(username)) return '用户名须以字母开头，长度 3–64，仅含字母、数字或下划线'
   if (phone && !/^1\d{10}$/.test(phone)) return '请输入正确的 11 位中国大陆手机号'
-  if (form.password.length < 8 || form.password.length > 64) return '密码长度须为 8–64 个字符'
+  if (form.password.length < 12 || form.password.length > 64) return '密码长度须为 12–64 个字符'
   if (new TextEncoder().encode(form.password).length > 72) return '密码的 UTF-8 编码不能超过 72 字节'
+  if (!/[a-z]/.test(form.password) || !/[A-Z]/.test(form.password) || !/\d/.test(form.password) || !/[^A-Za-z0-9\s]/.test(form.password)) {
+    return '密码须同时包含大写字母、小写字母、数字和特殊字符'
+  }
   if (form.password !== form.confirmPassword) return '两次输入的密码不一致'
   return ''
 }
@@ -75,8 +78,8 @@ async function submit() {
           <label>用户名（可选）<input v-model="form.username" autocomplete="username" maxlength="64" placeholder="字母开头，3–64 位" /></label>
           <label>手机号（可选）<input v-model="form.phone" inputmode="numeric" autocomplete="tel" maxlength="11" placeholder="11 位手机号" /></label>
           <label class="full">邮箱（可选）<input v-model="form.email" type="email" autocomplete="email" maxlength="254" placeholder="name@example.com" /></label>
-          <label>密码<input v-model="form.password" type="password" autocomplete="new-password" required minlength="8" maxlength="64" placeholder="至少 8 个字符" /></label>
-          <label>确认密码<input v-model="form.confirmPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="64" placeholder="再次输入密码" /></label>
+          <label>密码<input v-model="form.password" type="password" autocomplete="new-password" required minlength="12" maxlength="64" placeholder="至少 12 位，包含四类字符" /></label>
+          <label>确认密码<input v-model="form.confirmPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="64" placeholder="再次输入密码" /></label>
         </div>
         <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
         <button class="primary-button wide" type="submit" :disabled="saving">{{ saving ? '正在注册…' : '创建账号' }}</button>

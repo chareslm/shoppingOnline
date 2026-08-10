@@ -102,9 +102,11 @@ public class SuperAdminBootstrapRunner implements ApplicationRunner {
         if (properties.username() == null || !properties.username().matches("^[A-Za-z][A-Za-z0-9_]{2,63}$")) {
             throw new IllegalStateException("BOOTSTRAP_SUPER_ADMIN_USERNAME must be a valid username");
         }
-        if (properties.password() == null || properties.password().length() < 8
-                || properties.password().getBytes(StandardCharsets.UTF_8).length > 72) {
-            throw new IllegalStateException("BOOTSTRAP_SUPER_ADMIN_PASSWORD must be 8-72 UTF-8 bytes");
+        if (properties.password() == null || properties.password().length() < 12
+                || properties.password().length() > 64
+                || properties.password().getBytes(StandardCharsets.UTF_8).length > 72
+                || !properties.password().matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s])\\S+$")) {
+            throw new IllegalStateException("BOOTSTRAP_SUPER_ADMIN_PASSWORD must satisfy the strong password policy");
         }
     }
 }

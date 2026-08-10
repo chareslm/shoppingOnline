@@ -49,6 +49,9 @@ public interface UserAccountMapper extends BaseMapper<UserAccount> {
             """)
     long countAdminPage(@Param("keyword") String keyword, @Param("status") String status);
 
+    @Update("UPDATE `user` SET password_hash = #{passwordHash} WHERE id = #{userId}")
+    int updatePasswordHash(@Param("userId") Long userId, @Param("passwordHash") String passwordHash);
+
     @Update("""
             UPDATE `user`
             SET failed_login_count = failed_login_count + 1,

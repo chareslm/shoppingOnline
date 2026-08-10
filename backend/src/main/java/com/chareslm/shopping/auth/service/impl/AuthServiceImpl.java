@@ -1,5 +1,6 @@
 package com.chareslm.shopping.auth.service.impl;
 
+import com.chareslm.shopping.auth.dto.request.ChangePasswordRequest;
 import com.chareslm.shopping.auth.dto.request.PasswordLoginRequest;
 import com.chareslm.shopping.auth.dto.request.RefreshTokenRequest;
 import com.chareslm.shopping.auth.dto.request.RegisterRequest;
@@ -195,6 +196,25 @@ public class AuthServiceImpl implements AuthService {
         LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions);
         return new LoginResponse(user.getId(), user.getUsername(), jwtTokenService.createAccessToken(loginUser),
                 next.token(), jwtProperties.accessTokenTtl().toSeconds(), roles, permissions);
+    }
+
+    @Override
+    @Transactional(noRollbackFor = BusinessException.class)
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        UserAccount user = userAccountMapper.selectById(userId);
+        if (user == null || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            writeAudit(userId, "PASSWORD_CHANGE", false);
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+        validatePassword(request.newPassword());
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+            writeAudit(userId, "PASSWORD_CHANGE", false);
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+        }
+
+        userAccountMapper.updatePasswordHash(userId, passwordEncoder.encode(request.newPassword()));
+        refreshTokenMapper.revokeActiveByUserId(userId, "PASSWORD_CHANGED");
+        writeAudit(userId, "PASSWORD_CHANGE", true);
     }
 
     @Override

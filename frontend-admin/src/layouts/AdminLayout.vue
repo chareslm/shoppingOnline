@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowDown, DataAnalysis, Key, Monitor, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '../stores/auth'
 import { readApiError } from '../services/http'
+import ChangePasswordDialog from '../components/ChangePasswordDialog.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const passwordDialogVisible = ref(false)
 const canViewAuthorization = computed(() =>
   auth.session?.permissions.some((permission) => ['system:role:view', 'system:permission:view'].includes(permission)),
 )
@@ -32,6 +34,20 @@ async function handleLogout() {
   } finally {
     await router.replace({ name: 'login' })
   }
+}
+
+function handleCommand(command: string) {
+  if (command === 'change-password') {
+    passwordDialogVisible.value = true
+    return
+  }
+  void handleLogout()
+}
+
+async function handlePasswordChanged() {
+  auth.clearLocalSession()
+  ElMessage.success('密码已修改，请使用新密码重新登录')
+  await router.replace({ name: 'login' })
 }
 </script>
 
@@ -61,12 +77,18 @@ async function handleLogout() {
     <el-container>
       <el-header class="topbar">
         <span>统一身份与权限基础已接入</span>
-        <el-dropdown @command="handleLogout">
+        <el-dropdown @command="handleCommand">
           <span class="user-menu"><el-icon><UserFilled /></el-icon>{{ auth.session?.username }}<el-icon><ArrowDown /></el-icon></span>
-          <template #dropdown><el-dropdown-menu><el-dropdown-item command="logout">退出登录</el-dropdown-item></el-dropdown-menu></template>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="change-password">修改密码</el-dropdown-item>
+              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
         </el-dropdown>
       </el-header>
       <el-main class="main-content"><router-view /></el-main>
     </el-container>
+    <ChangePasswordDialog v-model="passwordDialogVisible" @changed="handlePasswordChanged" />
   </el-container>
 </template>
