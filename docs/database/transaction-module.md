@@ -38,7 +38,7 @@ reconciliation_record（独立，按日对账）
 
 ## 3. 表结构清单（11 张）
 
-> 通用约定：主键 `id BIGINT`（雪花 ID，应用层生成）；`created_at DATETIME`、`updated_at DATETIME`、`version INT DEFAULT 0`；引擎 InnoDB；字符集 utf8mb4；金额 `DECIMAL(10,2)`；状态 `TINYINT` + CHECK 约束（MySQL 8.0.16+ 生效）。
+> 通用约定：主键 `id BIGINT`（雪花 ID，应用层生成）；`created_at DATETIME`、`updated_at DATETIME`、`created_by BIGINT`、`updated_by BIGINT`、`version INT DEFAULT 0`（业务表五件套，与团队 BaseEntity 对齐；日志/对账表例外见各表）；引擎 InnoDB；字符集 utf8mb4；金额 `DECIMAL(10,2)`；状态 `TINYINT` + CHECK 约束（MySQL 8.0.16+ 生效）。
 
 ### 3.1 购物车模块（3 张）
 
@@ -48,7 +48,7 @@ reconciliation_record（独立，按日对账）
 | id | BIGINT | PK | 雪花 ID |
 | user_id | BIGINT | NOT NULL, UNIQUE(uk_user) | 用户 ID（引用成员1 user 表） |
 | status | TINYINT | DEFAULT 1 | 1 有效 / 0 停用 |
-| created_at / updated_at / version | — | 通用三件套 | — |
+| created_at / updated_at / created_by / updated_by / version | — | 通用五件套 | — |
 
 #### cart_group（购物车分组，按商家）
 | 字段 | 类型 | 约束 | 说明 |
@@ -57,7 +57,7 @@ reconciliation_record（独立，按日对账）
 | cart_id | BIGINT | NOT NULL, UNIQUE(uk_cart_shop) | 所属购物车 |
 | shop_id | BIGINT | NOT NULL, UNIQUE(uk_cart_shop), INDEX(idx_shop) | 商家 ID（引用成员2 shop 表） |
 | status | TINYINT | DEFAULT 1 | 1 有效 / 0 停用 |
-| created_at / updated_at / version | — | 通用三件套 | — |
+| created_at / updated_at / created_by / updated_by / version | — | 通用五件套 | — |
 
 #### cart_item（购物项）
 | 字段 | 类型 | 约束 | 说明 |
@@ -70,7 +70,7 @@ reconciliation_record（独立，按日对账）
 | checked | TINYINT | DEFAULT 1 | 1 勾选结算 / 0 未勾选 |
 | price_snapshot | DECIMAL(10,2) | NULL | 加入购物车时价格快照，结算时与最新价校验 |
 | status | TINYINT | DEFAULT 1 | 1 有效 / 0 已移除 |
-| created_at / updated_at / version | — | 通用三件套 | — |
+| created_at / updated_at / created_by / updated_by / version | — | 通用五件套 | — |
 
 > **价格与有效性校验**：结算时服务层调用成员 3 的 SKU 接口校验上下架状态与最新价格，与 `price_snapshot` 对比；表只存快照，不承担实时校验。
 
@@ -96,7 +96,7 @@ reconciliation_record（独立，按日对账）
 | close_time | DATETIME | NULL | 超时关闭时间 |
 | finish_time | DATETIME | NULL | 完成时间 |
 | cancel_reason | VARCHAR(255) | NULL | 取消原因 |
-| created_at / updated_at / version | — | 通用三件套 | — |
+| created_at / updated_at / created_by / updated_by / version | — | 通用五件套 | — |
 
 #### order_item（订单项）
 | 字段 | 类型 | 约束 | 说明 |
@@ -110,7 +110,7 @@ reconciliation_record（独立，按日对账）
 | quantity | INT | NOT NULL, CHECK(quantity>0) | 数量 |
 | total_amount | DECIMAL(10,2) | NULL | 小计 = price × quantity |
 | status | TINYINT | DEFAULT 0 | 0 正常 / 1 退款中 / 2 已退款 |
-| created_at / updated_at / version | — | 通用三件套 | — |
+| created_at / updated_at / created_by / updated_by / version | — | 通用五件套 | — |
 
 #### stock_reservation（库存预占记录）
 > 下单预占 + 超时释放的核心表。实际库存扣减由服务层调用成员 3 的库存接口完成（原子 `UPDATE ... WHERE stock >= quantity`），本表只记录预占生命周期。
@@ -123,7 +123,7 @@ reconciliation_record（独立，按日对账）
 | quantity | INT | NOT NULL | 预占数量 |
 | status | TINYINT | DEFAULT 0 | 0 预占中 / 1 已扣减 / 2 已释放 |
 | expire_time | DATETIME | NOT NULL | 预占过期时间（= 订单支付超时时间） |
-| created_at / updated_at / version | — | 通用三件套 | — |
+| created_at / updated_at / created_by / updated_by / version | — | 通用五件套 | — |
 | — | — | INDEX(idx_expire) | (status, expire_time) 供定时任务扫描 |
 
 #### order_operation_log（订单操作日志 / 审计）
@@ -158,7 +158,7 @@ reconciliation_record（独立，按日对账）
 | expire_time | DATETIME | NOT NULL | 支付超时时间 |
 | callback_time | DATETIME | NULL | 回调到达时间 |
 | callback_raw | TEXT | NULL | 回调原始报文 |
-| created_at / updated_at / version | — | 通用三件套 | — |
+| created_at / updated_at / created_by / updated_by / version | — | 通用五件套 | — |
 
 #### payment_record（支付回调记录，幂等）
 | 字段 | 类型 | 约束 | 说明 |
@@ -186,7 +186,7 @@ reconciliation_record（独立，按日对账）
 | status | TINYINT | DEFAULT 0 | 0 待处理 / 1 已退款 / 2 失败 / 3 已拒绝 |
 | channel_refund_id | VARCHAR(64) | NULL | 渠道退款单号（预留） |
 | refund_time | DATETIME | NULL | 退款完成时间 |
-| created_at / updated_at / version | — | 通用三件套 | — |
+| created_at / updated_at / created_by / updated_by / version | — | 通用五件套 | — |
 
 #### reconciliation_record（对账记录）
 | 字段 | 类型 | 约束 | 说明 |
