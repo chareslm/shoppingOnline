@@ -1,4 +1,4 @@
-import type { ApiResponse, AuthenticatedUser, LoginRequest, LoginResponse, Permission, Role } from '../types/auth'
+import type { AdminUser, ApiResponse, AuthenticatedUser, LoginRequest, LoginResponse, PageResponse, Permission, Role } from '../types/auth'
 import { http } from './http'
 
 function unwrap<T>(response: ApiResponse<T>) {
@@ -31,6 +31,19 @@ export const authApi = {
 
   async permissions() {
     const { data } = await http.get<ApiResponse<Permission[]>>('/api/admin/authorization/permissions')
+    return unwrap(data)
+  },
+
+  async users(params: { keyword?: string; status?: string; page: number; pageSize: number }) {
+    const { data } = await http.get<ApiResponse<PageResponse<AdminUser>>>('/api/admin/authorization/users', { params })
+    return unwrap(data)
+  },
+
+  async replaceUserRoles(userId: number, roleIds: number[], currentPassword: string) {
+    const { data } = await http.put<ApiResponse<null>>(`/api/admin/authorization/users/${userId}/roles`, {
+      roleIds,
+      currentPassword,
+    })
     return unwrap(data)
   },
 }

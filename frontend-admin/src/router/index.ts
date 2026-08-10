@@ -3,6 +3,7 @@ import AdminLayout from '../layouts/AdminLayout.vue'
 import DashboardView from '../views/DashboardView.vue'
 import AuthorizationView from '../views/AuthorizationView.vue'
 import LoginView from '../views/LoginView.vue'
+import UserManagementView from '../views/UserManagementView.vue'
 import { getSession } from '../utils/session'
 
 declare module 'vue-router' {
@@ -31,6 +32,12 @@ const routes: RouteRecordRaw[] = [
         name: 'authorization',
         component: AuthorizationView,
         meta: { permissions: ['system:role:view', 'system:permission:view'] },
+      },
+      {
+        path: 'users',
+        name: 'users',
+        component: UserManagementView,
+        meta: { permissions: ['system:user:view'] },
       },
     ],
   },

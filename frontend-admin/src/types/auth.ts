@@ -4,6 +4,13 @@ export interface ApiResponse<T> {
   data: T
 }
 
+export interface PageResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 export interface LoginRequest {
   identifier: string
   password: string
@@ -36,4 +43,15 @@ export interface Permission {
   id: number
   code: string
   name: string
+}
+
+export interface AdminUser {
+  userId: number
+  username?: string | null
+  maskedEmail?: string | null
+  maskedPhone?: string | null
+  status: 'ACTIVE' | 'DISABLED' | 'LOCKED' | 'PENDING_VERIFICATION'
+  roles: Role[]
+  createdAt: string
+  lastLoginAt?: string | null
 }

@@ -105,8 +105,41 @@
 
 - `GET /api/admin/authorization/roles`：要求 `system:role:view`，返回有效角色及数据范围。
 - `GET /api/admin/authorization/permissions`：要求 `system:permission:view`，返回有效权限编码。
+- `GET /api/admin/authorization/users`：要求 `system:user:view`，按账号关键字和状态分页返回用户及其角色。
 
-`SUPER_ADMIN` 在 V2 迁移后默认拥有这两个只读权限。用户角色分配接口尚未开放，因为它需要二次验证。
+`SUPER_ADMIN` 在 V2、V3 迁移后默认拥有上述只读权限。`ADMIN` 目前只表示平台管理员身份，尚未默认授予系统管理权限；后续应按具体岗位配置权限，不应仅依赖角色名称放行接口。
+
+### 管理端用户查询
+
+`GET /api/admin/authorization/users?keyword=alice&status=ACTIVE&page=1&pageSize=20`
+
+查询参数均可选，`page` 默认为 `1`，`pageSize` 默认为 `20` 且最大为 `50`。`keyword` 同时匹配用户名、邮箱和手机号；`status` 可为 `ACTIVE`、`DISABLED`、`LOCKED` 或 `PENDING_VERIFICATION`。邮箱和手机号仅返回脱敏值。
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "items": [
+      {
+        "userId": 101,
+        "username": "alice_1",
+        "maskedEmail": "a***@example.com",
+        "maskedPhone": "138****5678",
+        "status": "ACTIVE",
+        "roles": [
+          { "id": 1, "code": "USER", "name": "普通用户", "dataScope": "SELF", "builtIn": true }
+        ],
+        "createdAt": "2026-08-10T09:00:00",
+        "lastLoginAt": null
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 20
+  }
+}
+```
 
 ## 跨域访问
 
@@ -116,7 +149,7 @@
 
 `PUT /api/admin/authorization/users/{userId}/roles`
 
-该接口需要 `system:user:role:assign` 权限。除 Access Token 外，操作人必须再次提交自己的当前密码；密码错误返回 HTTP `401`。当前仅 `SUPER_ADMIN` 可调用该接口，且只能管理 `USER`、`ADMIN`、`SUPER_ADMIN` 三种平台角色；商家员工与客服角色由后续 `merchant` 模块按店铺数据范围处理。系统会校验角色均存在且有效，并防止撤销最后一个超级管理员。
+该接口需要 `system:user:role:assign` 权限。除 Access Token 外，操作人必须再次提交自己的当前密码；密码错误返回 HTTP `401`。当前仅 `SUPER_ADMIN` 可调用该接口，且只能替换 `USER`、`ADMIN`、`SUPER_ADMIN` 三种平台角色；已有的商家员工与客服等业务角色会保留，并由后续 `merchant` 模块按店铺数据范围处理。系统会校验角色均存在且有效，并防止撤销最后一个超级管理员。
 
 ```json
 {

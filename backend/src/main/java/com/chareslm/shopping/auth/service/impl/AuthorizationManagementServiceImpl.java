@@ -72,7 +72,7 @@ public class AuthorizationManagementServiceImpl implements AuthorizationManageme
             throw new BusinessException(ErrorCode.VALIDATION_ERROR);
         }
 
-        userRoleMapper.deleteByUserId(targetUserId);
+        userRoleMapper.deletePlatformRolesByUserId(targetUserId);
         for (Role role : roles) {
             UserRole relation = new UserRole();
             relation.setUserId(targetUserId);

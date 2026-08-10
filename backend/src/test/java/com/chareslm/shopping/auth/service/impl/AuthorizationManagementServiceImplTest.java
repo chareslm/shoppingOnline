@@ -53,7 +53,7 @@ class AuthorizationManagementServiceImplTest {
 
         service.replaceUserRoles(1L, 2L, new AssignUserRolesRequest(Set.of(5L), "Password123!"));
 
-        verify(userRoleMapper).deleteByUserId(2L);
+        verify(userRoleMapper).deletePlatformRolesByUserId(2L);
         verify(userRoleMapper).insert(any(UserRole.class));
         verify(refreshTokenMapper).revokeActiveByUserId(2L, "ROLE_CHANGED");
         verify(auditService).record(1L, "AUTHORIZATION", "USER_ROLE_REPLACE", "USER", "2", true);

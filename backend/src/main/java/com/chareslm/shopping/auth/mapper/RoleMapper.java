@@ -18,6 +18,14 @@ public interface RoleMapper extends BaseMapper<Role> {
             """)
     List<String> selectCodesByUserId(@Param("userId") Long userId);
 
+    @Select("""
+            SELECT r.* FROM `role` r
+            INNER JOIN user_role ur ON ur.role_id = r.id
+            WHERE ur.user_id = #{userId} AND r.status = 'ACTIVE'
+            ORDER BY r.code, r.id
+            """)
+    List<Role> selectByUserId(@Param("userId") Long userId);
+
     @Select("SELECT * FROM `role` WHERE status = 'ACTIVE' ORDER BY code, id")
     List<Role> selectAllActive();
 
