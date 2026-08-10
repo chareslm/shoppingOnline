@@ -6,7 +6,14 @@ public enum ErrorCode {
     UNAUTHORIZED(40101, "authentication required"),
     FORBIDDEN(40301, "permission denied"),
     NOT_FOUND(40401, "resource not found"),
-    INTERNAL_ERROR(50000, "internal server error");
+    INTERNAL_ERROR(50000, "internal server error"),
+    CART_EMPTY(40010, "no checked items to checkout"),
+    STOCK_NOT_ENOUGH(40011, "insufficient stock"),
+    ORDER_STATUS_INVALID(40012, "order status not allowed"),
+    ORDER_NOT_FOUND(40013, "order not found"),
+    PAYMENT_ALREADY_PROCESSED(40014, "payment already processed"),
+    PAYMENT_NOT_FOUND(40015, "payment order not found"),
+    REFUND_STATUS_INVALID(40016, "refund status not allowed");
 
     private final int code;
     private final String message;
