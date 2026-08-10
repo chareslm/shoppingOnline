@@ -10,7 +10,7 @@
 
 - GitHub 仓库：`https://github.com/chareslm/shoppingOnline.git`。
 - 当前集成分支：`develop`；认证权限、强密码与本人改密、管理端认证及用户角色管理、Redis/Elasticsearch 本地 Compose、用户资料/地址/偏好接口、用户 Web 用户中心，以及管理端/用户 Web 团队模块接入基础均已集成；最新提交以远程 `origin/develop` 为准，`main` 尚未包含这些功能。
-- 已集成功能提交：`5e13a13`（管理端认证基础）、`3ffad2d`（Redis/Elasticsearch 本地 Compose）、`eb6f4ba`（用户资料、地址与偏好接口）、`29ea2f9`（管理端用户与角色管理）、`09cc2da`（账号密码安全）、`ba2745e`（前端团队模块接入基础）、`30ffc16`（共享 `AGENTS.md`）；最新对应合并提交为 `8041ae1`。
+- 代表性功能提交：`5e13a13`（管理端认证基础）、`3ffad2d`（Redis/Elasticsearch 本地 Compose）、`eb6f4ba`（用户资料、地址与偏好接口）、`29ea2f9`（管理端用户与角色管理）、`09cc2da`（账号密码安全）、`ba2745e`（前端团队模块接入基础）、`30ffc16`（共享 `AGENTS.md`）；完整集成历史以 `git log origin/develop` 为准。
 - `frontend-admin` 已完成认证、用户角色和模块化菜单/路由注册；`frontend-web` 已完成账号中心及模块化导航/路由注册，四位成员均有独立业务目录；`frontend-app`、`frontend-miniapp` 尚待初始化。
 - 仓库根目录：`backend/`、`frontend-web/`、`frontend-app/`、`frontend-miniapp/`、`frontend-admin/`、`database/`、`deploy/`、`docs/`。
 
