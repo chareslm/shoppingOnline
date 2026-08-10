@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowDown, DataAnalysis, Key, Monitor, UserFilled } from '@element-plus/icons-vue'
+import { ArrowDown, Monitor, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '../stores/auth'
 import { readApiError } from '../services/http'
 import ChangePasswordDialog from '../components/ChangePasswordDialog.vue'
+import { adminModuleMenuItems } from '../modules/registry'
+import { canAccessAdminMenu } from '../modules/types'
 
 const router = useRouter()
 const auth = useAuthStore()
 const passwordDialogVisible = ref(false)
-const canViewAuthorization = computed(() =>
-  auth.session?.permissions.some((permission) => ['system:role:view', 'system:permission:view'].includes(permission)),
+const visibleModuleMenuItems = computed(() =>
+  adminModuleMenuItems.filter((item) => canAccessAdminMenu(item, auth.session?.permissions ?? [])),
 )
-const canViewUsers = computed(() => auth.session?.permissions.includes('system:user:view'))
 
 onMounted(async () => {
   try {
@@ -60,17 +61,14 @@ async function handlePasswordChanged() {
           <el-icon><Monitor /></el-icon>
           <span>工作台</span>
         </el-menu-item>
-        <el-menu-item v-if="canViewAuthorization" index="/authorization">
-          <el-icon><Key /></el-icon>
-          <span>权限概览</span>
-        </el-menu-item>
-        <el-menu-item v-if="canViewUsers" index="/users">
-          <el-icon><UserFilled /></el-icon>
-          <span>用户与角色</span>
-        </el-menu-item>
-        <el-menu-item index="pending-modules" disabled>
-          <el-icon><DataAnalysis /></el-icon>
-          <span>业务模块（待接入）</span>
+        <el-menu-item
+          v-for="item in visibleModuleMenuItems"
+          :key="item.index"
+          :index="item.index"
+          :disabled="item.disabled"
+        >
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span>{{ item.label }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
