@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { webModuleMenuItems } from '@/modules/registry'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -23,10 +24,9 @@ async function logout() {
         <span><strong>SHOP</strong><small>用户中心</small></span>
       </router-link>
       <nav :class="['main-nav', { open: menuOpen }]">
-        <router-link to="/" @click="menuOpen = false">概览</router-link>
-        <router-link to="/profile" @click="menuOpen = false">个人资料</router-link>
-        <router-link to="/addresses" @click="menuOpen = false">收货地址</router-link>
-        <router-link to="/preferences" @click="menuOpen = false">偏好设置</router-link>
+        <router-link v-for="item in webModuleMenuItems" :key="item.to" :to="item.to" @click="menuOpen = false">
+          {{ item.label }}
+        </router-link>
       </nav>
       <div class="user-actions">
         <button class="menu-toggle" type="button" aria-label="展开导航" @click="menuOpen = !menuOpen">☰</button>

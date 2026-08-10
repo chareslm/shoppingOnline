@@ -1,11 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import UserLayout from '@/layouts/UserLayout.vue'
-import AddressView from '@/views/AddressView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
-import OverviewView from '@/views/OverviewView.vue'
-import PreferenceView from '@/views/PreferenceView.vue'
-import ProfileView from '@/views/ProfileView.vue'
+import { webModuleRoutes } from '@/modules/registry'
 import { useAuthStore } from '@/stores/auth'
 
 export const router = createRouter({
@@ -16,12 +13,7 @@ export const router = createRouter({
     {
       path: '/',
       component: UserLayout,
-      children: [
-        { path: '', name: 'overview', component: OverviewView },
-        { path: 'profile', name: 'profile', component: ProfileView },
-        { path: 'addresses', name: 'addresses', component: AddressView },
-        { path: 'preferences', name: 'preferences', component: PreferenceView },
-      ],
+      children: webModuleRoutes,
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],

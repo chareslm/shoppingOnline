@@ -23,4 +23,12 @@
 - 商家 ID、用户 ID、管理员 ID 从认证上下文获取，不接受客户端任意指定的数据范围。
 - 高风险操作（权限变更、冻结、库存调整、退款审核等）必须写入审计日志。
 
+## 前端目录边界
+
+- 统一管理端和用户 Web 已分别在 `frontend-admin/src/modules/`、`frontend-web/src/modules/` 建立模块注册点。
+- 成员 2、3、4、5 分别只维护 `merchant`、`product`、`trade`、`message` 目录；项目管理员维护 `system`、`account` 和公共基础层。
+- 已注册模块通过本模块 `index.ts` 贡献路由和菜单，不直接修改中央路由、布局或注册表。
+- 公共认证、请求客户端、Token 刷新、路由守卫和错误处理由项目管理员维护；业务模块不得复制实现。
+- 完整接入步骤和检查清单见 `docs/frontend-integration-guide.md`。
+
 当前 `shop_follow` 仅为数据库预留：在 `merchant` 模块完成店铺实体、店铺状态和跨模块查询契约前，`user` 模块不得创建店铺关注接口或信任客户端提交的 `shopId`。
