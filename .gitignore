@@ -27,12 +27,8 @@ application-local.yaml
 *.pem
 *.key
 
-# Local project context (kept on the project administrator's machine only)
-/docs/project-context.md
-/docs/requirements-baseline.md
+# Local project progress (kept on the project administrator's machine only)
 /docs/progress.md
-/docs/technical-architecture.md
-/docs/backend-package-architecture.md
 
 # IDE and operating system files
 .idea/
