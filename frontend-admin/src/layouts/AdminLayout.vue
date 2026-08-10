@@ -11,6 +11,7 @@ const auth = useAuthStore()
 const canViewAuthorization = computed(() =>
   auth.session?.permissions.some((permission) => ['system:role:view', 'system:permission:view'].includes(permission)),
 )
+const canViewUsers = computed(() => auth.session?.permissions.includes('system:user:view'))
 
 onMounted(async () => {
   try {
@@ -46,6 +47,10 @@ async function handleLogout() {
         <el-menu-item v-if="canViewAuthorization" index="/authorization">
           <el-icon><Key /></el-icon>
           <span>权限概览</span>
+        </el-menu-item>
+        <el-menu-item v-if="canViewUsers" index="/users">
+          <el-icon><UserFilled /></el-icon>
+          <span>用户与角色</span>
         </el-menu-item>
         <el-menu-item index="pending-modules" disabled>
           <el-icon><DataAnalysis /></el-icon>

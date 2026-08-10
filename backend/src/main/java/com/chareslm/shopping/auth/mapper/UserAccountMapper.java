@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.util.List;
+
 public interface UserAccountMapper extends BaseMapper<UserAccount> {
     @Select("""
             SELECT * FROM `user`
@@ -13,6 +15,39 @@ public interface UserAccountMapper extends BaseMapper<UserAccount> {
             LIMIT 1
             """)
     UserAccount selectByLoginIdentifier(@Param("identifier") String identifier);
+
+    @Select("""
+            <script>
+            SELECT * FROM `user`
+            <where>
+              <if test="keyword != null">
+                AND (username LIKE CONCAT('%', #{keyword}, '%')
+                  OR email LIKE CONCAT('%', #{keyword}, '%')
+                  OR phone LIKE CONCAT('%', #{keyword}, '%'))
+              </if>
+              <if test="status != null">AND status = #{status}</if>
+            </where>
+            ORDER BY id DESC
+            LIMIT #{offset}, #{pageSize}
+            </script>
+            """)
+    List<UserAccount> selectAdminPage(@Param("keyword") String keyword, @Param("status") String status,
+                                      @Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    @Select("""
+            <script>
+            SELECT COUNT(*) FROM `user`
+            <where>
+              <if test="keyword != null">
+                AND (username LIKE CONCAT('%', #{keyword}, '%')
+                  OR email LIKE CONCAT('%', #{keyword}, '%')
+                  OR phone LIKE CONCAT('%', #{keyword}, '%'))
+              </if>
+              <if test="status != null">AND status = #{status}</if>
+            </where>
+            </script>
+            """)
+    long countAdminPage(@Param("keyword") String keyword, @Param("status") String status);
 
     @Update("""
             UPDATE `user`

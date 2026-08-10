@@ -30,6 +30,15 @@ h1, h2, p { margin-top: 0; }
 .summary-grid span { color: #64748b; font-size: 14px; margin-bottom: 12px; }
 .summary-grid strong { color: #1e3a8a; font-size: 18px; word-break: break-word; }
 .page-heading { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 20px; }
+.filter-card { margin-bottom: 16px; }
+.filter-card .el-form-item { margin-bottom: 0; }
+.filter-card .el-input { width: 260px; }
+.table-card .el-card__body { padding: 0; }
+.contact-line { color: #94a3b8; font-size: 12px; margin-top: 5px; }
+.role-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.table-pagination { justify-content: flex-end; padding: 18px 20px; }
+.assignment-form { margin-top: 20px; }
+.assignment-form .el-checkbox-group { display: grid; gap: 10px; }
 
 .login-page { background: linear-gradient(135deg, #14213d 0%, #1d4ed8 100%); display: grid; grid-template-columns: minmax(0, 1fr) 420px; min-height: 100vh; padding: 8vw max(7vw, 32px); place-items: center; gap: 56px; }
 .login-intro { color: #eff6ff; max-width: 520px; }
