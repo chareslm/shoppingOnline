@@ -1,5 +1,6 @@
 package com.chareslm.shopping.auth.controller;
 
+import com.chareslm.shopping.auth.dto.request.ChangePasswordRequest;
 import com.chareslm.shopping.auth.dto.request.PasswordLoginRequest;
 import com.chareslm.shopping.auth.dto.request.LogoutRequest;
 import com.chareslm.shopping.auth.dto.request.RefreshTokenRequest;
@@ -14,6 +15,7 @@ import com.chareslm.shopping.security.context.LoginUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,6 +43,13 @@ public class AuthController {
     @PostMapping("/refresh")
     public ApiResponse<LoginResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return ApiResponse.success(authService.refresh(request));
+    }
+
+    @PutMapping("/password")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(CurrentUser.require().userId(), request);
+        return ApiResponse.success(null);
     }
 
     @PostMapping("/logout")

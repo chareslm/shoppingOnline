@@ -1,5 +1,6 @@
 package com.chareslm.shopping.auth.service.impl;
 
+import com.chareslm.shopping.auth.dto.request.ChangePasswordRequest;
 import com.chareslm.shopping.auth.dto.request.PasswordLoginRequest;
 import com.chareslm.shopping.auth.dto.request.RegisterRequest;
 import com.chareslm.shopping.auth.dto.response.LoginResponse;
@@ -18,6 +19,7 @@ import com.chareslm.shopping.auth.mapper.RoleMapper;
 import com.chareslm.shopping.auth.mapper.UserAccountMapper;
 import com.chareslm.shopping.auth.mapper.UserDeviceMapper;
 import com.chareslm.shopping.auth.mapper.UserRoleMapper;
+import com.chareslm.shopping.common.exception.BusinessException;
 import com.chareslm.shopping.security.jwt.JwtProperties;
 import com.chareslm.shopping.security.jwt.JwtTokenService;
 import com.chareslm.shopping.user.entity.UserPreference;
@@ -35,10 +37,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -164,5 +170,37 @@ class AuthServiceImplTest {
         assertNotNull(refreshed.refreshToken());
         assertFalse(firstLogin.refreshToken().equals(refreshed.refreshToken()));
         verify(refreshTokenMapper).revokeIfActive(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void changePasswordReplacesHashAndRevokesEveryRefreshToken() {
+        UserAccount user = new UserAccount();
+        user.setId(101L);
+        user.setPasswordHash(passwordEncoder.encode("Password123!"));
+        when(userAccountMapper.selectById(101L)).thenReturn(user);
+
+        authService.changePassword(101L, new ChangePasswordRequest("Password123!", "NewPassword456!"));
+
+        ArgumentCaptor<String> passwordHashCaptor = ArgumentCaptor.forClass(String.class);
+        verify(userAccountMapper).updatePasswordHash(eq(101L), passwordHashCaptor.capture());
+        assertTrue(passwordEncoder.matches("NewPassword456!", passwordHashCaptor.getValue()));
+        verify(refreshTokenMapper).revokeActiveByUserId(101L, "PASSWORD_CHANGED");
+        verify(auditLogMapper).insert(any(AuditLog.class));
+    }
+
+    @Test
+    void changePasswordRejectsWrongCurrentPasswordWithoutUpdatingAccount() {
+        UserAccount user = new UserAccount();
+        user.setId(101L);
+        user.setPasswordHash(passwordEncoder.encode("Password123!"));
+        when(userAccountMapper.selectById(101L)).thenReturn(user);
+
+        assertThrows(BusinessException.class,
+                () -> authService.changePassword(101L,
+                        new ChangePasswordRequest("WrongPassword1!", "NewPassword456!")));
+
+        verify(userAccountMapper, never()).updatePasswordHash(anyLong(), anyString());
+        verify(refreshTokenMapper, never()).revokeActiveByUserId(anyLong(), anyString());
+        verify(auditLogMapper).insert(any(AuditLog.class));
     }
 }

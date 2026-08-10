@@ -10,7 +10,13 @@ public record RegisterRequest(
         @Pattern(regexp = "^[A-Za-z][A-Za-z0-9_]{2,63}$", message = "invalid username") String username,
         @Email(message = "invalid email") @Size(max = 254) String email,
         @Pattern(regexp = "^1\\d{10}$", message = "invalid phone") String phone,
-        @NotBlank @Size(min = 8, max = 64) String password
+        @NotBlank
+        @Size(min = 12, max = 64)
+        @Pattern(
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s])\\S+$",
+                message = "password must contain uppercase, lowercase, digit, and special characters"
+        )
+        String password
 ) {
     @AssertTrue(message = "at least one login identifier is required")
     public boolean hasLoginIdentifier() {

@@ -53,5 +53,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { session, loading, isAuthenticated, login, restoreCurrentUser, logout }
+  function clearLocalSession() {
+    clearSession()
+    session.value = null
+  }
+
+  return { session, loading, isAuthenticated, login, restoreCurrentUser, logout, clearLocalSession }
 })

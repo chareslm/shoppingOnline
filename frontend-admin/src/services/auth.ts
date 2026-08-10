@@ -24,6 +24,11 @@ export const authApi = {
     return unwrap(data)
   },
 
+  async changePassword(currentPassword: string, newPassword: string) {
+    const { data } = await http.put<ApiResponse<null>>('/api/auth/password', { currentPassword, newPassword })
+    return unwrap(data)
+  },
+
   async roles() {
     const { data } = await http.get<ApiResponse<Role[]>>('/api/admin/authorization/roles')
     return unwrap(data)

@@ -1,5 +1,6 @@
 package com.chareslm.shopping.auth.service;
 
+import com.chareslm.shopping.auth.dto.request.ChangePasswordRequest;
 import com.chareslm.shopping.auth.dto.request.PasswordLoginRequest;
 import com.chareslm.shopping.auth.dto.request.RefreshTokenRequest;
 import com.chareslm.shopping.auth.dto.request.RegisterRequest;
@@ -12,6 +13,8 @@ public interface AuthService {
     LoginResponse loginWithPassword(PasswordLoginRequest request, String clientIp);
 
     LoginResponse refresh(RefreshTokenRequest request);
+
+    void changePassword(Long userId, ChangePasswordRequest request);
 
     void logout(Long userId, String deviceId);
 }

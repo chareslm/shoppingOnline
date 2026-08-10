@@ -6,7 +6,7 @@
 
 `POST /api/auth/register`
 
-请求体至少提供 `username`、`email`、`phone` 中的一项。用户名须以字母开头，由字母、数字或下划线组成，长度 3–64；当前中国大陆手机号格式为 11 位、以 `1` 开头；密码长度为 8–64 字符且 UTF-8 编码不得超过 72 字节。
+请求体至少提供 `username`、`email`、`phone` 中的一项。用户名须以字母开头，由字母、数字或下划线组成，长度 3–64；当前中国大陆手机号格式为 11 位、以 `1` 开头；密码长度为 12–64 字符、UTF-8 编码不得超过 72 字节，并须同时包含大写字母、小写字母、数字和特殊字符。
 
 ```json
 {
@@ -98,6 +98,23 @@
 `GET /api/auth/me`
 
 该接口需要 Access Token，返回 Token 中的用户 ID、用户名、角色和权限。
+
+## 修改本人密码
+
+`PUT /api/auth/password`
+
+该接口需要 Access Token。调用者必须提交当前密码和符合强密码策略的新密码；新密码不得与当前密码相同。
+
+```json
+{
+  "currentPassword": "CurrentPassword123!",
+  "newPassword": "NewPassword456!"
+}
+```
+
+当前密码错误返回 HTTP `401` / `40102`；新密码不符合策略或与当前密码相同返回 HTTP `400` / `40001`。修改成功后会更新 BCrypt 密码哈希、撤销该账号全部 Refresh Token，并写入 `PASSWORD_CHANGE` 审计日志。客户端应立即清除本地 Access Token 和 Refresh Token，要求用户使用新密码重新登录。
+
+由于当前 Access Token 为无状态 JWT，其他设备已经签发的 Access Token 最长仍可使用 30 分钟；其 Refresh Token 已失效，无法继续续期。
 
 ## 后台 RBAC 查询
 
