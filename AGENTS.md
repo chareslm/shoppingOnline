@@ -47,7 +47,7 @@ docs/             需求、接口、架构和协作文档
 
 ## 文档位置
 
-`docs/progress.md`、`docs/project-context.md`、`docs/requirements-baseline.md`、`docs/technical-architecture.md` 和 `docs/backend-package-architecture.md` 仍是项目管理员本地文档。其他成员或远程新工作区若不存在这些文件，不得自行创建同名替代文档；应先使用仓库中已跟踪的接口、架构与协作说明，并向项目管理员确认缺失上下文。
+只有 `docs/progress.md` 是项目管理员本地开发流水，不同步到远程仓库。需求基线、技术架构、后端包结构、项目上下文、接口与数据库说明均为团队共享文档；任何成员修改相关实现时都必须同步对应文档。
 
 - `docs/requirements-baseline.md`：项目需求基线、范围、关键流程和验收目标；开始任何业务开发前应阅读。
 - `docs/technical-architecture.md`：最终技术选型、模块化单体结构和基础设施边界；开发或初始化工程前必须阅读。
