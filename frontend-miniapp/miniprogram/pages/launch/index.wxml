@@ -1,0 +1,6 @@
+<view class="page launch">
+  <view class="card">
+    <view class="title">综合商城</view>
+    <view class="muted">{{message}}</view>
+  </view>
+</view>

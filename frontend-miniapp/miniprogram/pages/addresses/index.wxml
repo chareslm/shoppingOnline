@@ -1,0 +1,18 @@
+<view class="page">
+  <button class="primary add-button" bindtap="createAddress">新增地址</button>
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+  <view wx:if="{{!loading && addresses.length === 0}}" class="card empty">暂无收货地址</view>
+
+  <view wx:for="{{addresses}}" wx:key="id" class="card address-card">
+    <view class="row">
+      <view class="recipient">{{item.recipientName}}　{{item.recipientPhone}}</view>
+      <view wx:if="{{item.isDefault}}" class="default-tag">默认</view>
+    </view>
+    <view class="muted address-text">{{item.provinceName}}{{item.cityName}}{{item.districtName}}{{item.detailAddress}}</view>
+    <view class="actions">
+      <text wx:if="{{!item.isDefault}}" class="link" data-id="{{item.id}}" bindtap="setDefault">设为默认</text>
+      <text class="link" data-id="{{item.id}}" bindtap="editAddress">编辑</text>
+      <text class="delete-link" data-id="{{item.id}}" bindtap="deleteAddress">删除</text>
+    </view>
+  </view>
+</view>

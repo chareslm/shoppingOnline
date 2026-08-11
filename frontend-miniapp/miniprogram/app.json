@@ -1,0 +1,23 @@
+{
+  "pages": [
+    "pages/launch/index",
+    "pages/login/index",
+    "pages/register/index",
+    "pages/home/index",
+    "pages/profile/index",
+    "pages/addresses/index",
+    "pages/address-edit/index",
+    "pages/preferences/index",
+    "pages/change-password/index",
+    "pages/unauthorized/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "综合商城",
+    "backgroundColor": "#f5f7fa",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -11,7 +11,7 @@
 - GitHub 仓库：`https://github.com/chareslm/shoppingOnline.git`。
 - 当前集成分支：`develop`；认证权限、强密码与本人改密、管理端认证及用户角色管理、Redis/Elasticsearch 本地 Compose、用户资料/地址/偏好接口、用户 Web 用户中心，以及管理端/用户 Web 团队模块接入基础均已集成；最新提交以远程 `origin/develop` 为准，`main` 尚未包含这些功能。
 - 代表性功能提交：`5e13a13`（管理端认证基础）、`3ffad2d`（Redis/Elasticsearch 本地 Compose）、`eb6f4ba`（用户资料、地址与偏好接口）、`29ea2f9`（管理端用户与角色管理）、`09cc2da`（账号密码安全）、`ba2745e`（前端团队模块接入基础）、`30ffc16`（共享 `AGENTS.md`）；完整集成历史以 `git log origin/develop` 为准。
-- `frontend-admin` 已完成认证、用户角色和模块化菜单/路由注册；`frontend-web` 已完成账号中心及模块化导航/路由注册，四位成员均有独立业务目录；`frontend-app` 已在功能分支完成 Android 工程、统一认证、本人改密、USER 角色限制、用户中心和五模块注册基础；`frontend-miniapp` 尚待初始化。
+- `frontend-admin` 已完成认证、用户角色和模块化菜单/路由注册；`frontend-web` 已完成账号中心及模块化导航/路由注册，四位成员均有独立业务目录；`frontend-app` 已完成 Android 工程、统一认证、本人改密、USER 角色限制、用户中心和五模块注册基础；`frontend-miniapp` 已在功能分支初始化原生 TypeScript 工程、统一认证、用户中心和五模块注册基础。
 - 仓库根目录：`backend/`、`frontend-web/`、`frontend-app/`、`frontend-miniapp/`、`frontend-admin/`、`database/`、`deploy/`、`docs/`。
 
 ## 业务分工
@@ -44,4 +44,4 @@ feature/* 或 fix/* → 项目管理员集成至 develop → Pull Request + 非�
 
 ## 下一阶段建议
 
-Flutter App 已使用 Android 16 / API 36 模拟器完成真实注册、登录、Token 自动刷新、会话恢复、个人资料、收货地址、偏好设置、本人改密、新密码登录和退出联调，下一步提交并集成该功能分支，再初始化微信原生 TypeScript 小程序并接入统一认证。用户 Web 和 App 等待商品、交易和消息模块提供稳定契约后，再逐步补齐商城浏览、购物车、订单和消息页面。店铺关注关系因商家／店铺模块尚未落地，仅保留数据库预留与跨模块边界说明，不创建接口。其他模块始终从认证上下文获取用户、商家或管理员数据范围。
+Flutter App 已使用 Android 16 / API 36 模拟器完成真实认证与用户中心联调。微信原生 TypeScript 小程序已完成统一请求、Token 自动刷新、USER 角色限制、账号和用户中心页面，并完成真实注册、登录、Token 轮换、资料、地址、偏好、改密和退出接口联调。用户 Web、App 和小程序等待商品、交易和消息模块提供稳定契约后，再逐步补齐商城浏览、购物车、订单和消息页面。店铺关注关系因商家／店铺模块尚未落地，仅保留数据库预留与跨模块边界说明，不创建接口。其他模块始终从认证上下文获取用户、商家或管理员数据范围。

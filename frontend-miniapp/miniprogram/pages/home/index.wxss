@@ -1,0 +1,10 @@
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 28rpx 0;
+  border-bottom: 2rpx solid #eef2f7;
+}
+
+.menu-item:last-child {
+  border-bottom: 0;
+}

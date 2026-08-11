@@ -126,6 +126,8 @@ SUPER_ADMIN
 
 Flutter Android App 的 Android 包名为 `com.chareslm.shopping`，已在 `frontend-app` 建立 `app/core/features` 分层：`core` 统一维护 Dio、Bearer Token、并发 401 刷新、安全会话存储和稳定设备 ID，`features/account` 承载注册、登录、本人改密、个人资料、收货地址、偏好设置和退出页面。App 只允许包含 `USER` 角色的账号进入用户功能区；中央模块注册表已接入 `account/merchant/product/trade/message`，后四个业务模块保持空注册点。API 地址通过 `--dart-define=API_BASE_URL=...` 注入；Debug 构建可访问本地 HTTP，Release 构建必须使用 HTTPS。
 
+微信小程序在 `frontend-miniapp` 使用微信原生 TypeScript：`core` 统一维护 `wx.request`、Bearer Token、并发 401 单次刷新、本地会话和稳定设备 ID，`features/account` 维护认证与用户中心 API/类型，页面位于 `pages/`。登录固定提交 `deviceType: MINIAPP`，启动时恢复会话并限制 `USER` 角色；中央模块注册表同样接入 `account/merchant/product/trade/message`，后四个业务模块保持空注册点。仓库公共配置固定使用 `touristappid` 和 `http://127.0.0.1:8080`，成员通过被 Git 忽略的 `project.private.config.json` 保存测试 AppID，并通过小程序本地存储覆盖开发 API 地址。开发者工具可在关闭合法域名校验后访问本机 HTTP，真机和正式版必须使用已登记的 HTTPS `request` 合法域名。
+
 聊天职责划分：
 
 ```text

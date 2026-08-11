@@ -1,0 +1,34 @@
+<view class="page">
+  <view class="card">
+    <view class="field">
+      <text class="label">昵称</text>
+      <input class="input" value="{{nickname}}" bindinput="onNicknameInput" placeholder="请输入昵称" />
+    </view>
+    <view class="field">
+      <text class="label">真实姓名</text>
+      <input class="input" value="{{realName}}" bindinput="onRealNameInput" placeholder="可选" />
+    </view>
+    <view class="field">
+      <text class="label">头像 URL</text>
+      <input class="input" value="{{avatarUrl}}" bindinput="onAvatarInput" placeholder="可选" />
+    </view>
+    <view class="field">
+      <text class="label">性别</text>
+      <picker class="picker" mode="selector" range="{{genderLabels}}" value="{{genderIndex}}" bindchange="onGenderChange">
+        <view>{{genderLabels[genderIndex]}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="label">生日</text>
+      <picker class="picker" mode="date" value="{{birthday}}" bindchange="onBirthdayChange">
+        <view>{{birthday || '请选择（可选）'}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="label">个人简介</text>
+      <textarea class="textarea" value="{{bio}}" bindinput="onBioInput" maxlength="500" placeholder="介绍一下自己" />
+    </view>
+    <view wx:if="{{error}}" class="error">{{error}}</view>
+    <button class="primary" loading="{{loading}}" disabled="{{loading}}" bindtap="save">保存资料</button>
+  </view>
+</view>

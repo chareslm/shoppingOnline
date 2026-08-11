@@ -105,7 +105,7 @@ export const tradeModule: WebModuleContribution = {
 
 ## 5. Flutter 与微信小程序
 
-Flutter Android App 已初始化，采用以下目录边界；微信小程序创建工程时沿用相同业务划分：
+Flutter Android App 与微信原生 TypeScript 小程序均已初始化，并采用以下业务划分：
 
 ```text
 features/
@@ -127,6 +127,15 @@ Flutter 模块注册约定：
 - `merchant`、`product`、`trade` 和 `message` 当前均为空路由注册点，不向用户展示入口，也不提前定义业务模型。
 - 成员只在本人模块下增加 `domain/data/presentation` 和路由，网络请求必须复用 `apiClientProvider`。
 - Flutter 的角色菜单或路由限制不构成安全边界，业务数据范围仍由后端认证主体和权限校验决定。
+
+微信小程序模块注册约定：
+
+- `frontend-miniapp/miniprogram/app/module-registry.ts` 是中央注册表，已接入五个模块，成员无需修改。
+- 每个 `features/<module>/module.ts` 导出一个 `AppModuleContribution`，包含模块键、负责人和本模块页面路径。
+- `merchant`、`product`、`trade` 和 `message` 当前均为空页面注册点，不提前定义业务模型或展示入口。
+- 公共请求必须复用 `core/http/api-client.ts`，不得在业务模块中重复实现 Token 注入、刷新队列或统一响应解析。
+- 登录固定提交 `deviceType: MINIAPP`；启动会话和用户页面要求账号包含 `USER` 角色，但客户端角色判断不替代后端授权。
+- 开发 API 默认由 `config/environment.ts` 指向 `http://127.0.0.1:8080`；其他本机端口通过小程序存储键 `shopping.apiBaseUrl.development` 覆盖，不修改源码。公共 `project.config.json` 固定使用 `touristappid`，成员在被 Git 忽略的 `project.private.config.json` 配置个人测试 AppID。正式版必须使用 HTTPS，并在微信公众平台登记 `request` 合法域名。
 
 ## 6. API 与类型约定
 

@@ -1,0 +1,19 @@
+<view class="page">
+  <view class="card">
+    <view class="subtitle">修改成功后，所有设备的 Refresh Token 都会失效，需要使用新密码重新登录。</view>
+    <view class="field">
+      <text class="label">当前密码</text>
+      <input class="input" value="{{currentPassword}}" bindinput="onCurrentInput" password />
+    </view>
+    <view class="field">
+      <text class="label">新密码</text>
+      <input class="input" value="{{newPassword}}" bindinput="onNewInput" password placeholder="12–64 位强密码" />
+    </view>
+    <view class="field">
+      <text class="label">确认新密码</text>
+      <input class="input" value="{{confirmation}}" bindinput="onConfirmationInput" password />
+    </view>
+    <view wx:if="{{error}}" class="error">{{error}}</view>
+    <button class="primary" loading="{{loading}}" disabled="{{loading}}" bindtap="submit">确认修改</button>
+  </view>
+</view>

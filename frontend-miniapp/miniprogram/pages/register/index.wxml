@@ -1,0 +1,20 @@
+<view class="page">
+  <view class="card">
+    <view class="title">注册平台账号</view>
+    <view class="subtitle">密码需为 12–64 位，并同时包含大小写字母、数字和特殊字符</view>
+    <view class="field">
+      <text class="label">用户名</text>
+      <input class="input" value="{{username}}" bindinput="onUsernameInput" placeholder="字母开头，3–64 位" />
+    </view>
+    <view class="field">
+      <text class="label">密码</text>
+      <input class="input" value="{{password}}" bindinput="onPasswordInput" password placeholder="请输入强密码" />
+    </view>
+    <view class="field">
+      <text class="label">确认密码</text>
+      <input class="input" value="{{confirmation}}" bindinput="onConfirmationInput" password placeholder="请再次输入密码" />
+    </view>
+    <view wx:if="{{error}}" class="error">{{error}}</view>
+    <button class="primary" loading="{{loading}}" disabled="{{loading}}" bindtap="submit">注册</button>
+  </view>
+</view>

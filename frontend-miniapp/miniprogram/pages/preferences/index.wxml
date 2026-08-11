@@ -1,0 +1,18 @@
+<view class="page">
+  <view class="card">
+    <view class="row preference-row">
+      <view><view>营销通知</view><view class="muted">接收活动和优惠信息</view></view>
+      <switch checked="{{marketingEnabled}}" bindchange="onMarketingChange" />
+    </view>
+    <view class="row preference-row">
+      <view><view>订单通知</view><view class="muted">接收订单状态变化</view></view>
+      <switch checked="{{orderNotificationEnabled}}" bindchange="onOrderChange" />
+    </view>
+    <view class="row preference-row">
+      <view><view>系统通知</view><view class="muted">接收平台重要消息</view></view>
+      <switch checked="{{systemNotificationEnabled}}" bindchange="onSystemChange" />
+    </view>
+    <view wx:if="{{error}}" class="error">{{error}}</view>
+    <button class="primary" loading="{{loading}}" disabled="{{loading}}" bindtap="save">保存设置</button>
+  </view>
+</view>

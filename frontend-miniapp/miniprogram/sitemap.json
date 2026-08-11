@@ -1,0 +1,4 @@
+{
+  "desc": "平台用户中心页面不参与微信搜索索引",
+  "rules": [{ "action": "disallow", "page": "*" }]
+}
