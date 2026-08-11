@@ -105,7 +105,7 @@ export const tradeModule: WebModuleContribution = {
 
 ## 5. Flutter 与微信小程序
 
-两端尚未初始化，创建工程时沿用相同边界：
+Flutter Android App 已初始化，采用以下目录边界；微信小程序创建工程时沿用相同业务划分：
 
 ```text
 features/
@@ -117,6 +117,16 @@ features/
 ```
 
 公共网络层、Token 安全存储、刷新队列、路由守卫和通用响应解析放在 `core/`，业务模块不得复制。Flutter 使用 Riverpod、go_router 和 Dio；微信小程序使用 TypeScript，并由统一请求封装注入 Bearer Token。
+
+Flutter 当前公共基础位于 `frontend-app/lib/core/`，认证、修改密码、个人资料、收货地址和偏好设置位于 `frontend-app/lib/features/account/`。登录固定提交 `deviceType: ANDROID`，用户端路由要求账号包含 `USER` 角色；API 地址通过 `--dart-define=API_BASE_URL=...` 配置，Android 模拟器访问宿主机时默认使用 `http://10.0.2.2:8080`。Debug 构建仅为本地联调允许明文 HTTP，Release 构建必须使用 HTTPS。
+
+Flutter 模块注册约定：
+
+- `frontend-app/lib/app/module_registry.dart` 是中央注册表，已接入五个模块，成员无需修改。
+- 每个 `features/<module>/module.dart` 导出一个 `AppModuleContribution`，包含模块键、负责人和本模块 `GoRoute`。
+- `merchant`、`product`、`trade` 和 `message` 当前均为空路由注册点，不向用户展示入口，也不提前定义业务模型。
+- 成员只在本人模块下增加 `domain/data/presentation` 和路由，网络请求必须复用 `apiClientProvider`。
+- Flutter 的角色菜单或路由限制不构成安全边界，业务数据范围仍由后端认证主体和权限校验决定。
 
 ## 6. API 与类型约定
 

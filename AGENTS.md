@@ -6,7 +6,7 @@
 
 - 项目名称：综合电商平台课程设计。
 - 仓库：`https://github.com/chareslm/shoppingOnline.git`。
-- 当前阶段：身份认证与 RBAC、强密码与本人改密、统一管理端认证及用户角色管理、Redis/Elasticsearch 本地基础设施、用户资料/地址/偏好接口、用户 Web 用户中心，以及管理端/用户 Web 团队模块接入基础均已集成至 `develop`。Flutter App、微信小程序及其余业务模块尚待建设。
+- 当前阶段：身份认证与 RBAC、强密码与本人改密、统一管理端认证及用户角色管理、Redis/Elasticsearch 本地基础设施、用户资料/地址/偏好接口、用户 Web 用户中心，以及管理端/用户 Web 团队模块接入基础均已集成至 `develop`；Flutter Android App 统一认证、本人改密、用户中心和模块注册基础已在功能分支完成，微信小程序及其余业务模块尚待建设。
 - 开发策略：先采用模块化单体，后端使用 Java 21 + Spring Boot 4.1；本地 Compose 已提供 MySQL、Redis 和 Elasticsearch，消息队列在后期确有异步需求时再接入；Web 端使用 Vue 3 + TypeScript。
 - 终端范围：一期建设用户 Web、Android Flutter App、微信原生小程序和统一管理端；三端共用同一后端 API、账号与业务规则。
 
