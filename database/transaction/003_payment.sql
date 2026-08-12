@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS `payment_order` (
   KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付单';
 
--- 支付回调记录（幂等: 同一支付单同一回调类型只处理一次）
+-- 支付回调记录（幂等: 唯一约束 (payment_order_id, callback_type, status) 保证并发下
+-- 同一支付单同一回调类型只有一条 status=1 处理记录；重复回调写 status=2 记录）
 CREATE TABLE IF NOT EXISTS `payment_record` (
   `id`               BIGINT       NOT NULL                COMMENT '雪花ID(应用层生成)',
   `payment_order_id` BIGINT       NOT NULL                COMMENT '关联支付单',
@@ -42,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `payment_record` (
   `process_result`   VARCHAR(255) NULL                    COMMENT '处理结果说明',
   `created_at`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '回调时间',
   PRIMARY KEY (`id`),
-  KEY `idx_payment` (`payment_order_id`)
+  UNIQUE KEY `uk_payment_callback` (`payment_order_id`, `callback_type`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付回调记录';
 
 -- 退款单
