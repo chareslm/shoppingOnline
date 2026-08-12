@@ -1,10 +1,12 @@
 package com.chareslm.shopping.payment.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.chareslm.shopping.common.api.ErrorCode;
 import com.chareslm.shopping.common.exception.BusinessException;
 import com.chareslm.shopping.payment.dto.CreatePaymentRequest;
 import com.chareslm.shopping.payment.dto.PaymentOrderDTO;
+import com.chareslm.shopping.payment.dto.RefundOrderDTO;
 import com.chareslm.shopping.payment.dto.RefundRequest;
 import com.chareslm.shopping.payment.entity.PaymentOrder;
 import com.chareslm.shopping.payment.entity.PaymentRecord;
@@ -19,19 +21,22 @@ import com.chareslm.shopping.trade.mapper.OrderMapper;
 import com.chareslm.shopping.trade.mapper.OrderOperationLogMapper;
 import com.chareslm.shopping.trade.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 支付服务实现。
  * <p>
- * 幂等策略（设计文档 §5.2）：回调先查 payment_record 已处理记录，存在则标记重复直接返回；
- * 否则同一事务内写 payment_record + 更新 payment_order.status=1 + 订单 markPaid + 操作日志。
+ * 幂等策略（设计文档 §5.2）：payment_record 唯一约束 (payment_order_id, callback_type, status)
+ * 保证并发回调下只有一条 status=1 处理记录；插入冲突（DuplicateKeyException）说明已处理，
+ * 改插 status=2 重复记录后直接返回。所有状态变更使用条件更新（WHERE status=?）防并发覆盖。
  */
 @Service
 @RequiredArgsConstructor
@@ -74,56 +79,63 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public PaymentOrderDTO mockPay(Long userId, Long paymentOrderId) {
         PaymentOrder paymentOrder = requireOwnedPaymentOrder(userId, paymentOrderId);
-        if (paymentOrder.getStatus() != 0) {
+        // 条件更新：仅当 status=0 时置 transactionId/prepayId，并发下只有一个线程成功
+        PaymentOrder update = new PaymentOrder();
+        update.setTransactionId(generateNo("TXN"));
+        update.setPrepayId(generateNo("PRE"));
+        int rows = paymentOrderMapper.update(update, new LambdaUpdateWrapper<PaymentOrder>()
+                .eq(PaymentOrder::getId, paymentOrderId)
+                .eq(PaymentOrder::getStatus, 0));
+        if (rows == 0) {
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
         }
-        paymentOrder.setTransactionId(generateNo("TXN"));
-        paymentOrder.setPrepayId(generateNo("PRE"));
-        paymentOrderMapper.updateById(paymentOrder);
-        handlePayCallback(paymentOrderId, "{\"mock\":true,\"transactionId\":\"" + paymentOrder.getTransactionId() + "\"}");
+        handlePayCallback(paymentOrderId, "{\"mock\":true,\"transactionId\":\"" + update.getTransactionId() + "\"}");
         return toDTO(paymentOrderMapper.selectById(paymentOrderId));
     }
 
     @Override
     @Transactional
     public void handlePayCallback(Long paymentOrderId, String rawData) {
-        PaymentOrder paymentOrder = paymentOrderMapper.selectById(paymentOrderId);
+        // Serialize concurrent callbacks: FOR UPDATE locks the payment order row so
+        // concurrent callbacks queue up instead of racing on the unique key insert
+        // (which caused InnoDB deadlocks in markDuplicateCallback).
+        PaymentOrder paymentOrder = paymentOrderMapper.selectOne(new LambdaQueryWrapper<PaymentOrder>()
+                .eq(PaymentOrder::getId, paymentOrderId)
+                .last("FOR UPDATE"));
         if (paymentOrder == null) {
             throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
         }
-        // 幂等：已处理直接返回（标记重复）
-        PaymentRecord existing = paymentRecordMapper.selectOne(new LambdaQueryWrapper<PaymentRecord>()
-                .eq(PaymentRecord::getPaymentOrderId, paymentOrderId)
-                .eq(PaymentRecord::getCallbackType, "PAY")
-                .eq(PaymentRecord::getStatus, 1));
-        if (existing != null) {
-            PaymentRecord duplicate = new PaymentRecord();
-            duplicate.setPaymentOrderId(paymentOrderId);
-            duplicate.setCallbackType("PAY");
-            duplicate.setRawData(rawData);
-            duplicate.setStatus(2);
-            duplicate.setProcessResult("重复回调，已忽略");
-            paymentRecordMapper.insert(duplicate);
+        // Idempotent: already paid (status=1) -> record duplicate and return.
+        if (paymentOrder.getStatus() == 1) {
+            markDuplicateCallback(paymentOrderId, rawData);
             return;
         }
-        if (paymentOrder.getStatus() != 0) {
-            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
-        }
-        // 同一事务：写回调记录 + 支付单成功 + 订单已支付 + 操作日志
+        // Idempotent: insert status=1 processing record; unique constraint
+        // (payment_order_id, callback_type, status) is the fallback guard.
         PaymentRecord record = new PaymentRecord();
         record.setPaymentOrderId(paymentOrderId);
         record.setCallbackType("PAY");
         record.setRawData(rawData);
         record.setStatus(1);
         record.setProcessResult("支付成功");
-        paymentRecordMapper.insert(record);
-
-        paymentOrder.setStatus(1);
-        paymentOrder.setPayTime(LocalDateTime.now());
-        paymentOrder.setCallbackTime(LocalDateTime.now());
-        paymentOrder.setCallbackRaw(rawData);
-        paymentOrderMapper.updateById(paymentOrder);
-
+        try {
+            paymentRecordMapper.insert(record);
+        } catch (DuplicateKeyException e) {
+            markDuplicateCallback(paymentOrderId, rawData);
+            return;
+        }
+        // 条件更新：仅当 status=0 时 0→1，防止与超时关闭/取消并发覆盖
+        PaymentOrder update = new PaymentOrder();
+        update.setStatus(1);
+        update.setPayTime(LocalDateTime.now());
+        update.setCallbackTime(LocalDateTime.now());
+        update.setCallbackRaw(rawData);
+        int rows = paymentOrderMapper.update(update, new LambdaUpdateWrapper<PaymentOrder>()
+                .eq(PaymentOrder::getId, paymentOrderId)
+                .eq(PaymentOrder::getStatus, 0));
+        if (rows == 0) {
+            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
+        }
         orderService.markPaid(paymentOrder.getOrderId());
     }
 
@@ -137,13 +149,22 @@ public class PaymentServiceImpl implements PaymentService {
         if (order.getStatus() != 1 && order.getStatus() != 2) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID);
         }
+        // 悲观锁（FOR UPDATE）串行化退款申请：并发退款时第二个线程等待并读到最新数据，
+        // 结合"已退 + 待退"累计校验，防止并发超退
         PaymentOrder paymentOrder = paymentOrderMapper.selectOne(new LambdaQueryWrapper<PaymentOrder>()
-                .eq(PaymentOrder::getOrderId, order.getId()));
+                .eq(PaymentOrder::getOrderId, order.getId())
+                .last("FOR UPDATE"));
         if (paymentOrder == null || paymentOrder.getStatus() != 1) {
             throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
         }
         BigDecimal refundAmount = request.getAmount() == null ? order.getPayAmount() : request.getAmount();
-        if (refundAmount.compareTo(BigDecimal.ZERO) <= 0 || refundAmount.compareTo(order.getPayAmount()) > 0) {
+        if (refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+        }
+        // 累计校验：已退金额 + 待退金额 + 本次退款不得超过实付金额（防并发超退）
+        BigDecimal refunded = sumRefunded(paymentOrder.getId());
+        BigDecimal pending = sumPending(paymentOrder.getId());
+        if (refundAmount.add(refunded).add(pending).compareTo(order.getPayAmount()) > 0) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR);
         }
         RefundOrder refundOrder = new RefundOrder();
@@ -156,10 +177,16 @@ public class PaymentServiceImpl implements PaymentService {
         refundOrder.setStatus(0);
         refundOrderMapper.insert(refundOrder);
 
-        int fromStatus = order.getStatus();
-        order.setStatus(6);
-        orderMapper.updateById(order);
-        writeOrderLog(order.getId(), 1, userId, "REFUND", fromStatus, 6, "申请退款");
+        // 条件更新：仅当 status IN (1,2) 时 1/2→6（退款中），防并发覆盖
+        Order update = new Order();
+        update.setStatus(6);
+        int rows = orderMapper.update(update, new LambdaUpdateWrapper<Order>()
+                .eq(Order::getId, order.getId())
+                .in(Order::getStatus, 1, 2));
+        if (rows == 0) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID);
+        }
+        writeOrderLog(order.getId(), 1, userId, "REFUND", order.getStatus(), 6, "申请退款");
     }
 
     @Override
@@ -169,19 +196,93 @@ public class PaymentServiceImpl implements PaymentService {
         if (refundOrder == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
-        if (refundOrder.getStatus() != 0) {
+        // 条件更新：仅当 status=0 时 0→1，防并发重复完成
+        RefundOrder update = new RefundOrder();
+        update.setStatus(1);
+        update.setChannelRefundId(generateNo("CHREF"));
+        update.setRefundTime(LocalDateTime.now());
+        int rows = refundOrderMapper.update(update, new LambdaUpdateWrapper<RefundOrder>()
+                .eq(RefundOrder::getId, refundId)
+                .eq(RefundOrder::getStatus, 0));
+        if (rows == 0) {
             throw new BusinessException(ErrorCode.REFUND_STATUS_INVALID);
         }
-        refundOrder.setStatus(1);
-        refundOrder.setChannelRefundId(generateNo("CHREF"));
-        refundOrder.setRefundTime(LocalDateTime.now());
-        refundOrderMapper.updateById(refundOrder);
 
-        Order order = orderMapper.selectById(refundOrder.getOrderId());
-        if (order != null && order.getStatus() == 6) {
-            order.setStatus(7);
-            orderMapper.updateById(order);
-            writeOrderLog(order.getId(), 2, null, "REFUND", 6, 7, "退款成功");
+        PaymentOrder paymentOrder = paymentOrderMapper.selectById(refundOrder.getPaymentOrderId());
+        if (paymentOrder == null) {
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+        }
+        // 累计已退金额达到实付金额 → 全额退完：订单 6→7 + 支付单 1→4（已退款）
+        // 否则为部分退款：订单保持 6（退款中），支付单保持 1
+        BigDecimal refunded = sumRefunded(paymentOrder.getId());
+        if (refunded.compareTo(paymentOrder.getAmount()) >= 0) {
+            Order orderUpdate = new Order();
+            orderUpdate.setStatus(7);
+            int orderRows = orderMapper.update(orderUpdate, new LambdaUpdateWrapper<Order>()
+                    .eq(Order::getId, refundOrder.getOrderId())
+                    .eq(Order::getStatus, 6));
+            if (orderRows > 0) {
+                writeOrderLog(refundOrder.getOrderId(), 2, null, "REFUND", 6, 7, "退款成功");
+            }
+            PaymentOrder poUpdate = new PaymentOrder();
+            poUpdate.setStatus(4);
+            paymentOrderMapper.update(poUpdate, new LambdaUpdateWrapper<PaymentOrder>()
+                    .eq(PaymentOrder::getId, paymentOrder.getId())
+                    .eq(PaymentOrder::getStatus, 1));
+        }
+    }
+
+    @Override
+    public PaymentOrderDTO getPaymentOrder(Long userId, Long paymentOrderId) {
+        return toDTO(requireOwnedPaymentOrder(userId, paymentOrderId));
+    }
+
+    @Override
+    public List<RefundOrderDTO> listRefunds(Long userId) {
+        List<RefundOrder> refunds = refundOrderMapper.selectList(new LambdaQueryWrapper<RefundOrder>()
+                .eq(RefundOrder::getUserId, userId)
+                .orderByDesc(RefundOrder::getCreatedAt));
+        return refunds.stream().map(this::toRefundDTO).toList();
+    }
+
+    /**
+     * 统计支付单已成功退款的累计金额（refund_order.status=1）。
+     */
+    private BigDecimal sumRefunded(Long paymentOrderId) {
+        List<RefundOrder> refundedOrders = refundOrderMapper.selectList(new LambdaQueryWrapper<RefundOrder>()
+                .eq(RefundOrder::getPaymentOrderId, paymentOrderId)
+                .eq(RefundOrder::getStatus, 1));
+        return refundedOrders.stream()
+                .map(RefundOrder::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * 统计支付单待处理退款的累计金额（refund_order.status=0）。
+     */
+    private BigDecimal sumPending(Long paymentOrderId) {
+        List<RefundOrder> pendingOrders = refundOrderMapper.selectList(new LambdaQueryWrapper<RefundOrder>()
+                .eq(RefundOrder::getPaymentOrderId, paymentOrderId)
+                .eq(RefundOrder::getStatus, 0));
+        return pendingOrders.stream()
+                .map(RefundOrder::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * 标记重复回调（status=2）。唯一约束冲突（重复记录已存在）时静默忽略。
+     */
+    private void markDuplicateCallback(Long paymentOrderId, String rawData) {
+        try {
+            PaymentRecord duplicate = new PaymentRecord();
+            duplicate.setPaymentOrderId(paymentOrderId);
+            duplicate.setCallbackType("PAY");
+            duplicate.setRawData(rawData);
+            duplicate.setStatus(2);
+            duplicate.setProcessResult("重复回调，已忽略");
+            paymentRecordMapper.insert(duplicate);
+        } catch (DuplicateKeyException ignored) {
+            // 重复记录已存在，无需再写
         }
     }
 
@@ -204,6 +305,20 @@ public class PaymentServiceImpl implements PaymentService {
         log.setToStatus(toStatus);
         log.setRemark(remark);
         orderOperationLogMapper.insert(log);
+    }
+
+    private RefundOrderDTO toRefundDTO(RefundOrder refundOrder) {
+        RefundOrderDTO dto = new RefundOrderDTO();
+        dto.setRefundId(refundOrder.getId());
+        dto.setRefundNo(refundOrder.getRefundNo());
+        dto.setPaymentOrderId(refundOrder.getPaymentOrderId());
+        dto.setOrderId(refundOrder.getOrderId());
+        dto.setAmount(refundOrder.getAmount());
+        dto.setReason(refundOrder.getReason());
+        dto.setStatus(refundOrder.getStatus());
+        dto.setRefundTime(refundOrder.getRefundTime());
+        dto.setCreatedAt(refundOrder.getCreatedAt());
+        return dto;
     }
 
     private PaymentOrderDTO toDTO(PaymentOrder paymentOrder) {

@@ -30,6 +30,9 @@ application-local.yaml
 # Local project progress (kept on the project administrator's machine only)
 /docs/progress.md
 
+# Orchestrator session metadata (plans, drafts, run-continuation)
+.omo/
+
 # IDE and operating system files
 .idea/
 .vscode/

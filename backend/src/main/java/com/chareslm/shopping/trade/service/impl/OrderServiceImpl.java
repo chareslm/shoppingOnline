@@ -1,6 +1,7 @@
 package com.chareslm.shopping.trade.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.chareslm.shopping.cart.entity.Cart;
 import com.chareslm.shopping.cart.entity.CartGroup;
 import com.chareslm.shopping.cart.entity.CartItem;
@@ -98,12 +99,16 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public void cancelOrder(Long userId, Long orderId) {
         Order order = requireOwnedOrder(userId, orderId);
-        if (order.getStatus() != 0) {
+        // 条件更新：仅当 status=0 时 0→4，并发下只有一个线程成功
+        Order update = new Order();
+        update.setStatus(4);
+        update.setCancelReason("用户取消");
+        int rows = orderMapper.update(update, new LambdaUpdateWrapper<Order>()
+                .eq(Order::getId, orderId)
+                .eq(Order::getStatus, 0));
+        if (rows == 0) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID);
         }
-        order.setStatus(4);
-        order.setCancelReason("用户取消");
-        orderMapper.updateById(order);
         releaseReservations(orderId);
         writeLog(orderId, 1, userId, "CANCEL", 0, 4, "用户取消订单");
     }
@@ -112,12 +117,16 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public void confirmReceipt(Long userId, Long orderId) {
         Order order = requireOwnedOrder(userId, orderId);
-        if (order.getStatus() != 2) {
+        // 条件更新：仅当 status=2 时 2→3
+        Order update = new Order();
+        update.setStatus(3);
+        update.setFinishTime(LocalDateTime.now());
+        int rows = orderMapper.update(update, new LambdaUpdateWrapper<Order>()
+                .eq(Order::getId, orderId)
+                .eq(Order::getStatus, 2));
+        if (rows == 0) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID);
         }
-        order.setStatus(3);
-        order.setFinishTime(LocalDateTime.now());
-        orderMapper.updateById(order);
         writeLog(orderId, 1, userId, "COMPLETE", 2, 3, "用户确认收货");
     }
 
@@ -128,11 +137,15 @@ public class OrderServiceImpl implements OrderService {
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
-        if (order.getStatus() != 1) {
+        // 条件更新：仅当 status=1 时 1→2
+        Order update = new Order();
+        update.setStatus(2);
+        int rows = orderMapper.update(update, new LambdaUpdateWrapper<Order>()
+                .eq(Order::getId, orderId)
+                .eq(Order::getStatus, 1));
+        if (rows == 0) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID);
         }
-        order.setStatus(2);
-        orderMapper.updateById(order);
         writeLog(orderId, 3, null, "SHIP", 1, 2, "商家发货");
     }
 
@@ -156,19 +169,25 @@ public class OrderServiceImpl implements OrderService {
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
-        if (order.getStatus() != 0) {
+        // 条件更新：仅当 status=0 时 0→1，防止与取消/超时关闭并发覆盖
+        Order update = new Order();
+        update.setStatus(1);
+        update.setPayTime(LocalDateTime.now());
+        int rows = orderMapper.update(update, new LambdaUpdateWrapper<Order>()
+                .eq(Order::getId, orderId)
+                .eq(Order::getStatus, 0));
+        if (rows == 0) {
             throw new BusinessException(ErrorCode.ORDER_STATUS_INVALID);
         }
-        order.setStatus(1);
-        order.setPayTime(LocalDateTime.now());
-        orderMapper.updateById(order);
-        // 预占 0→1（已扣减）
+        // 预占 0→1（已扣减）；扣减失败必须抛异常回滚，避免"已支付但库存未扣"
         List<StockReservation> reservations = stockReservationMapper.selectList(
                 new LambdaQueryWrapper<StockReservation>()
                         .eq(StockReservation::getOrderId, orderId)
                         .eq(StockReservation::getStatus, 0));
         for (StockReservation reservation : reservations) {
-            stockClient.deduct(reservation.getSkuId(), reservation.getQuantity());
+            if (!stockClient.deduct(reservation.getSkuId(), reservation.getQuantity())) {
+                throw new BusinessException(ErrorCode.STOCK_NOT_ENOUGH);
+            }
             reservation.setStatus(1);
             stockReservationMapper.updateById(reservation);
         }

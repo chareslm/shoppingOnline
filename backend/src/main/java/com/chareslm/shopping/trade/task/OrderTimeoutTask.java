@@ -1,6 +1,7 @@
 package com.chareslm.shopping.trade.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.chareslm.shopping.trade.client.StockClient;
 import com.chareslm.shopping.trade.entity.Order;
 import com.chareslm.shopping.trade.entity.OrderOperationLog;
@@ -33,17 +34,27 @@ public class OrderTimeoutTask {
 
     @Scheduled(fixedDelay = 60_000)
     @Transactional
-    public void closeExpiredOrders() {
+    public int closeExpiredOrders() {
         List<Order> expired = orderMapper.selectList(new LambdaQueryWrapper<Order>()
                 .eq(Order::getStatus, 0)
                 .lt(Order::getCloseTime, LocalDateTime.now()));
+        int closed = 0;
         for (Order order : expired) {
-            order.setStatus(5);
-            order.setCancelReason("超时未支付，系统关闭");
-            orderMapper.updateById(order);
+            // 条件更新：仅当 status=0 时 0→5，与支付回调(0→1)/用户取消(0→4)并发时只有一个成功
+            Order update = new Order();
+            update.setStatus(5);
+            update.setCancelReason("超时未支付，系统关闭");
+            int rows = orderMapper.update(update, new LambdaUpdateWrapper<Order>()
+                    .eq(Order::getId, order.getId())
+                    .eq(Order::getStatus, 0));
+            if (rows == 0) {
+                continue;
+            }
+            closed++;
             releaseReservations(order.getId());
             writeLog(order.getId(), "CLOSE", 0, 5, "超时未支付，系统关闭");
         }
+        return closed;
     }
 
     private void releaseReservations(Long orderId) {
