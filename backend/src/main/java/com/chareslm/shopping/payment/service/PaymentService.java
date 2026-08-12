@@ -2,7 +2,10 @@ package com.chareslm.shopping.payment.service;
 
 import com.chareslm.shopping.payment.dto.CreatePaymentRequest;
 import com.chareslm.shopping.payment.dto.PaymentOrderDTO;
+import com.chareslm.shopping.payment.dto.RefundOrderDTO;
 import com.chareslm.shopping.payment.dto.RefundRequest;
+
+import java.util.List;
 
 /**
  * 支付服务：创建支付单、模拟支付、幂等回调、退款。
@@ -35,4 +38,14 @@ public interface PaymentService {
      * 模拟退款成功（系统操作）：退款单 0→1，订单 6→7（已退款）。
      */
     void completeRefund(Long refundId);
+
+    /**
+     * 查询支付单（校验归属当前用户）。
+     */
+    PaymentOrderDTO getPaymentOrder(Long userId, Long paymentOrderId);
+
+    /**
+     * 查询当前用户的退款单列表（按创建时间倒序）。
+     */
+    List<RefundOrderDTO> listRefunds(Long userId);
 }
