@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 库存模拟实现（本地开发用）。
  * <p>
  * 内存 {@code ConcurrentHashMap<Long, long[]>}（[库存, 已预占]），线程安全。
+ * 未初始化 SKU 视为无库存（reserve/deduct 返回 false），测试/开发需先 {@link #initStock}。
  * 通过配置 {@code trade.stock.mock-enabled=false} 可禁用（成员 3 提供真实实现后）。
  */
 @Component
@@ -25,9 +26,23 @@ public class MockStockClient implements StockClient {
         this.stock.put(skuId, new long[]{stock, 0});
     }
 
+    /** 清空全部库存状态（测试隔离用）。 */
+    public void reset() {
+        this.stock.clear();
+    }
+
+    /** 查询 SKU 当前可售库存（库存 - 已预占），测试断言用；未初始化返回 0。 */
+    public int getAvailable(Long skuId) {
+        long[] s = stock.get(skuId);
+        return s == null ? 0 : (int) (s[0] - s[1]);
+    }
+
     @Override
     public synchronized boolean reserve(Long skuId, int quantity) {
-        long[] s = stock.computeIfAbsent(skuId, k -> new long[]{100, 0});
+        long[] s = stock.get(skuId);
+        if (s == null) {
+            return false;
+        }
         if (s[0] - s[1] >= quantity) {
             s[1] += quantity;
             return true;
