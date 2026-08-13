@@ -4,6 +4,8 @@
 
 购物车按商家（`shopId`）分组；`skuId`、`shopId` 与 `price`（价格快照）当前由客户端提交，真实场景应在成员 3 的商品 / SKU 接口接入后由服务端校验并返回。价格快照仅用于结算展示，下单时以服务端校验为准。
 
+> 雪花 ID 约定：`cartId`、`groupId`、`shopId`、`itemId`、`skuId` 等 ID 字段统一以**字符串**返回（避免超出 JS Number 安全范围），请求体中提交时同样传字符串。
+
 ## 查询购物车
 
 `GET /api/cart`
@@ -15,22 +17,22 @@
   "code": 0,
   "message": "success",
   "data": {
-    "cartId": 2087107323255431169,
+    "cartId": "2087107323255431169",
     "groups": [
       {
-        "groupId": 2087107323255431170,
-        "shopId": 1,
+        "groupId": "2087107323255431170",
+        "shopId": "1",
         "shopName": null,
         "items": [
           {
-            "itemId": 2087107323255431171,
-            "skuId": 101,
+            "itemId": "2087107323255431171",
+            "skuId": "101",
             "skuName": null,
             "skuImage": null,
             "price": 99.90,
             "quantity": 2,
             "checked": 1,
-            "groupId": 2087107323255431170
+            "groupId": "2087107323255431170"
           }
         ]
       }
@@ -47,9 +49,9 @@
 
 ```json
 {
-  "skuId": 101,
+  "skuId": "101",
   "quantity": 2,
-  "shopId": 1,
+  "shopId": "1",
   "price": 99.90
 }
 ```

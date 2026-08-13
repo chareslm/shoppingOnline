@@ -44,7 +44,7 @@ export const authApi = {
     return unwrap(data)
   },
 
-  async replaceUserRoles(userId: number, roleIds: number[], currentPassword: string) {
+  async replaceUserRoles(userId: string, roleIds: string[], currentPassword: string) {
     const { data } = await http.put<ApiResponse<null>>(`/api/admin/authorization/users/${userId}/roles`, {
       roleIds,
       currentPassword,

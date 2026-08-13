@@ -22,13 +22,13 @@ export const userApi = {
   async createAddress(payload: SaveUserAddress) {
     return unwrap((await http.post<ApiResponse<UserAddress>>('/api/users/me/addresses', payload)).data)
   },
-  async updateAddress(addressId: number, payload: SaveUserAddress) {
+  async updateAddress(addressId: string, payload: SaveUserAddress) {
     return unwrap((await http.put<ApiResponse<UserAddress>>(`/api/users/me/addresses/${addressId}`, payload)).data)
   },
-  async setDefaultAddress(addressId: number) {
+  async setDefaultAddress(addressId: string) {
     return unwrap((await http.put<ApiResponse<null>>(`/api/users/me/addresses/${addressId}/default`)).data)
   },
-  async deleteAddress(addressId: number) {
+  async deleteAddress(addressId: string) {
     return unwrap((await http.delete<ApiResponse<null>>(`/api/users/me/addresses/${addressId}`)).data)
   },
   async preference() {

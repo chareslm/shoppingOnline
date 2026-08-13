@@ -1,7 +1,7 @@
 export type Gender = 'UNKNOWN' | 'MALE' | 'FEMALE'
 
 export interface UserProfile {
-  userId: number
+  userId: string
   nickname: string | null
   avatarUrl: string | null
   realName: string | null
@@ -20,7 +20,7 @@ export interface UpdateUserProfile {
 }
 
 export interface UserAddress {
-  id: number
+  id: string
   recipientName: string
   recipientPhone: string
   provinceCode: string | null
@@ -49,7 +49,7 @@ export interface SaveUserAddress {
 }
 
 export interface UserPreference {
-  userId: number
+  userId: string
   marketingEnabled: boolean
   orderNotificationEnabled: boolean
   systemNotificationEnabled: boolean

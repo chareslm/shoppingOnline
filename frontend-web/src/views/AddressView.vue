@@ -8,7 +8,7 @@ const addresses = ref<UserAddress[]>([])
 const loading = ref(true)
 const saving = ref(false)
 const modalOpen = ref(false)
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const message = ref('')
 const isError = ref(false)
 const emptyForm = (): SaveUserAddress => ({

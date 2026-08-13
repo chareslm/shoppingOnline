@@ -20,7 +20,7 @@ export interface LoginRequest {
 }
 
 export interface AuthenticatedUser {
-  userId: number
+  userId: string
   username: string
   roles: string[]
   permissions: string[]
@@ -33,20 +33,20 @@ export interface LoginResponse extends AuthenticatedUser {
 }
 
 export interface Role {
-  id: number
+  id: string
   code: string
   name: string
   dataScope?: string
 }
 
 export interface Permission {
-  id: number
+  id: string
   code: string
   name: string
 }
 
 export interface AdminUser {
-  userId: number
+  userId: string
   username?: string | null
   maskedEmail?: string | null
   maskedPhone?: string | null

@@ -14,7 +14,7 @@ const users = ref<AdminUser[]>([])
 const roles = ref<Role[]>([])
 const total = ref(0)
 const query = reactive({ keyword: '', status: '', page: 1, pageSize: 20 })
-const assignment = reactive<{ user: AdminUser | null; roleIds: number[]; currentPassword: string }>({
+const assignment = reactive<{ user: AdminUser | null; roleIds: string[]; currentPassword: string }>({
   user: null,
   roleIds: [],
   currentPassword: '',
