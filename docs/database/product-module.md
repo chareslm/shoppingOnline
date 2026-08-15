@@ -150,7 +150,7 @@ search_log（独立，热词统计）
 
 - 三段库存：`available_stock`（可售）、`reserved_stock`（预占）、`sold_stock`（已售）
 - **下单预占**：`UPDATE sku SET available_stock=available_stock-?, reserved_stock=reserved_stock+? WHERE id=? AND status=1 AND available_stock>=?`（单条条件 UPDATE，禁止先查再改）
-- **支付扣减**：`available_stock-?`、`reserved_stock-?`、`sold_stock+?`，条件 `available_stock>=?`
+- **支付扣减**：`reserved_stock-?`、`sold_stock+?`，条件 `reserved_stock>=?`（预占已在预占时扣减，此处只把预占转为已售）
 - **超时释放**：`reserved_stock-?`、`available_stock+?`
 - 实现：`product/client/MysqlStockClient` 实现 `trade/client/StockClient`，通过 `trade.stock.mock-enabled=false` 启用（默认仍用交易模块 `MockStockClient` 内存模拟）
 

@@ -33,15 +33,15 @@ public interface SkuMapper extends BaseMapper<Sku> {
     int releaseStock(@Param("skuId") Long skuId, @Param("quantity") int quantity);
 
     /**
-     * 原子扣减库存：available_stock 减、reserved_stock 减、sold_stock 增（支付成功后正式扣减）。
+     * 原子扣减库存：支付成功后把预占转为已售（reserved_stock 减、sold_stock 增）。
+     * 注意：available_stock 已在预占时扣减，此处不再重复扣减。
      */
     @Update("""
             UPDATE sku
-            SET available_stock = available_stock - #{quantity},
-                reserved_stock = GREATEST(reserved_stock - #{quantity}, 0),
+            SET reserved_stock = reserved_stock - #{quantity},
                 sold_stock = sold_stock + #{quantity}
             WHERE id = #{skuId}
-              AND available_stock >= #{quantity}
+              AND reserved_stock >= #{quantity}
             """)
     int deductStock(@Param("skuId") Long skuId, @Param("quantity") int quantity);
 
