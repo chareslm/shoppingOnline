@@ -34,6 +34,8 @@ public class SecurityConfig {
                                 "/api/auth/refresh").permitAll()
                         .requestMatchers("/api/mock/wechat/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/spu/**",
+                                "/api/search/**", "/api/review/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint(authenticationEntryPoint)

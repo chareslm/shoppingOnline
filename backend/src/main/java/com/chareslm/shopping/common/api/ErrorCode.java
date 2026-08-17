@@ -17,7 +17,16 @@ public enum ErrorCode {
     ORDER_NOT_FOUND(40013, "order not found"),
     PAYMENT_ALREADY_PROCESSED(40014, "payment already processed"),
     PAYMENT_NOT_FOUND(40015, "payment order not found"),
-    REFUND_STATUS_INVALID(40016, "refund status not allowed");
+    REFUND_STATUS_INVALID(40016, "refund status not allowed"),
+    CATEGORY_NOT_FOUND(40402, "category not found"),
+    CATEGORY_HAS_CHILDREN(40020, "category has children and cannot be deleted"),
+    PRODUCT_NOT_FOUND(40403, "product not found"),
+    PRODUCT_STATUS_INVALID(40021, "product status not allowed"),
+    SKU_NOT_FOUND(40404, "sku not found"),
+    REVIEW_NOT_FOUND(40405, "review not found"),
+    REVIEW_ALREADY_EXISTS(40022, "review already exists"),
+    REVIEW_NOT_ELIGIBLE(40023, "review not eligible"),
+    SEARCH_SERVICE_UNAVAILABLE(50001, "search service unavailable");
 
     private final int code;
     private final String message;
