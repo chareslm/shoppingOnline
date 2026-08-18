@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.chareslm.shopping.auth.entity.Role;
 import com.chareslm.shopping.auth.entity.UserAccount;
 import com.chareslm.shopping.auth.entity.UserRole;
+import com.chareslm.shopping.auth.mapper.RefreshTokenMapper;
 import com.chareslm.shopping.auth.mapper.RoleMapper;
 import com.chareslm.shopping.auth.mapper.UserAccountMapper;
 import com.chareslm.shopping.auth.mapper.UserRoleMapper;
@@ -11,7 +12,6 @@ import com.chareslm.shopping.auth.service.AuditService;
 import com.chareslm.shopping.common.api.ErrorCode;
 import com.chareslm.shopping.common.api.PageResponse;
 import com.chareslm.shopping.common.exception.BusinessException;
-import com.chareslm.shopping.merchant.dto.MerchantDtos;
 import com.chareslm.shopping.merchant.dto.MerchantDtos.ApplicationCreatedResponse;
 import com.chareslm.shopping.merchant.dto.MerchantDtos.ApplicationDetailResponse;
 import com.chareslm.shopping.merchant.dto.MerchantDtos.ApplicationRequest;
@@ -62,6 +62,7 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
     private final UserAccountMapper userMapper;
     private final RoleMapper roleMapper;
     private final UserRoleMapper userRoleMapper;
+    private final RefreshTokenMapper refreshTokenMapper;
     private final UserProfileMapper profileMapper;
     private final UserPreferenceMapper preferenceMapper;
     private final QualificationFileStorage storage;
@@ -73,7 +74,8 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
     public MerchantApplicationServiceImpl(
             MerchantApplicationMapper applicationMapper, MerchantQualificationFileMapper fileMapper,
             ShopMapper shopMapper, UserAccountMapper userMapper, RoleMapper roleMapper,
-            UserRoleMapper userRoleMapper, UserProfileMapper profileMapper,
+            UserRoleMapper userRoleMapper, RefreshTokenMapper refreshTokenMapper,
+            UserProfileMapper profileMapper,
             UserPreferenceMapper preferenceMapper, QualificationFileStorage storage,
             MailService mailService, AuditService auditService, PasswordEncoder passwordEncoder,
             TransactionTemplate transactionTemplate) {
@@ -83,6 +85,7 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
         this.userMapper = userMapper;
         this.roleMapper = roleMapper;
         this.userRoleMapper = userRoleMapper;
+        this.refreshTokenMapper = refreshTokenMapper;
         this.profileMapper = profileMapper;
         this.preferenceMapper = preferenceMapper;
         this.storage = storage;
@@ -138,7 +141,8 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
                 .selectPage(normalized, (page - 1) * pageSize, pageSize).stream()
                 .map(item -> new ApplicationSummaryResponse(item.getId(), MerchantType.valueOf(item.getMerchantType()),
                         item.getShopName(), maskPhone(item.getContactPhone()), maskEmail(item.getContactEmail()),
-                        item.getStatus(), item.getEmailDeliveryStatus(), item.getCreatedAt()))
+                        item.getStatus(), item.getShopStatus(), item.getAccountUserId(),
+                        item.getEmailDeliveryStatus(), item.getCreatedAt()))
                 .toList();
         return new PageResponse<>(items, applicationMapper.countPage(normalized), page, pageSize);
     }
@@ -150,26 +154,51 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
                 .map(file -> new FileResponse(file.getId(), file.getOriginalName(), file.getContentType(),
                         file.getFileSize()))
                 .toList();
+        Shop shop = shopMapper.selectByApplicationId(id);
         return new ApplicationDetailResponse(item.getId(), MerchantType.valueOf(item.getMerchantType()),
                 item.getShopName(), item.getSubjectName(), item.getUnifiedSocialCreditCode(),
                 item.getResponsiblePersonName(), item.getIdentityDocumentType(),
                 maskIdentity(item.getIdentityDocumentNumber()), item.getContactPhone(), item.getContactEmail(),
-                item.getStatus(), item.getRejectionReason(), item.getAccountUserId(), item.getAccountReused(),
+                item.getStatus(), shop == null ? null : shop.getStatus(), item.getRejectionReason(),
+                item.getAccountUserId(), item.getAccountReused(),
                 item.getEmailDeliveryStatus(), item.getCreatedAt(), files);
     }
 
     @Override
     public void auditQualification(Long id, AuditRequest request, Long auditorId) {
-        requireApplication(id);
-        String next = request.approved() ? "QUALIFICATION_APPROVED" : "REJECTED";
-        // SQL 同时校验旧状态，受影响行数为 0 表示重复审核或并发状态迁移，按冲突处理。
-        if (applicationMapper.auditQualification(id, next, trimToNull(request.reason()), auditorId) != 1) {
+        MerchantApplication application = requireApplication(id);
+        if (!request.approved()) {
+            int updated = switch (application.getStatus()) {
+                case "SUBMITTED" -> applicationMapper.auditQualification(id, "REJECTED",
+                        trimToNull(request.reason()), auditorId);
+                case "QUALIFICATION_APPROVED" -> applicationMapper.rejectAccount(id, trimToNull(request.reason()),
+                        auditorId);
+                default -> 0;
+            };
+            if (updated != 1) {
+                auditService.record(auditorId, "MERCHANT", "QUALIFICATION_AUDIT", "MERCHANT_APPLICATION",
+                        id.toString(), false);
+                throw new BusinessException(ErrorCode.MERCHANT_APPLICATION_CONFLICT);
+            }
+            auditService.record(auditorId, "MERCHANT", "QUALIFICATION_AUDIT", "MERCHANT_APPLICATION",
+                    id.toString(), true);
+            return;
+        }
+        if ("SUBMITTED".equals(application.getStatus())) {
+            if (applicationMapper.auditQualification(id, "QUALIFICATION_APPROVED", trimToNull(request.reason()),
+                    auditorId) != 1) {
+                auditService.record(auditorId, "MERCHANT", "QUALIFICATION_AUDIT", "MERCHANT_APPLICATION",
+                        id.toString(), false);
+                throw new BusinessException(ErrorCode.MERCHANT_APPLICATION_CONFLICT);
+            }
+        } else if (!"QUALIFICATION_APPROVED".equals(application.getStatus())) {
             auditService.record(auditorId, "MERCHANT", "QUALIFICATION_AUDIT", "MERCHANT_APPLICATION",
                     id.toString(), false);
             throw new BusinessException(ErrorCode.MERCHANT_APPLICATION_CONFLICT);
         }
         auditService.record(auditorId, "MERCHANT", "QUALIFICATION_AUDIT", "MERCHANT_APPLICATION",
                 id.toString(), true);
+        auditAccount(id, request, auditorId);
     }
 
     @Override
@@ -208,6 +237,13 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
                 || !"MAIL_FAILED".equals(application.getEmailDeliveryStatus())) {
             throw new BusinessException(ErrorCode.MERCHANT_APPLICATION_CONFLICT);
         }
+        Shop shop = shopMapper.selectByApplicationId(id);
+        if (shop != null && "SUSPENDED".equals(shop.getStatus())) {
+            notifyMerchantAccessChange(id, shop, false);
+            auditService.record(auditorId, "MERCHANT", "CREDENTIAL_EMAIL_RETRY", "MERCHANT_APPLICATION",
+                    id.toString(), true);
+            return;
+        }
         String temporaryPassword = null;
         if (!Boolean.TRUE.equals(application.getAccountReused())) {
             temporaryPassword = generatePassword();
@@ -221,11 +257,66 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
     }
 
     @Override
+    public void revokeMerchant(Long id, Long auditorId) {
+        Shop shop = requireOwnedShop(id, "OPEN");
+        transactionTemplate.execute(status -> {
+            if (shopMapper.updateStatus(shop.getId(), "OPEN", "SUSPENDED") != 1) {
+                throw new BusinessException(ErrorCode.MERCHANT_APPLICATION_CONFLICT);
+            }
+            userRoleMapper.deleteMerchantOwnerRoleByUserId(shop.getOwnerUserId());
+            refreshTokenMapper.revokeActiveByUserId(shop.getOwnerUserId(), "MERCHANT_REVOKED");
+            return null;
+        });
+        auditService.record(auditorId, "MERCHANT", "MERCHANT_REVOKE", "SHOP", shop.getId().toString(), true);
+        notifyMerchantAccessChange(id, shop, false);
+    }
+
+    @Override
+    public void restoreMerchant(Long id, Long auditorId) {
+        Shop shop = requireOwnedShop(id, "SUSPENDED");
+        transactionTemplate.execute(status -> {
+            if (shopMapper.updateStatus(shop.getId(), "SUSPENDED", "OPEN") != 1) {
+                throw new BusinessException(ErrorCode.MERCHANT_APPLICATION_CONFLICT);
+            }
+            addMerchantOwnerRole(shop.getOwnerUserId(), auditorId);
+            return null;
+        });
+        auditService.record(auditorId, "MERCHANT", "MERCHANT_RESTORE", "SHOP", shop.getId().toString(), true);
+        notifyMerchantAccessChange(id, shop, true);
+    }
+
+    @Override
     public DownloadedFile download(Long applicationId, Long fileId) {
         MerchantQualificationFile file = fileMapper.selectOwnedFile(applicationId, fileId);
         if (file == null) throw new BusinessException(ErrorCode.NOT_FOUND);
         Resource resource = storage.load(file.getStorageKey());
         return new DownloadedFile(resource, file.getOriginalName(), file.getContentType());
+    }
+
+    private Shop requireOwnedShop(Long applicationId, String expectedStatus) {
+        MerchantApplication application = requireApplication(applicationId);
+        if (!"ACCOUNT_APPROVED".equals(application.getStatus())) {
+            throw new BusinessException(ErrorCode.MERCHANT_APPLICATION_CONFLICT);
+        }
+        Shop shop = shopMapper.selectByApplicationId(applicationId);
+        if (shop == null || !expectedStatus.equals(shop.getStatus())) {
+            throw new BusinessException(ErrorCode.MERCHANT_APPLICATION_CONFLICT);
+        }
+        return shop;
+    }
+
+    private void notifyMerchantAccessChange(Long applicationId, Shop shop, boolean restored) {
+        MerchantApplication application = requireApplication(applicationId);
+        try {
+            if (restored) {
+                mailService.sendMerchantRestoredNotice(application.getContactEmail(), shop.getName());
+            } else {
+                mailService.sendMerchantRevokedNotice(application.getContactEmail(), shop.getName());
+            }
+            applicationMapper.updateEmailStatus(applicationId, "SENT");
+        } catch (RuntimeException exception) {
+            applicationMapper.updateEmailStatus(applicationId, "MAIL_FAILED");
+        }
     }
 
     private ProvisionedAccount provisionAccount(Long id, Long auditorId) {

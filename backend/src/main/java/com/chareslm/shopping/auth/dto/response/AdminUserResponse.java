@@ -9,6 +9,7 @@ public record AdminUserResponse(
         String maskedEmail,
         String maskedPhone,
         String status,
+        boolean mustChangePassword,
         List<RoleResponse> roles,
         LocalDateTime createdAt,
         LocalDateTime lastLoginAt

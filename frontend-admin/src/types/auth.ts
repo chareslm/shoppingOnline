@@ -54,7 +54,18 @@ export interface AdminUser {
   maskedEmail?: string | null
   maskedPhone?: string | null
   status: 'ACTIVE' | 'DISABLED' | 'LOCKED' | 'PENDING_VERIFICATION'
+  mustChangePassword: boolean
   roles: Role[]
   createdAt: string
   lastLoginAt?: string | null
+}
+
+export interface CreatedAdminUser {
+  userId: string
+  username?: string | null
+  maskedEmail?: string | null
+  status: string
+  mustChangePassword: boolean
+  mailDeliveryStatus: 'SENT' | 'MAIL_FAILED'
+  roles: Role[]
 }

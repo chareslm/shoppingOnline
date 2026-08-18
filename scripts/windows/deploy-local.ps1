@@ -137,19 +137,8 @@ if ($Recreate) { $composeArgs += '--force-recreate' }
 & docker @composeArgs
 if ($LASTEXITCODE -ne 0) { throw 'Docker services failed to start.' }
 
-$deadline = (Get-Date).AddMinutes(6)
-$status = $null
-do {
-    Start-Sleep -Seconds 10
-    try {
-        $status = (Invoke-RestMethod -Uri 'http://localhost:8080/actuator/health' -TimeoutSec 5).status
-        if ($status -eq 'UP') { break }
-    } catch {
-        # First startup can download Maven dependencies; keep waiting until the deadline.
-    }
-} while ((Get-Date) -lt $deadline)
-
-if ($status -ne 'UP') {
+& powershell -ExecutionPolicy Bypass -File (Join-Path $RepoRoot 'scripts/windows/wait-backend.ps1') -TimeoutSeconds 360
+if ($LASTEXITCODE -ne 0) {
     & docker compose --env-file $DeployEnv -f $ComposeFile logs --tail 80 backend
     throw 'Backend did not become healthy within six minutes.'
 }

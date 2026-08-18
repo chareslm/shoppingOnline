@@ -26,8 +26,8 @@ app:
     # [OPTIONAL] Add origins only when frontend host/ports are changed.
     allowed-origins: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174
   merchant:
-    # [OPTIONAL] Private files; never expose this directory through a static server.
-    upload-dir: folder
+    # Native Windows default. Docker Compose sets MERCHANT_UPLOAD_DIR=/data/uploads.
+    upload-dir: ${MERCHANT_UPLOAD_DIR:D:/Project/data/shopping/uploads}
 
 # [OPTIONAL] SMTP stays environment-driven to keep credentials out of YAML:
 # MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM,

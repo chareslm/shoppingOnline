@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 管理端商家双阶段审核与私有资质文件访问 API。
+ * 管理端商家资质审核、账号开通与私有资质文件访问 API。
  */
 @Validated
 @RestController
@@ -58,35 +58,54 @@ public class MerchantApplicationAdminController {
         return ApiResponse.success(service.detail(id));
     }
 
-    /** 提交资质阶段审核结论，审核人取自当前认证上下文。 */
+    /** 提交资质审核结论；通过时同时开通商家账号。审核人取自当前认证上下文。 */
     @PostMapping("/{id}/qualification-audit")
     public ApiResponse<Void> auditQualification(@PathVariable Long id, @Valid @RequestBody AuditRequest request) {
         service.auditQualification(id, request, CurrentUser.require().userId());
         return ApiResponse.success(null);
     }
 
-    /** 提交账号阶段审核结论，审核人取自当前认证上下文。 */
+    /** 兼容存量资质已通过、账号尚未开通的申请。 */
     @PostMapping("/{id}/account-audit")
     public ApiResponse<Void> auditAccount(@PathVariable Long id, @Valid @RequestBody AuditRequest request) {
         service.auditAccount(id, request, CurrentUser.require().userId());
         return ApiResponse.success(null);
     }
 
-    /** 重试此前投递失败的账号开通邮件。 */
+    /** 重试此前投递失败的账号开通或权限变更邮件。 */
     @PostMapping("/{id}/credential-email/retry")
     public ApiResponse<Void> retryCredentialEmail(@PathVariable Long id) {
         service.retryCredentialEmail(id, CurrentUser.require().userId());
         return ApiResponse.success(null);
     }
 
-    /** 下载属于指定申请的私有资质文件。 */
+    /** 撤销已开通商家经营权限并发送邮件通知。 */
+    @PostMapping("/{id}/revoke")
+    public ApiResponse<Void> revoke(@PathVariable Long id) {
+        service.revokeMerchant(id, CurrentUser.require().userId());
+        return ApiResponse.success(null);
+    }
+
+    /** 重新授予已撤销商家经营权限并发送邮件通知。 */
+    @PostMapping("/{id}/restore")
+    public ApiResponse<Void> restore(@PathVariable Long id) {
+        service.restoreMerchant(id, CurrentUser.require().userId());
+        return ApiResponse.success(null);
+    }
+
+    /** 下载或预览属于指定申请的私有资质文件。图片与 PDF 使用 inline 以便审核页展示。 */
     @GetMapping("/{applicationId}/files/{fileId}")
-    public ResponseEntity<Resource> download(@PathVariable Long applicationId, @PathVariable Long fileId) {
+    public ResponseEntity<Resource> download(@PathVariable Long applicationId, @PathVariable Long fileId,
+                                             @RequestParam(defaultValue = "false") boolean download) {
         MerchantApplicationService.DownloadedFile file = service.download(applicationId, fileId);
-        ContentDisposition disposition = ContentDisposition.attachment()
+        boolean inline = !download && file.contentType() != null
+                && (file.contentType().startsWith("image/") || "application/pdf".equals(file.contentType()));
+        String contentType = file.contentType() == null || file.contentType().isBlank()
+                ? MediaType.APPLICATION_OCTET_STREAM_VALUE : file.contentType();
+        ContentDisposition disposition = (inline ? ContentDisposition.inline() : ContentDisposition.attachment())
                 .filename(file.originalName(), StandardCharsets.UTF_8).build();
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(file.contentType()))
+                .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(file.resource());
     }

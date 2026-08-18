@@ -14,9 +14,25 @@ import java.util.List;
 public interface MerchantApplicationMapper extends BaseMapper<MerchantApplication> {
     @Select("""
             <script>
-            SELECT * FROM merchant_application
-            <where><if test="status != null and status != ''">status = #{status}</if></where>
-            ORDER BY id DESC LIMIT #{offset}, #{pageSize}
+            SELECT a.*, s.status AS shop_status FROM merchant_application a
+            LEFT JOIN shop s ON s.application_id = a.id
+            <where>
+              <choose>
+                <when test="status == 'PENDING'">
+                  a.status IN ('SUBMITTED', 'QUALIFICATION_APPROVED')
+                </when>
+                <when test="status == 'APPROVED'">
+                  a.status = 'ACCOUNT_APPROVED' AND s.status = 'OPEN'
+                </when>
+                <when test="status == 'REVOKED'">
+                  a.status = 'ACCOUNT_APPROVED' AND s.status = 'SUSPENDED'
+                </when>
+                <when test="status != null and status != ''">
+                  a.status = #{status}
+                </when>
+              </choose>
+            </where>
+            ORDER BY a.id DESC LIMIT #{offset}, #{pageSize}
             </script>
             """)
     List<MerchantApplication> selectPage(@Param("status") String status, @Param("offset") int offset,
@@ -24,8 +40,24 @@ public interface MerchantApplicationMapper extends BaseMapper<MerchantApplicatio
 
     @Select("""
             <script>
-            SELECT COUNT(*) FROM merchant_application
-            <where><if test="status != null and status != ''">status = #{status}</if></where>
+            SELECT COUNT(*) FROM merchant_application a
+            LEFT JOIN shop s ON s.application_id = a.id
+            <where>
+              <choose>
+                <when test="status == 'PENDING'">
+                  a.status IN ('SUBMITTED', 'QUALIFICATION_APPROVED')
+                </when>
+                <when test="status == 'APPROVED'">
+                  a.status = 'ACCOUNT_APPROVED' AND s.status = 'OPEN'
+                </when>
+                <when test="status == 'REVOKED'">
+                  a.status = 'ACCOUNT_APPROVED' AND s.status = 'SUSPENDED'
+                </when>
+                <when test="status != null and status != ''">
+                  a.status = #{status}
+                </when>
+              </choose>
+            </where>
             </script>
             """)
     long countPage(@Param("status") String status);

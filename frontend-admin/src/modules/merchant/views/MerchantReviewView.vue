@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import MerchantReviewQueueView from './MerchantReviewQueueView.vue'
 
-const stage = ref<'qualification' | 'account'>('qualification')
+const stage = ref<'pending' | 'approved' | 'revoked'>('pending')
 </script>
 
 <template>
@@ -11,12 +11,13 @@ const stage = ref<'qualification' | 'account'>('qualification')
       <div>
         <p class="eyebrow">MERCHANT ONBOARDING</p>
         <h1>商家审核</h1>
-        <p>统合资质核验与账号开通。先完成资质审核，通过后再处理账号与店铺开通。</p>
+        <p>资质审核通过后即开通商家账号与店铺。已通过账号可撤销；已撤销账号可重新授予。</p>
       </div>
     </div>
     <el-tabs v-model="stage" class="merchant-review-tabs">
-      <el-tab-pane label="资质审核" name="qualification" />
-      <el-tab-pane label="账号审核" name="account" />
+      <el-tab-pane label="待审核" name="pending" />
+      <el-tab-pane label="已通过" name="approved" />
+      <el-tab-pane label="已撤销" name="revoked" />
     </el-tabs>
     <MerchantReviewQueueView :stage="stage" embedded />
   </section>

@@ -98,6 +98,8 @@ services:
     volumes:
       # Source mount is for local development; use a built image for production.
       - ../backend:/app
+      # pom.xml copies ../database/V*__*.sql onto the Flyway classpath.
+      - ../database:/database:ro
       - ${MAVEN_REPO_DIR:-folder}:/root/.m2
       # Qualification files are private; no web server serves this host directory directly.
       - ${DATA_DIR:-folder}/shopping/uploads:/data/uploads
@@ -108,3 +110,9 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8080'"]
+      interval: 5s
+      timeout: 3s
+      retries: 36
+      start_period: 90s

@@ -2,15 +2,19 @@
 
 ## 1. 业务流程
 
-商家入驻采用两阶段审核：
+商家入驻采用一次资质审核。通过后立即开通账号与店铺，不再单独进行账号审核：
 
 ```text
 提交申请 SUBMITTED
-→ 资质审核 QUALIFICATION_APPROVED / REJECTED
-→ 账号审核 ACCOUNT_APPROVED
-→ 创建或复用账号、授予 MERCHANT_OWNER、创建店铺
+→ 资质审核
+   ├─ REJECTED
+   └─ 开通账号 ACCOUNT_APPROVED（创建或复用账号、授予 MERCHANT_OWNER、创建 OPEN 店铺）
 → 邮件通知（新账号包含一次性临时密码）
 ```
+
+存量仍处于 `QUALIFICATION_APPROVED` 的申请出现在待审核队列，通过时走同一开通路径。
+
+已开通商家可被撤销：店铺变为 `SUSPENDED`，收回 `MERCHANT_OWNER` 并作废刷新令牌，同时发送邮件。已撤销商家可重新授予：店铺恢复 `OPEN` 并补回角色。
 
 新建账号首次登录返回 `mustChangePassword=true`。在完成本人改密前，服务端仅允许访问当前账号、改密和退出接口。
 
@@ -51,12 +55,14 @@
 
 以下接口均要求 `merchant:qualification:audit` 权限：
 
-- `GET /api/admin/merchant/applications`：按状态、关键词分页查询。
-- `GET /api/admin/merchant/applications/{id}`：查看申请详情；证件号仅返回掩码。
-- `GET /api/admin/merchant/applications/{id}/files/{fileId}`：鉴权下载资质文件。
-- `POST /api/admin/merchant/applications/{id}/qualification-audit`：资质通过或驳回。
-- `POST /api/admin/merchant/applications/{id}/account-audit`：账号通过或驳回。
-- `POST /api/admin/merchant/applications/{id}/credential-email/retry`：重试开通邮件。
+- `GET /api/admin/merchant/applications`：按状态分页查询。`status` 可为申请原状态，或队列别名 `PENDING`（待审核）、`APPROVED`（店铺 OPEN）、`REVOKED`（店铺 SUSPENDED）。
+- `GET /api/admin/merchant/applications/{id}`：查看申请详情；证件号仅返回掩码。列表与详情包含 `shopStatus`。
+- `GET /api/admin/merchant/applications/{id}/files/{fileId}`：鉴权获取资质文件。图片与 PDF 使用 inline，便于审核页预览。
+- `POST /api/admin/merchant/applications/{id}/qualification-audit`：资质通过或驳回；通过时同时开通商家账号。
+- `POST /api/admin/merchant/applications/{id}/account-audit`：仅用于存量 `QUALIFICATION_APPROVED` 申请的开通或驳回。
+- `POST /api/admin/merchant/applications/{id}/credential-email/retry`：重试开通或撤销通知邮件。
+- `POST /api/admin/merchant/applications/{id}/revoke`：撤销已开通商家。
+- `POST /api/admin/merchant/applications/{id}/restore`：重新授予已撤销商家。
 
 审核请求：
 
@@ -74,6 +80,8 @@
 - 邮箱已有普通用户账号：复用账号并追加 `MERCHANT_OWNER`，不更改原密码，发送权限开通通知。
 - 邮箱尚无账号：生成满足强密码策略的随机临时密码，创建账号并设置 `mustChangePassword=true`，邮件发送临时密码。
 - 审核事务创建店铺并建立唯一店主关系。
+- 撤销将店铺置为 `SUSPENDED` 并收回商家角色，邮件失败不回滚撤销结果。
+- 重新授予将店铺恢复为 `OPEN` 并补回商家角色。
 - SMTP 失败不回滚审核与账号；申请记录为 `MAIL_FAILED`，平台官员可重试。
 - 临时密码、身份证件号码、SMTP 密码不得写入日志或审计详情。
 

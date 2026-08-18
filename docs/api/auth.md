@@ -126,8 +126,10 @@
 - `GET /api/admin/authorization/roles`：要求 `system:role:view`，返回有效角色及数据范围。
 - `GET /api/admin/authorization/permissions`：要求 `system:permission:view`，返回有效权限编码。
 - `GET /api/admin/authorization/users`：要求 `system:user:view`，按账号关键字和状态分页返回用户及其角色。
+- `POST /api/admin/authorization/users`：要求 `system:user:create`，由系统管理员手动创建平台账号。
+- `POST /api/admin/authorization/users/{userId}/credential-email`：要求 `system:user:create`，向仍须改密的账号重发临时密码。
 
-`SUPER_ADMIN` 在 V2、V3 迁移后默认拥有上述只读权限。`ADMIN` 目前只表示平台管理员身份，尚未默认授予系统管理权限；后续应按具体岗位配置权限，不应仅依赖角色名称放行接口。
+`SUPER_ADMIN` 在 V2、V3、V9 迁移后默认拥有上述系统管理权限。`ADMIN` 目前只表示平台管理员身份，尚未默认授予系统管理权限；后续应按具体岗位配置权限，不应仅依赖角色名称放行接口。 SMTP 配置见 [system.md](system.md)。
 
 ### 管理端用户查询
 
@@ -147,6 +149,7 @@
         "maskedEmail": "a***@example.com",
         "maskedPhone": "138****5678",
         "status": "ACTIVE",
+        "mustChangePassword": false,
         "roles": [
           { "id": 1, "code": "USER", "name": "普通用户", "dataScope": "SELF", "builtIn": true }
         ],
@@ -179,3 +182,23 @@
 ```
 
 无论成功还是密码确认失败，操作都会保留独立事务的审计日志。变更成功后会撤销目标用户所有 Refresh Token；目标用户已签发的 Access Token 最多仍可使用 30 分钟。
+
+## 系统管理员手动建号
+
+`POST /api/admin/authorization/users`
+
+该接口需要 `system:user:create` 权限。邮箱必填；用户名和手机号可选。除 Access Token 外，操作人必须再次提交自己的当前密码。系统生成符合强密码策略的临时密码，将 `must_change_password` 置为 true，创建资料与偏好，并只分配 `USER`、`ADMIN`、`SUPER_ADMIN` 平台角色。临时密码只通过 SMTP 投递给邮箱，接口不返回明文。
+
+```json
+{
+  "username": "staff_one",
+  "email": "staff@example.com",
+  "phone": "13800138000",
+  "roleIds": [2],
+  "currentPassword": "Password123!"
+}
+```
+
+成功响应包含 `mailDeliveryStatus`：`SENT` 或 `MAIL_FAILED`。邮件失败不回滚建号。首次登录后必须修改密码；在改密完成前，服务端只允许访问本人信息、改密和退出。
+
+`POST /api/admin/authorization/users/{userId}/credential-email` 仅允许对仍标记 `mustChangePassword` 且已有邮箱的账号重发。重发会轮换临时密码并撤销该账号 Refresh Token。

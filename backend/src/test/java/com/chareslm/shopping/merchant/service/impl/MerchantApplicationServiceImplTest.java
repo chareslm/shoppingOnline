@@ -2,6 +2,8 @@ package com.chareslm.shopping.merchant.service.impl;
 
 import com.chareslm.shopping.auth.entity.Role;
 import com.chareslm.shopping.auth.entity.UserAccount;
+import com.chareslm.shopping.auth.entity.UserRole;
+import com.chareslm.shopping.auth.mapper.RefreshTokenMapper;
 import com.chareslm.shopping.auth.mapper.RoleMapper;
 import com.chareslm.shopping.auth.mapper.UserAccountMapper;
 import com.chareslm.shopping.auth.mapper.UserRoleMapper;
@@ -9,6 +11,7 @@ import com.chareslm.shopping.auth.service.AuditService;
 import com.chareslm.shopping.common.exception.BusinessException;
 import com.chareslm.shopping.merchant.dto.MerchantDtos.AuditRequest;
 import com.chareslm.shopping.merchant.entity.MerchantApplication;
+import com.chareslm.shopping.merchant.entity.Shop;
 import com.chareslm.shopping.merchant.mapper.MerchantApplicationMapper;
 import com.chareslm.shopping.merchant.mapper.MerchantQualificationFileMapper;
 import com.chareslm.shopping.merchant.mapper.ShopMapper;
@@ -35,7 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 覆盖审核状态机 CAS、已有账号复用及 SMTP 失败不回滚开通结果等关键边界。
+ * 覆盖审核状态机 CAS、资质通过即开通、撤销/恢复及 SMTP 失败不回滚开通结果等关键边界。
  */
 class MerchantApplicationServiceImplTest {
     private MerchantApplicationMapper applicationMapper;
@@ -43,6 +46,7 @@ class MerchantApplicationServiceImplTest {
     private UserAccountMapper userMapper;
     private RoleMapper roleMapper;
     private UserRoleMapper userRoleMapper;
+    private RefreshTokenMapper refreshTokenMapper;
     private UserProfileMapper profileMapper;
     private UserPreferenceMapper preferenceMapper;
     private MailService mailService;
@@ -56,6 +60,7 @@ class MerchantApplicationServiceImplTest {
         userMapper = mock(UserAccountMapper.class);
         roleMapper = mock(RoleMapper.class);
         userRoleMapper = mock(UserRoleMapper.class);
+        refreshTokenMapper = mock(RefreshTokenMapper.class);
         profileMapper = mock(UserProfileMapper.class);
         preferenceMapper = mock(UserPreferenceMapper.class);
         mailService = mock(MailService.class);
@@ -65,24 +70,47 @@ class MerchantApplicationServiceImplTest {
                         .doInTransaction(mock(TransactionStatus.class)));
         service = new MerchantApplicationServiceImpl(applicationMapper,
                 mock(MerchantQualificationFileMapper.class), shopMapper, userMapper, roleMapper, userRoleMapper,
-                profileMapper, preferenceMapper, mock(QualificationFileStorage.class), mailService,
+                refreshTokenMapper, profileMapper, preferenceMapper, mock(QualificationFileStorage.class), mailService,
                 mock(AuditService.class), new BCryptPasswordEncoder(), transactions);
     }
 
     @Test
-    void qualificationAuditUsesSubmittedCasTransition() {
-        when(applicationMapper.selectById(1L)).thenReturn(application("SUBMITTED"));
+    void qualificationApprovalProvisionsAccount() {
+        UserAccount existing = new UserAccount();
+        existing.setId(20L);
+        when(applicationMapper.selectById(1L)).thenReturn(application("SUBMITTED"), application("QUALIFICATION_APPROVED"));
         when(applicationMapper.auditQualification(1L, "QUALIFICATION_APPROVED", null, 9L)).thenReturn(1);
+        when(userMapper.selectByLoginIdentifier("owner@example.com")).thenReturn(existing);
+        when(roleMapper.selectActiveByCode("MERCHANT_OWNER")).thenReturn(role());
+        when(userRoleMapper.selectCount(any())).thenReturn(0L);
+        when(applicationMapper.approveAccount(1L, 20L, true, 9L)).thenReturn(1);
 
         service.auditQualification(1L, new AuditRequest(true, null), 9L);
 
         verify(applicationMapper).auditQualification(1L, "QUALIFICATION_APPROVED", null, 9L);
+        verify(mailService).sendMerchantEnabledNotice("owner@example.com", "Demo Shop");
+        verify(applicationMapper).updateEmailStatus(1L, "SENT");
     }
 
     @Test
-    void repeatedQualificationAuditIsRejected() {
+    void leftoverQualificationApprovedStillProvisions() {
+        UserAccount existing = new UserAccount();
+        existing.setId(20L);
         when(applicationMapper.selectById(1L)).thenReturn(application("QUALIFICATION_APPROVED"));
-        when(applicationMapper.auditQualification(1L, "QUALIFICATION_APPROVED", null, 9L)).thenReturn(0);
+        when(userMapper.selectByLoginIdentifier("owner@example.com")).thenReturn(existing);
+        when(roleMapper.selectActiveByCode("MERCHANT_OWNER")).thenReturn(role());
+        when(userRoleMapper.selectCount(any())).thenReturn(0L);
+        when(applicationMapper.approveAccount(1L, 20L, true, 9L)).thenReturn(1);
+
+        service.auditQualification(1L, new AuditRequest(true, null), 9L);
+
+        verify(applicationMapper, never()).auditQualification(eq(1L), eq("QUALIFICATION_APPROVED"), any(), eq(9L));
+        verify(applicationMapper).approveAccount(1L, 20L, true, 9L);
+    }
+
+    @Test
+    void repeatedQualificationAuditOnApprovedAccountIsRejected() {
+        when(applicationMapper.selectById(1L)).thenReturn(application("ACCOUNT_APPROVED"));
 
         assertThrows(BusinessException.class,
                 () -> service.auditQualification(1L, new AuditRequest(true, null), 9L));
@@ -130,6 +158,39 @@ class MerchantApplicationServiceImplTest {
         verify(applicationMapper).updateEmailStatus(1L, "MAIL_FAILED");
     }
 
+    @Test
+    void revokeSuspendsShopAndNotifiesOwner() {
+        MerchantApplication application = application("ACCOUNT_APPROVED");
+        Shop shop = shop("OPEN");
+        when(applicationMapper.selectById(1L)).thenReturn(application);
+        when(shopMapper.selectByApplicationId(1L)).thenReturn(shop);
+        when(shopMapper.updateStatus(5L, "OPEN", "SUSPENDED")).thenReturn(1);
+
+        service.revokeMerchant(1L, 9L);
+
+        verify(userRoleMapper).deleteMerchantOwnerRoleByUserId(20L);
+        verify(refreshTokenMapper).revokeActiveByUserId(20L, "MERCHANT_REVOKED");
+        verify(mailService).sendMerchantRevokedNotice("owner@example.com", "Demo Shop");
+        verify(applicationMapper).updateEmailStatus(1L, "SENT");
+    }
+
+    @Test
+    void restoreReopensShopAndNotifiesOwner() {
+        MerchantApplication application = application("ACCOUNT_APPROVED");
+        Shop shop = shop("SUSPENDED");
+        when(applicationMapper.selectById(1L)).thenReturn(application);
+        when(shopMapper.selectByApplicationId(1L)).thenReturn(shop);
+        when(shopMapper.updateStatus(5L, "SUSPENDED", "OPEN")).thenReturn(1);
+        when(roleMapper.selectActiveByCode("MERCHANT_OWNER")).thenReturn(role());
+        when(userRoleMapper.selectCount(any())).thenReturn(0L);
+
+        service.restoreMerchant(1L, 9L);
+
+        verify(userRoleMapper).insert(any(UserRole.class));
+        verify(mailService).sendMerchantRestoredNotice("owner@example.com", "Demo Shop");
+        verify(applicationMapper).updateEmailStatus(1L, "SENT");
+    }
+
     private MerchantApplication application(String status) {
         MerchantApplication application = new MerchantApplication();
         application.setId(1L);
@@ -139,6 +200,16 @@ class MerchantApplicationServiceImplTest {
         application.setResponsiblePersonName("Owner");
         application.setShopName("Demo Shop");
         return application;
+    }
+
+    private Shop shop(String status) {
+        Shop shop = new Shop();
+        shop.setId(5L);
+        shop.setOwnerUserId(20L);
+        shop.setApplicationId(1L);
+        shop.setName("Demo Shop");
+        shop.setStatus(status);
+        return shop;
     }
 
     private Role role() {

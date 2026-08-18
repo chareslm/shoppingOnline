@@ -176,4 +176,4 @@ auth/mapper                   # 身份权限数据访问
 auth/service                  # 认证、授权查询、角色变更与审计服务
 ```
 
-身份权限数据库迁移已由 `database/V1__identity_and_user.sql`、`database/V2__authorization_permissions.sql` 与 `database/V3__admin_user_view_permission.sql` 提供；字段说明见 `docs/database/`，调用契约见 `docs/api/auth.md`。
+身份权限数据库迁移已由 `database/V1__identity_and_user.sql`、`database/V2__authorization_permissions.sql`、`database/V3__admin_user_view_permission.sql` 与 `database/V9__system_smtp_and_admin_user.sql` 提供；字段说明见 `docs/database/`，调用契约见 `docs/api/auth.md` 与 `docs/api/system.md`。 `message` 模块提供运行时 SMTP 配置与事务邮件发送。

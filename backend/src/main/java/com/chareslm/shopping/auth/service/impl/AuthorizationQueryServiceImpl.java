@@ -61,7 +61,8 @@ public class AuthorizationQueryServiceImpl implements AuthorizationQueryService 
                 .map(this::toRoleResponse)
                 .toList();
         return new AdminUserResponse(user.getId(), user.getUsername(), maskEmail(user.getEmail()),
-                maskPhone(user.getPhone()), user.getStatus(), roles, user.getCreatedAt(), user.getLastLoginAt());
+                maskPhone(user.getPhone()), user.getStatus(), Boolean.TRUE.equals(user.getMustChangePassword()),
+                roles, user.getCreatedAt(), user.getLastLoginAt());
     }
 
     private RoleResponse toRoleResponse(Role role) {

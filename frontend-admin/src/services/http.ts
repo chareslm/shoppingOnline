@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse, LoginResponse } from '../types/auth'
 import { clearSession, getSession, saveAccessTokens } from '../utils/session'
+import { isBackendUnavailable, retryWhileBackendStarts } from './backendRetry'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:8080'
 
@@ -53,27 +54,30 @@ http.interceptors.response.use(
     const isUnauthorized = error.response?.status === 401
     const isTokenIssuingRequest = /\/api\/auth\/(register|login\/password|refresh)(?:\?|$)/.test(request?.url ?? '')
 
-    if (!request || !isUnauthorized || isTokenIssuingRequest || request._retried || !getSession()?.refreshToken) {
-      return Promise.reject(error)
+    if (request && isUnauthorized && !isTokenIssuingRequest && !request._retried && getSession()?.refreshToken) {
+      request._retried = true
+      try {
+        refreshPromise ??= refreshAccessToken()
+        const accessToken = await refreshPromise
+        request.headers.Authorization = `Bearer ${accessToken}`
+        return http(request)
+      } catch (refreshError) {
+        redirectToLogin()
+        return Promise.reject(refreshError)
+      } finally {
+        refreshPromise = null
+      }
     }
 
-    request._retried = true
-    try {
-      refreshPromise ??= refreshAccessToken()
-      const accessToken = await refreshPromise
-      request.headers.Authorization = `Bearer ${accessToken}`
-      return http(request)
-    } catch (refreshError) {
-      redirectToLogin()
-      return Promise.reject(refreshError)
-    } finally {
-      refreshPromise = null
-    }
+    return retryWhileBackendStarts(error, (config) => http(config))
   },
 )
 
 export function readApiError(error: unknown, fallback = '请求失败，请稍后重试') {
   if (axios.isAxiosError<ApiResponse<unknown>>(error)) {
+    if (isBackendUnavailable(error)) {
+      return '后端正在启动或重启，请稍候再试（通常约一分钟）'
+    }
     return error.response?.data?.message || fallback
   }
   return error instanceof Error ? error.message : fallback

@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 账号审核通过后建立的店铺及其所有者关系。
+ * 资质审核通过后建立的店铺及其所有者关系。 OPEN 为有效经营，SUSPENDED 为已撤销商家权限。
  */
 @Getter
 @Setter

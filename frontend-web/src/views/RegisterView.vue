@@ -15,7 +15,7 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const accountType = ref<'user' | 'merchant'>('user')
 const form = reactive({ username: '', email: '', phone: '', password: '', confirmPassword: '' })
-// 商家申请不在浏览器生成账号密码；账号审核通过后由后端创建或复用统一账号。
+// 商家申请不在浏览器生成账号密码；资质审核通过后由后端创建或复用统一账号。
 const merchantForm = reactive({
   merchantType: 'ENTERPRISE' as MerchantType,
   shopName: '',
@@ -96,7 +96,7 @@ async function submit() {
         },
         qualificationFiles.value,
       )
-      successMessage.value = `申请 ${receipt.id} 已提交。资质和账号审核完成后，系统会向申请邮箱发送开通通知。`
+      successMessage.value = `申请 ${receipt.id} 已提交。资质审核通过后，系统会向申请邮箱发送开通通知。`
       return
     }
 
@@ -132,7 +132,7 @@ async function submit() {
       <div>
         <p class="eyebrow">CREATE YOUR ACCOUNT</p>
         <h1>{{ accountType === 'user' ? '一个账号，' : '让好商品，' }}<br />{{ accountType === 'user' ? '开启完整购物旅程。' : '被更多人看见。' }}</h1>
-        <p>{{ accountType === 'user' ? '注册后将自动获得普通用户角色，并创建个人资料与偏好记录。' : '提交主体身份与经营资质，平台官员将依次完成资质和账号审核。审核通过前不会创建商家权限。' }}</p>
+        <p>{{ accountType === 'user' ? '注册后将自动获得普通用户角色，并创建个人资料与偏好记录。' : '提交主体身份与经营资质。平台官员完成资质审核后即开通商家账号，审核通过前不会授予商家权限。' }}</p>
       </div>
       <div class="trust-row"><span>身份核验</span><span>材料私密</span><span>审核留痕</span></div>
     </section>

@@ -48,6 +48,7 @@ public final class MerchantDtos {
 
     public record ApplicationSummaryResponse(Long id, MerchantType merchantType, String shopName,
                                              String contactPhone, String contactEmail, String status,
+                                             String shopStatus, Long accountUserId,
                                              String emailDeliveryStatus, LocalDateTime createdAt) {
     }
 
@@ -56,7 +57,8 @@ public final class MerchantDtos {
                                             String responsiblePersonName,
                                             String identityDocumentType, String maskedIdentityDocumentNumber,
                                             String contactPhone, String contactEmail, String status,
-                                            String rejectionReason, Long accountUserId, Boolean accountReused,
+                                            String shopStatus, String rejectionReason, Long accountUserId,
+                                            Boolean accountReused,
                                             String emailDeliveryStatus, LocalDateTime createdAt,
                                             List<FileResponse> files) {
     }

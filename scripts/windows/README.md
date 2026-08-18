@@ -11,6 +11,9 @@ powershell -ExecutionPolicy Bypass -File scripts/windows/deploy-local.ps1 -Recre
 
 # 只启动 Docker 后端与中间件
 powershell -ExecutionPolicy Bypass -File scripts/windows/deploy-local.ps1 -SkipFrontends
+
+# 等待后端健康（Maven 编译后约 1-2 分钟）
+powershell -ExecutionPolicy Bypass -File scripts/windows/wait-backend.ps1
 ```
 
 安全清理：

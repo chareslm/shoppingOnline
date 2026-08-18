@@ -3,8 +3,8 @@ package com.chareslm.shopping.merchant.service;
 import com.chareslm.shopping.common.api.ErrorCode;
 import com.chareslm.shopping.common.exception.BusinessException;
 import com.chareslm.shopping.merchant.config.MerchantProperties;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -64,15 +64,11 @@ public class QualificationFileStorage {
      * 加载私有文件；不存在、不可读或非法存储键统一按资源不存在处理。
      */
     public Resource load(String storageKey) {
-        try {
-            Resource resource = new UrlResource(resolve(storageKey).toUri());
-            if (!resource.isReadable()) {
-                throw new BusinessException(ErrorCode.NOT_FOUND);
-            }
-            return resource;
-        } catch (IOException exception) {
+        Path path = resolve(storageKey);
+        if (!Files.isRegularFile(path)) {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
+        return new FileSystemResource(path);
     }
 
     /**

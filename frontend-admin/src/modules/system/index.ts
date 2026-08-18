@@ -1,4 +1,5 @@
-import { Document, UserFilled } from '@element-plus/icons-vue'
+import { Document, Message, UserFilled } from '@element-plus/icons-vue'
+import SmtpSettingsView from '../../views/SmtpSettingsView.vue'
 import SystemLogView from '../../views/SystemLogView.vue'
 import UserManagementView from '../../views/UserManagementView.vue'
 import type { AdminModuleContribution } from '../types'
@@ -23,6 +24,16 @@ export const systemModule: AdminModuleContribution = {
         adminModes: ['system'],
       },
     },
+    {
+      path: 'smtp',
+      name: 'smtp-settings',
+      component: SmtpSettingsView,
+      meta: {
+        permissions: ['system:smtp:view'],
+        roles: ['SUPER_ADMIN'],
+        adminModes: ['system'],
+      },
+    },
   ],
   menuItems: [
     {
@@ -30,6 +41,14 @@ export const systemModule: AdminModuleContribution = {
       label: '用户与角色',
       icon: UserFilled,
       permissions: ['system:user:view'],
+      roles: ['SUPER_ADMIN'],
+      adminModes: ['system'],
+    },
+    {
+      index: '/smtp',
+      label: 'SMTP 配置',
+      icon: Message,
+      permissions: ['system:smtp:view'],
       roles: ['SUPER_ADMIN'],
       adminModes: ['system'],
     },

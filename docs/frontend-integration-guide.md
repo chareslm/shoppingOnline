@@ -67,7 +67,8 @@ export const productModule: AdminModuleContribution = {
 管理端当前约定：
 
 - 登录必须选择身份：系统管理员要求 `SUPER_ADMIN`，平台管理员要求 `ADMIN`（`SUPER_ADMIN` 也可进入平台管理员工作区以便本地审核）。商家与客服角色不能建立管理端会话。
-- 系统管理员菜单：用户与角色、系统日志。路由和菜单须带 `roles: ['SUPER_ADMIN']` 与 `adminModes: ['system']`。
+- 系统管理员菜单：用户与角色、SMTP 配置、系统日志。路由和菜单须带 `roles: ['SUPER_ADMIN']` 与 `adminModes: ['system']`。
+- 用户与角色页可手动创建平台账号（邮箱必填，首次登录强制改密）；SMTP 配置页可保存运行时发信参数，查询不回显密码。
 - 平台管理员菜单：商家审核（统合资质与账号）、商品审核、全部商品、消息发布。路由和菜单须带 `roles: ['ADMIN']` 与 `adminModes: ['platform']`。
 - 业务路由使用模块前缀，例如 `merchant/review`、`product/audit`、`message/publish`。
 - 路由名称使用模块前缀，例如 `merchant-review`。
@@ -112,7 +113,7 @@ export const tradeModule: WebModuleContribution = {
 - 用户身份菜单：概览、个人资料、收货地址、偏好设置，以及已接入的商品、购物车和订单。
 - 商家身份菜单目前为占位页：添加商品、商品浏览、客服账号、用户沟通、订单。成员替换占位组件时保留 `portalModes: ['merchant']`。
 - `/register` 提供个人账号与商家入驻切换；商家申请使用公开 multipart 接口，不提前创建账号或授予商家角色。
-- 管理台 `/merchant/review` 由 merchant 模块注册，统合资质审核与账号审核两个队列，菜单和路由均要求 `merchant:qualification:audit`，并限定平台管理员身份。
+- 管理台 `/merchant/review` 由 merchant 模块注册，待审核 / 已通过 / 已撤销三个队列共用同一权限 `merchant:qualification:audit`，并限定平台管理员身份。资质审核通过即开通账号；资质图片在详情中预览。
 - 新商家账号收到临时密码后，前端根据 `mustChangePassword` 强制进入改密流程；该前端限制不替代后端过滤器。
 - 资质文件不使用公开 URL，管理台通过带 Bearer Token 的下载接口获取。
 

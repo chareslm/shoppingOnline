@@ -22,6 +22,7 @@ export interface MerchantApplication {
   contactPhone: string
   contactEmail: string
   status: MerchantApplicationStatus
+  shopStatus?: 'OPEN' | 'SUSPENDED' | 'FROZEN' | 'CLOSED' | null
   rejectionReason?: string | null
   emailDeliveryStatus?: 'PENDING' | 'SENT' | 'MAIL_FAILED'
   accountUserId?: string | null

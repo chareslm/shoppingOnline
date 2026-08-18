@@ -14,7 +14,7 @@ const formRef = ref<FormInstance>()
 const form = reactive<{ identifier: string; password: string; adminMode: AdminMode }>({
   identifier: '',
   password: '',
-  adminMode: 'platform',
+  adminMode: 'system',
 })
 const rules: FormRules = {
   adminMode: [{ required: true, message: '请选择管理员身份', trigger: 'change' }],
@@ -32,7 +32,8 @@ async function submit() {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
     await router.replace(redirect)
   } catch (error) {
-    ElMessage.error(readApiError(error, '登录失败，请检查账号和密码'))
+    const message = readApiError(error, '登录失败，请检查账号和密码')
+    ElMessage.error(message === 'invalid credentials' ? '账号或密码错误' : message)
   }
 }
 </script>
