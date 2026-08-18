@@ -1,6 +1,6 @@
 # Local Docker Compose template with persistent Windows bind mounts.
 # Copy to docker-compose.yml for machine-local changes. Keep credentials in .env.
-# Modify DATA_DIR in .env instead of hard-coding another host path in this file.
+# Replace folder values in the copied .env; do not hard-code a host path here.
 name: shopping
 
 services:
@@ -18,7 +18,7 @@ services:
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - ${DATA_DIR:-D:/Project/data}/shopping/mysql:/var/lib/mysql
+      - ${DATA_DIR:-folder}/shopping/mysql:/var/lib/mysql
       - ../database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
@@ -36,7 +36,7 @@ services:
       - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     volumes:
       # Redis is cache/state infrastructure, isolated under this project's data directory.
-      - ${DATA_DIR:-D:/Project/data}/shopping/redis:/data
+      - ${DATA_DIR:-folder}/shopping/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -58,7 +58,7 @@ services:
       - "127.0.0.1:${ELASTICSEARCH_PORT:-9200}:9200"
     volumes:
       # Search indexes are rebuildable, but persisted to speed up local restarts.
-      - ${DATA_DIR:-D:/Project/data}/shopping/elasticsearch:/usr/share/elasticsearch/data
+      - ${DATA_DIR:-folder}/shopping/elasticsearch:/usr/share/elasticsearch/data
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=1s > /dev/null"]
       interval: 10s
@@ -98,9 +98,9 @@ services:
     volumes:
       # Source mount is for local development; use a built image for production.
       - ../backend:/app
-      - ${MAVEN_REPO_DIR:-C:/Users/user/.m2}:/root/.m2
+      - ${MAVEN_REPO_DIR:-folder}:/root/.m2
       # Qualification files are private; no web server serves this host directory directly.
-      - ${DATA_DIR:-D:/Project/data}/shopping/uploads:/data/uploads
+      - ${DATA_DIR:-folder}/shopping/uploads:/data/uploads
     depends_on:
       mysql:
         condition: service_healthy

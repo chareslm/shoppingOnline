@@ -56,6 +56,10 @@ h1, h2, p { margin-top: 0; }
 .login-card h2 { font-size: 26px; margin-bottom: 8px; }
 .hint { color: #64748b; font-size: 14px; margin-bottom: 28px; }
 .login-button { margin-top: 8px; width: 100%; }
+.admin-mode-picker { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+.admin-mode-picker .el-radio-button__inner { width: 100%; height: auto; min-height: 76px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: 1.3; white-space: normal; }
+.admin-mode-picker .el-radio-button__inner small { color: inherit; opacity: .72; font-size: 11px; }
+.merchant-review-tabs { margin-bottom: 8px; }
 
 @media (max-width: 760px) {
   .login-page { display: block; padding: 64px 24px; }

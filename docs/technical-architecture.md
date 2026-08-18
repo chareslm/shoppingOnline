@@ -121,7 +121,7 @@ SUPER_ADMIN
 
 ## 5. 前端与聊天架构
 
-管理端统一使用 `frontend-admin`，并依据角色展示菜单，不拆成单独的管理员、商家和客服前端工程。用户 Web 使用 Vue 3；Flutter 用于 Android App。
+管理端使用 `frontend-admin`，登录时分离系统管理员与平台管理员，不拆成两套管理端工程。商家工作台放在用户 Web，与普通用户共用 `frontend-web`，登录时选择身份。用户 Web 使用 Vue 3；Flutter 用于 Android App。
 
 管理端和用户 Web 采用模块注册机制：公共层集中维护认证、请求、布局和路由守卫，各领域负责人分别在 `merchant`、`product`、`trade`、`message` 目录中贡献本模块路由与菜单。中央注册表预先接入所有模块，成员增加业务页面时无需修改公共路由和布局。详细协作规范见 `docs/frontend-integration-guide.md`。
 

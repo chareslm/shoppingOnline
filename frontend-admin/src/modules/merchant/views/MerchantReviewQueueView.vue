@@ -6,7 +6,7 @@ import { readApiError } from '../../../services/http'
 import { merchantAdminApi } from '../services/merchant'
 import type { MerchantApplication } from '../types'
 
-const props = defineProps<{ stage: 'qualification' | 'account' }>()
+const props = defineProps<{ stage: 'qualification' | 'account'; embedded?: boolean }>()
 const loading = ref(false)
 const reviewing = ref(false)
 const detailVisible = ref(false)
@@ -108,7 +108,7 @@ onMounted(loadApplications)
 
 <template>
   <section>
-    <div class="page-heading">
+    <div v-if="!embedded" class="page-heading">
       <div>
         <p class="eyebrow">MERCHANT ONBOARDING</p>
         <h1>{{ title }}</h1>

@@ -27,7 +27,7 @@ app:
     allowed-origins: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174
   merchant:
     # [OPTIONAL] Private files; never expose this directory through a static server.
-    upload-dir: D:/Project/data/shopping/uploads
+    upload-dir: folder
 
 # [OPTIONAL] SMTP stays environment-driven to keep credentials out of YAML:
 # MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM,

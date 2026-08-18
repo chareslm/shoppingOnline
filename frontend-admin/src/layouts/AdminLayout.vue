@@ -12,8 +12,17 @@ import { canAccessAdminMenu } from '../modules/types'
 const router = useRouter()
 const auth = useAuthStore()
 const passwordDialogVisible = ref(false)
+const isSystemMode = computed(() => auth.session?.adminMode === 'system')
+const workspaceLabel = computed(() => (isSystemMode.value ? '系统管理台' : '平台管理台'))
 const visibleModuleMenuItems = computed(() =>
-  adminModuleMenuItems.filter((item) => canAccessAdminMenu(item, auth.session?.permissions ?? [])),
+  adminModuleMenuItems.filter((item) =>
+    canAccessAdminMenu(
+      item,
+      auth.session?.permissions ?? [],
+      auth.session?.roles ?? [],
+      auth.session?.adminMode,
+    ),
+  ),
 )
 
 onMounted(async () => {
@@ -56,7 +65,7 @@ async function handlePasswordChanged() {
 <template>
   <el-container class="admin-shell">
     <el-aside width="232px" class="sidebar">
-      <div class="brand"><span>SHOP</span> 运营管理台</div>
+      <div class="brand"><span>SHOP</span> {{ workspaceLabel }}</div>
       <el-menu router :default-active="$route.path" background-color="transparent" text-color="#b8c4d9" active-text-color="#ffffff">
         <el-menu-item index="/dashboard">
           <el-icon><Monitor /></el-icon>
@@ -75,7 +84,7 @@ async function handlePasswordChanged() {
     </el-aside>
     <el-container>
       <el-header class="topbar">
-        <span>统一身份与权限基础已接入</span>
+        <span>{{ isSystemMode ? '系统管理员工作区：用户角色与系统日志' : '平台管理员工作区：审核、商品与消息发布' }}</span>
         <el-dropdown @command="handleCommand">
           <span class="user-menu"><el-icon><UserFilled /></el-icon>{{ auth.session?.username }}<el-icon><ArrowDown /></el-icon></span>
           <template #dropdown>

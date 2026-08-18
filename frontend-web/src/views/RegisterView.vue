@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import axios from 'axios'
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { merchantApi } from '@/modules/merchant/services/merchant'
 import type { IdentityDocumentType, MerchantType } from '@/modules/merchant/types'
 import { authApi } from '@/services/auth'
@@ -9,6 +9,7 @@ import { readApiError } from '@/services/http'
 import type { ApiResponse } from '@/types/api'
 
 const router = useRouter()
+const route = useRoute()
 const saving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -27,6 +28,10 @@ const merchantForm = reactive({
   email: '',
 })
 const qualificationFiles = ref<File[]>([])
+
+onMounted(() => {
+  if (route.query.account === 'merchant' || route.query.portal === 'merchant') accountType.value = 'merchant'
+})
 
 function validateUser() {
   const username = form.username.trim()
@@ -186,7 +191,7 @@ async function submit() {
         <p v-if="errorMessage" class="notice error">{{ errorMessage }}</p>
         <p v-if="successMessage" class="notice success">{{ successMessage }}</p>
         <button v-if="!successMessage" class="primary-button wide" type="submit" :disabled="saving">{{ saving ? '正在提交…' : accountType === 'user' ? '创建账号' : '提交入驻申请' }}</button>
-        <p class="login-switch">已有账号？<router-link to="/login">返回登录</router-link></p>
+        <p class="login-switch">已有账号？<router-link :to="{ path: '/login', query: accountType === 'merchant' ? { portal: 'merchant' } : {} }">返回登录</router-link></p>
       </form>
     </section>
   </main>

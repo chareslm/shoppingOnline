@@ -19,6 +19,8 @@ export interface LoginRequest {
   deviceName: string
 }
 
+export type AdminMode = 'system' | 'platform'
+
 export interface AuthenticatedUser {
   userId: string
   username: string

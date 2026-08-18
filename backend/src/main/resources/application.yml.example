@@ -1,0 +1,70 @@
+# Shared backend configuration template.
+# Copy only when application.yml is missing; machine-specific values belong in
+# application-local.yml or environment variables and must not be committed here.
+spring:
+  application:
+    name: shopping-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    url: ${DB_URL:}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: 2
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://127.0.0.1:9200}
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS_ENABLED:true}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
+  mail:
+    from: ${MAIL_FROM:}
+  merchant:
+    # Replace folder only in the copied local configuration or via MERCHANT_UPLOAD_DIR.
+    upload-dir: ${MERCHANT_UPLOAD_DIR:folder}
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:}
+    access-token-ttl: PT30M
+    refresh-token-ttl: P7D
+  bootstrap-super-admin:
+    enabled: ${BOOTSTRAP_SUPER_ADMIN_ENABLED:false}
+    username: ${BOOTSTRAP_SUPER_ADMIN_USERNAME:}
+    password: ${BOOTSTRAP_SUPER_ADMIN_PASSWORD:}
+
+management:
+  health:
+    mail:
+      enabled: ${MAIL_HEALTH_ENABLED:false}
+  endpoints:
+    web:
+      exposure:
+        include: health,info

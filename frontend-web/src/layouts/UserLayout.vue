@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { canAccessWebMenu, portalHomePath } from '@/modules/types'
 import { webModuleMenuItems } from '@/modules/registry'
+import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
 const menuOpen = ref(false)
 const displayName = computed(() => auth.session?.username || '用户')
 const initial = computed(() => displayName.value.slice(0, 1).toUpperCase())
+const isMerchantPortal = computed(() => auth.session?.portalMode === 'merchant')
+const homePath = computed(() => portalHomePath(auth.session?.portalMode))
+const visibleMenuItems = computed(() =>
+  webModuleMenuItems
+    .filter((item) => canAccessWebMenu(item, auth.session?.portalMode, auth.session?.roles ?? []))
+    .sort((left, right) => (left.order ?? 100) - (right.order ?? 100)),
+)
 
 async function logout() {
   await auth.logout()
@@ -19,12 +27,12 @@ async function logout() {
 <template>
   <div class="app-shell">
     <header class="topbar">
-      <router-link class="brand" to="/" @click="menuOpen = false">
+      <router-link class="brand" :to="homePath" @click="menuOpen = false">
         <span class="brand-mark">S</span>
-        <span><strong>SHOP</strong><small>用户中心</small></span>
+        <span><strong>SHOP</strong><small>{{ isMerchantPortal ? '商家工作台' : '用户中心' }}</small></span>
       </router-link>
       <nav :class="['main-nav', { open: menuOpen }]">
-        <router-link v-for="item in webModuleMenuItems" :key="item.to" :to="item.to" @click="menuOpen = false">
+        <router-link v-for="item in visibleMenuItems" :key="item.to" :to="item.to" @click="menuOpen = false">
           {{ item.label }}
         </router-link>
       </nav>
@@ -36,6 +44,6 @@ async function logout() {
       </div>
     </header>
     <main class="page-container"><router-view /></main>
-    <footer>SHOP · 统一账号与用户中心基础能力</footer>
+    <footer>{{ isMerchantPortal ? 'SHOP · 商家工作台' : 'SHOP · 统一账号与用户中心基础能力' }}</footer>
   </div>
 </template>

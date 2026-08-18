@@ -18,7 +18,7 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml ps
 
 The `database/init/` directory is mounted into MySQL's initialization directory. Put versioned SQL migration scripts in `database/`; initialization scripts are only executed when the MySQL bind-mounted data directory is first created. The backend applies Flyway migrations on startup.
 
-By default, bind-mount data is stored under `DATA_DIR` (see `.env.example`, default `D:/Project/data`):
+By default, bind-mount data is stored under `DATA_DIR` (see `.env.example`, default `folder`):
 
 - MySQL: `${DATA_DIR}/shopping/mysql`
 - Redis: `${DATA_DIR}/shopping/redis`

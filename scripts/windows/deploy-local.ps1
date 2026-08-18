@@ -56,6 +56,15 @@ function Assert-RequiredSecret {
     }
 }
 
+function Assert-LocalPath {
+    param([Parameter(Mandatory)] [string]$Name)
+
+    $value = Get-EnvValue -Name $Name
+    if ([string]::IsNullOrWhiteSpace($value) -or $value -eq 'folder') {
+        throw "Replace the folder placeholder for $Name in deploy/.env."
+    }
+}
+
 function Test-LocalPort {
     param([Parameter(Mandatory)] [int]$Port)
     return [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
@@ -95,6 +104,9 @@ Ensure-LocalCopy `
     -Example (Join-Path $RepoRoot 'backend\src\main\resources\application-local.yml.example') `
     -Local (Join-Path $RepoRoot 'backend\src\main\resources\application-local.yml')
 Ensure-LocalCopy `
+    -Example (Join-Path $RepoRoot 'backend\src\main\resources\application.yml.example') `
+    -Local (Join-Path $RepoRoot 'backend\src\main\resources\application.yml')
+Ensure-LocalCopy `
     -Example (Join-Path $RepoRoot 'frontend-web\.env.example') `
     -Local (Join-Path $RepoRoot 'frontend-web\.env')
 Ensure-LocalCopy `
@@ -104,6 +116,8 @@ Ensure-LocalCopy `
 Assert-RequiredSecret -Name 'MYSQL_APP_PASSWORD'
 Assert-RequiredSecret -Name 'MYSQL_ROOT_PASSWORD'
 Assert-RequiredSecret -Name 'JWT_SECRET'
+Assert-LocalPath -Name 'DATA_DIR'
+Assert-LocalPath -Name 'MAVEN_REPO_DIR'
 
 $DataRoot = Get-EnvValue -Name 'DATA_DIR'
 if ([string]::IsNullOrWhiteSpace($DataRoot)) { $DataRoot = 'D:/Project/data' }

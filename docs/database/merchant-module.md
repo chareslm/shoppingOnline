@@ -40,7 +40,7 @@ OPEN / SUSPENDED / FROZEN / CLOSED
 ## 数据保护
 
 - 证件号与统一社会信用代码仅用于审核，管理列表不返回明文。
-- 资质文件写入 `app.merchant.upload-dir`，默认 `D:/Project/data/shopping/uploads`。
+- 资质文件写入 `app.merchant.upload-dir`，默认 `folder`，由 `MERCHANT_UPLOAD_DIR` 或本地配置覆盖。
 - 数据库只保存随机存储键、原始文件名、内容类型、大小和摘要。
 - 下载必须经过 `merchant:qualification:audit` 权限校验，禁止静态目录映射。
 - 账号密码只保存 BCrypt 哈希；临时明文密码仅在创建后交给邮件发送组件，不持久化。

@@ -141,6 +141,11 @@ textarea { resize: vertical; }
 .login-card label { margin-bottom: 18px; }
 .login-card input { min-height: 50px; }
 .login-card .notice { margin-bottom: 16px; }
+.portal-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 24px; padding: 5px; border-radius: 14px; background: #edf2ed; }
+.portal-mode-switch button { min-height: 64px; padding: 10px 12px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; text-align: left; }
+.portal-mode-switch button strong, .portal-mode-switch button small { display: block; }
+.portal-mode-switch button small { margin-top: 4px; font-weight: 500; }
+.portal-mode-switch button.active { color: white; background: var(--green); box-shadow: 0 6px 16px rgba(23, 95, 73, .2); }
 .login-footnote { margin: 16px 0 0; text-align: center; color: #8b948f; font-size: 12px; }
 .login-switch { margin: 20px 0 0; text-align: center; color: var(--muted); font-size: 14px; }
 .login-switch a { color: var(--green); font-weight: 800; }

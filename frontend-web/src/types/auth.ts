@@ -6,6 +6,10 @@ export interface AuthenticatedUser {
   mustChangePassword: boolean
 }
 
+export type PortalMode = 'user' | 'merchant'
+
+export const MERCHANT_PORTAL_ROLES = ['MERCHANT_OWNER', 'MERCHANT_STAFF', 'CUSTOMER_SERVICE']
+
 export interface LoginRequest {
   identifier: string
   password: string
