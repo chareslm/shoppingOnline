@@ -2,6 +2,8 @@ package com.chareslm.shopping.trade.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.chareslm.shopping.cart.client.ProductQueryClient;
+import com.chareslm.shopping.cart.dto.ProductSkuView;
 import com.chareslm.shopping.cart.entity.Cart;
 import com.chareslm.shopping.cart.entity.CartGroup;
 import com.chareslm.shopping.cart.entity.CartItem;
@@ -58,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartMapper cartMapper;
     private final CartGroupMapper cartGroupMapper;
     private final CartItemMapper cartItemMapper;
+    private final ProductQueryClient productQueryClient;
     private final StockClient stockClient;
 
     @Override
@@ -199,9 +202,17 @@ public class OrderServiceImpl implements OrderService {
      * 预占失败时补偿释放已预占的 SKU 后抛异常（事务回滚）。
      */
     private Order createOrderForShop(Long userId, CreateOrderRequest request, Long shopId, List<CartItem> items) {
-        BigDecimal totalAmount = items.stream()
-                .map(i -> i.getPriceSnapshot().multiply(BigDecimal.valueOf(i.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 结算校验：重新校验每个购物项可售性（SKU 启用 + SPU 上架），价格以服务端为准
+        Map<Long, ProductSkuView> skuSnapshots = new HashMap<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (CartItem item : items) {
+            ProductSkuView sku = productQueryClient.getSkuSnapshot(item.getSkuId());
+            if (sku == null || !sku.onSale()) {
+                throw new BusinessException(ErrorCode.SKU_NOT_AVAILABLE);
+            }
+            skuSnapshots.put(item.getSkuId(), sku);
+            totalAmount = totalAmount.add(sku.price().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
         BigDecimal freightAmount = BigDecimal.ZERO;
         BigDecimal discountAmount = BigDecimal.ZERO;
         BigDecimal payAmount = totalAmount.add(freightAmount).subtract(discountAmount);
@@ -226,12 +237,15 @@ public class OrderServiceImpl implements OrderService {
         Map<Long, Integer> reserved = new HashMap<>();
         try {
             for (CartItem item : items) {
+                ProductSkuView sku = skuSnapshots.get(item.getSkuId());
                 OrderItem orderItem = new OrderItem();
                 orderItem.setOrderId(order.getId());
                 orderItem.setSkuId(item.getSkuId());
-                orderItem.setPrice(item.getPriceSnapshot());
+                orderItem.setSkuName(sku.skuName());
+                orderItem.setSkuImage(sku.skuImage());
+                orderItem.setPrice(sku.price());
                 orderItem.setQuantity(item.getQuantity());
-                orderItem.setTotalAmount(item.getPriceSnapshot().multiply(BigDecimal.valueOf(item.getQuantity())));
+                orderItem.setTotalAmount(sku.price().multiply(BigDecimal.valueOf(item.getQuantity())));
                 orderItem.setStatus(0);
                 orderItemMapper.insert(orderItem);
 

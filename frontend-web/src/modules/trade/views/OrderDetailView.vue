@@ -240,7 +240,9 @@ function formatTime(value: string | null) {
 .status-text.status-2 { color: #15553f; }
 .status-text.status-3 { color: #526059; }
 .status-text.status-4 { color: #8b948f; }
+.status-text.status-5 { color: #8b948f; }
 .status-text.status-6 { color: #6b3fa0; }
+.status-text.status-7 { color: #1e7a46; }
 
 .detail-actions {
   display: flex;
