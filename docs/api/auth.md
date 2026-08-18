@@ -60,7 +60,8 @@
     "refreshToken": "<JWT>",
     "expiresInSeconds": 1800,
     "roles": ["USER"],
-    "permissions": []
+    "permissions": [],
+    "mustChangePassword": false
   }
 }
 ```
@@ -97,13 +98,15 @@
 
 `GET /api/auth/me`
 
-该接口需要 Access Token，返回 Token 中的用户 ID、用户名、角色和权限。
+该接口需要 Access Token，返回 Token 中的用户 ID、用户名、角色、权限及 `mustChangePassword`。
 
 ## 修改本人密码
 
 `PUT /api/auth/password`
 
 该接口需要 Access Token。调用者必须提交当前密码和符合强密码策略的新密码；新密码不得与当前密码相同。
+
+商家审核新建的账号首次登录时 `mustChangePassword=true`。服务端在该标记清除前仅允许访问 `/api/auth/me`、`/api/auth/password` 和 `/api/auth/logout`；改密成功后清除标记并撤销 Refresh Token，客户端应退出并要求使用新密码重新登录。
 
 ```json
 {

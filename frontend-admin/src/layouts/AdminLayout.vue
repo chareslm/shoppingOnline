@@ -19,6 +19,7 @@ const visibleModuleMenuItems = computed(() =>
 onMounted(async () => {
   try {
     await auth.restoreCurrentUser()
+    passwordDialogVisible.value = Boolean(auth.session?.mustChangePassword)
   } catch (error) {
     ElMessage.error(readApiError(error, '登录状态已失效，请重新登录'))
     await auth.logout()
@@ -87,6 +88,6 @@ async function handlePasswordChanged() {
       </el-header>
       <el-main class="main-content"><router-view /></el-main>
     </el-container>
-    <ChangePasswordDialog v-model="passwordDialogVisible" @changed="handlePasswordChanged" />
+    <ChangePasswordDialog v-model="passwordDialogVisible" :forced="auth.session?.mustChangePassword" @changed="handlePasswordChanged" />
   </el-container>
 </template>

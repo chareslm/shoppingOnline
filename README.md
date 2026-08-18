@@ -23,3 +23,17 @@
 日常开发从 `develop` 创建功能分支，并通过 Pull Request 合并回 `develop`。详细规则见 [docs/git-workflow.md](docs/git-workflow.md)。
 
 微信小程序的导入、API 地址和本地联调说明见 [frontend-miniapp/README.md](frontend-miniapp/README.md)。
+
+## Windows 快速部署
+
+本地配置必须从 example 复制，真实密码和 SMTP 凭据不得写入 example 或提交到 Git。
+
+```powershell
+# 准备配置、启动 Docker 服务并启动两个 Vue 开发服务器
+powershell -ExecutionPolicy Bypass -File scripts/windows/deploy-local.ps1
+
+# 默认安全清理：保留持久化数据、本地配置和依赖
+powershell -ExecutionPolicy Bypass -File scripts/windows/clean-local.ps1
+```
+
+高风险清理及可选参数见 [scripts/windows/README.md](scripts/windows/README.md)。

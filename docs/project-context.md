@@ -1,6 +1,6 @@
 # 项目上下文记录
 
-> 最后更新：2026-08-11
+> 最后更新：2026-08-18
 
 ## 项目定位
 
@@ -12,6 +12,7 @@
 - 当前集成分支：`develop`；认证权限、强密码与本人改密、管理端认证及用户角色管理、Redis/Elasticsearch 本地 Compose、用户资料/地址/偏好接口、用户 Web 用户中心，以及管理端/用户 Web 团队模块接入基础均已集成；最新提交以远程 `origin/develop` 为准，`main` 尚未包含这些功能。
 - 代表性功能提交：`5e13a13`（管理端认证基础）、`3ffad2d`（Redis/Elasticsearch 本地 Compose）、`eb6f4ba`（用户资料、地址与偏好接口）、`29ea2f9`（管理端用户与角色管理）、`09cc2da`（账号密码安全）、`ba2745e`（前端团队模块接入基础）、`30ffc16`（共享 `AGENTS.md`）；完整集成历史以 `git log origin/develop` 为准。
 - `frontend-admin` 已完成认证、用户角色和模块化菜单/路由注册；`frontend-web` 已完成账号中心及模块化导航/路由注册，四位成员均有独立业务目录；`frontend-app` 已完成 Android 工程、统一认证、本人改密、USER 角色限制、用户中心和五模块注册基础；`frontend-miniapp` 已在功能分支初始化原生 TypeScript 工程、统一认证、用户中心和五模块注册基础。
+- 商家入驻链路已实现：用户 Web 可提交企业、个体工商户或个人商家申请及私有资质文件；管理台按 `merchant:qualification:audit` 完成资质和账号双阶段审核。账号审核通过后复用已有普通账号或创建带首次改密标记的商家主账号，并通过通用 SMTP 投递开通信息。
 - 仓库根目录：`backend/`、`frontend-web/`、`frontend-app/`、`frontend-miniapp/`、`frontend-admin/`、`database/`、`deploy/`、`docs/`。
 
 ## 业务分工

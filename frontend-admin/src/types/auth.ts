@@ -24,6 +24,7 @@ export interface AuthenticatedUser {
   username: string
   roles: string[]
   permissions: string[]
+  mustChangePassword: boolean
 }
 
 export interface LoginResponse extends AuthenticatedUser {

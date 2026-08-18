@@ -103,6 +103,13 @@ export const tradeModule: WebModuleContribution = {
 
 商品详情等不适合顶层导航的页面只注册路由，不加入 `menuItems`。
 
+商家入驻当前接入约定：
+
+- 用户 Web `/register` 提供个人账号与商家账号切换；商家申请使用公开 multipart 接口，不提前创建账号或授予商家角色。
+- 管理台 `/merchant/qualification-review` 与 `/merchant/account-review` 由 merchant 模块注册，菜单和路由均要求 `merchant:qualification:audit`。
+- 新商家账号收到临时密码后，前端根据 `mustChangePassword` 强制进入改密流程；该前端限制不替代后端过滤器。
+- 资质文件不使用公开 URL，管理台通过带 Bearer Token 的下载接口获取。
+
 ## 5. Flutter 与微信小程序
 
 Flutter Android App 与微信原生 TypeScript 小程序均已初始化，并采用以下业务划分：

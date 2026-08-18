@@ -1,19 +1,34 @@
-# Copy this file to application-local.yml and replace placeholders locally.
-# Do not commit application-local.yml.
+# Native Windows development template.
+# Copy to application-local.yml and replace [REQUIRED] placeholders locally.
+# application-local.yml is ignored by Git; never put real secrets in this example.
 spring:
+  # [REQUIRED] Native backend datasource. Compose overrides these values.
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/shopping?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: change-me
+    username: shopping_app
+    password: replace-with-local-application-password
+  # [OPTIONAL] Enable only when adopting an existing database without Flyway history.
+  flyway:
+    baseline-on-migrate: false
 
 security:
   jwt:
+    # [REQUIRED] At least 32 random bytes; do not reuse a database password.
     secret: replace-with-a-random-secret-of-at-least-32-bytes
   bootstrap-super-admin:
+    # [OPTIONAL] Enable once only when no SUPER_ADMIN exists, then disable it.
     enabled: false
-    username:
-    password:
+    username: admin_local
+    password: replace-with-a-strong-one-time-bootstrap-password
 
 app:
   cors:
+    # [OPTIONAL] Add origins only when frontend host/ports are changed.
     allowed-origins: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174
+  merchant:
+    # [OPTIONAL] Private files; never expose this directory through a static server.
+    upload-dir: D:/Project/data/shopping/uploads
+
+# [OPTIONAL] SMTP stays environment-driven to keep credentials out of YAML:
+# MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM,
+# MAIL_SMTP_AUTH and MAIL_SMTP_STARTTLS_ENABLED.

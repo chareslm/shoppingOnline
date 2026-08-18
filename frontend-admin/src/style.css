@@ -41,6 +41,11 @@ h1, h2, p { margin-top: 0; }
 .assignment-form .el-checkbox-group { display: grid; gap: 10px; }
 .password-form { margin-top: 20px; }
 .password-hint { color: #64748b; font-size: 13px; line-height: 1.6; margin-bottom: 0; }
+.merchant-review-card strong { color: #172554; }
+.qualification-files { margin: 24px 0; padding: 20px; border: 1px solid #dbe4ef; border-radius: 10px; background: #f8fafc; }
+.qualification-files h3 { margin: 0 0 14px; font-size: 16px; }
+.qualification-files .el-button { margin: 0 8px 8px 0; }
+.merchant-audit-form { padding-top: 20px; border-top: 1px solid #e5e7eb; }
 
 .login-page { background: linear-gradient(135deg, #14213d 0%, #1d4ed8 100%); display: grid; grid-template-columns: minmax(0, 1fr) 420px; min-height: 100vh; padding: 8vw max(7vw, 32px); place-items: center; gap: 56px; }
 .login-intro { color: #eff6ff; max-width: 520px; }

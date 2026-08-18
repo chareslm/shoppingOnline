@@ -15,4 +15,7 @@ export const authApi = {
   async currentUser() {
     return unwrap((await http.get<ApiResponse<AuthenticatedUser>>('/api/auth/me')).data)
   },
+  async changePassword(currentPassword: string, newPassword: string) {
+    return unwrap((await http.put<ApiResponse<null>>('/api/auth/password', { currentPassword, newPassword })).data)
+  },
 }

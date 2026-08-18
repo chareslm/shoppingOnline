@@ -18,6 +18,8 @@ public class UserAccount {
     private String email;
     private String phone;
     private String passwordHash;
+    /** True only for system-issued temporary credentials; cleared by a successful password change. */
+    private Boolean mustChangePassword;
     private String status;
     private Integer failedLoginCount;
     private LocalDateTime lockedUntil;

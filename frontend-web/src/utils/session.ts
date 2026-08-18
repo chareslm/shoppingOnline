@@ -24,6 +24,7 @@ export function saveLoginSession(login: LoginResponse) {
     username: login.username,
     roles: login.roles,
     permissions: login.permissions,
+    mustChangePassword: login.mustChangePassword,
     accessToken: login.accessToken,
     refreshToken: login.refreshToken,
   }

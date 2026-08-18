@@ -15,12 +15,17 @@ const successMessage = ref('')
 onMounted(() => {
   if (typeof route.query.identifier === 'string') identifier.value = route.query.identifier
   if (route.query.registered === '1') successMessage.value = '注册成功，请使用新账号登录'
+  if (route.query.passwordChanged === '1') successMessage.value = '密码已修改，请使用新密码登录'
 })
 
 async function submit() {
   errorMessage.value = ''
   try {
     await auth.login(identifier.value.trim(), password.value)
+    if (auth.session?.mustChangePassword) {
+      await router.replace({ name: 'forced-password-change' })
+      return
+    }
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     await router.replace(redirect)
   } catch (error) {

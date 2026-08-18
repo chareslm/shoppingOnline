@@ -10,4 +10,6 @@ import lombok.Setter;
 public class UserRole {
     private Long userId;
     private Long roleId;
+    /** Operator that granted a business role; null for legacy/self-registration relations. */
+    private Long grantedBy;
 }

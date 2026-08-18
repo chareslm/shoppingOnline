@@ -34,6 +34,8 @@ public class JwtTokenService {
                 .claim("username", loginUser.username())
                 .claim("roles", loginUser.roles())
                 .claim("permissions", loginUser.permissions())
+                // Signed claim lets the request filter enforce first-login password change without a client hint.
+                .claim("mustChangePassword", loginUser.mustChangePassword())
                 .claim("tokenType", "access")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(properties.accessTokenTtl())))
@@ -53,7 +55,8 @@ public class JwtTokenService {
                 Long.valueOf(claims.getSubject()),
                 claims.get("username", String.class),
                 roles == null ? Set.of() : Set.copyOf(roles),
-                permissions == null ? Set.of() : Set.copyOf(permissions)
+                permissions == null ? Set.of() : Set.copyOf(permissions),
+                Boolean.TRUE.equals(claims.get("mustChangePassword", Boolean.class))
         );
     }
 

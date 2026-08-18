@@ -46,6 +46,7 @@ backend/src/main/java/com/chareslm/shopping/
 | Android App | Flutter + Dart + Dio + Riverpod + go_router | 移动端购物与商家高频操作 |
 | 微信端 | 微信原生小程序 + TypeScript | 微信小程序 |
 | 实时通信 | WebSocket | 客服聊天、实时消息 |
+| 邮件 | Spring Mail + 通用 SMTP | 商家账号开通通知；凭据仅由部署环境注入 |
 | 部署（后期） | Docker / Docker Compose | MySQL、Redis、Elasticsearch、Kibana、Filebeat 环境统一 |
 
 ## 3. 数据与中间件边界

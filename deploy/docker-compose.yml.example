@@ -1,0 +1,110 @@
+# Local Docker Compose template with persistent Windows bind mounts.
+# Copy to docker-compose.yml for machine-local changes. Keep credentials in .env.
+# Modify DATA_DIR in .env instead of hard-coding another host path in this file.
+name: shopping
+
+services:
+  # Authoritative business database. Bind mounts keep data outside the repository.
+  mysql:
+    image: mysql:8.4
+    container_name: shopping-mysql
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-shopping}
+      MYSQL_USER: ${MYSQL_USER:-shopping_app}
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?Set MYSQL_APP_PASSWORD in deploy/.env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in deploy/.env}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ${DATA_DIR:-D:/Project/data}/shopping/mysql:/var/lib/mysql
+      - ../database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: shopping-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      # Redis is cache/state infrastructure, isolated under this project's data directory.
+      - ${DATA_DIR:-D:/Project/data}/shopping/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.2
+    container_name: shopping-elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      cluster.name: shopping-local
+      xpack.security.enabled: "false"
+      xpack.security.enrollment.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "127.0.0.1:${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      # Search indexes are rebuildable, but persisted to speed up local restarts.
+      - ${DATA_DIR:-D:/Project/data}/shopping/elasticsearch:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=1s > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
+
+  backend:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: shopping-backend
+    restart: unless-stopped
+    working_dir: /app
+    command: mvn -q spring-boot:run
+    environment:
+      # Compose values override ignored application-local.yml credentials.
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-shopping}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-shopping_app}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_APP_PASSWORD:?Set MYSQL_APP_PASSWORD in deploy/.env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in deploy/.env}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      MERCHANT_UPLOAD_DIR: /data/uploads
+      # SMTP is optional. Empty settings make delivery retryable instead of blocking approval.
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_SMTP_STARTTLS_ENABLED: ${MAIL_SMTP_STARTTLS_ENABLED:-true}
+      MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+      MANAGEMENT_HEALTH_ELASTICSEARCH_ENABLED: "false"
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      # Source mount is for local development; use a built image for production.
+      - ../backend:/app
+      - ${MAVEN_REPO_DIR:-C:/Users/user/.m2}:/root/.m2
+      # Qualification files are private; no web server serves this host directory directly.
+      - ${DATA_DIR:-D:/Project/data}/shopping/uploads:/data/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
