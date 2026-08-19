@@ -1,7 +1,14 @@
 param(
     [int]$TimeoutSeconds = 180,
-    [string]$HealthUrl = 'http://127.0.0.1:8080/actuator/health'
+    [string]$HealthUrl = ''
 )
+
+Set-StrictMode -Version Latest
+
+if ([string]::IsNullOrWhiteSpace($HealthUrl)) {
+    . (Join-Path $PSScriptRoot 'local-env.ps1')
+    $HealthUrl = Get-BackendHealthUrl
+}
 
 $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 do {

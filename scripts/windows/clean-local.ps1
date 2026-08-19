@@ -3,12 +3,11 @@
     Safely clean the Windows development environment.
 
 .DESCRIPTION
-    The default action stops project services and removes reproducible build
-    output. Persistent data, dependencies, and local secrets are preserved.
-    Destructive cleanup requires explicit switches and confirmation.
+    Default: stop project services and delete reproducible build output.
+    Persistent data, node_modules, and gitignored secrets are kept unless
+    you pass explicit switches.
 
-    This executable script intentionally uses ASCII text for Windows
-    PowerShell 5 compatibility. Chinese usage notes are in README.md.
+    Chinese usage notes: scripts/windows/README.md
 #>
 [CmdletBinding()]
 param(
@@ -21,10 +20,11 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$DeployDir = Join-Path $RepoRoot 'deploy'
-$DeployEnv = Join-Path $DeployDir '.env'
-$ComposeFile = Join-Path $DeployDir 'docker-compose.yml'
+. (Join-Path $PSScriptRoot 'local-env.ps1')
+
+$RepoRoot = Get-RepoRoot
+$DeployEnv = Get-DeployEnvPath
+$ComposeFile = Get-ComposeFilePath
 
 function Remove-PathIfPresent {
     param([Parameter(Mandatory)] [string]$Path)
@@ -41,7 +41,6 @@ function Stop-NodeListener {
         Select-Object -ExpandProperty OwningProcess -Unique |
         ForEach-Object {
             $process = Get-Process -Id $_ -ErrorAction SilentlyContinue
-            # Only stop Node on project-owned ports; never terminate unrelated processes.
             if ($process -and $process.ProcessName -match '^node') {
                 Stop-Process -Id $process.Id -Force
                 Write-Host "Stopped Node development server on port $Port."
@@ -49,21 +48,13 @@ function Stop-NodeListener {
         }
 }
 
-function Get-DataRoot {
-    if (-not (Test-Path -LiteralPath $DeployEnv)) { return 'D:/Project/data' }
-    $line = Get-Content -LiteralPath $DeployEnv |
-        Where-Object { $_ -match '^\s*DATA_DIR=' } |
-        Select-Object -Last 1
-    if (-not $line) { return 'D:/Project/data' }
-    $value = ($line -split '=', 2)[1].Trim()
-    if ([string]::IsNullOrWhiteSpace($value)) { return 'D:/Project/data' }
-    return $value
+$dataRoot = Get-EnvValue -Name 'DATA_DIR'
+if (Test-EnvPlaceholder $dataRoot) {
+    $dataRoot = Get-DefaultDataDir
 }
 
-$DataRootBeforeCleanup = Get-DataRoot
-
-Stop-NodeListener -Port 5173
-Stop-NodeListener -Port 5174
+Stop-NodeListener -Port $script:AdminDevPort
+Stop-NodeListener -Port $script:WebDevPort
 
 if (Test-Path -LiteralPath $DeployEnv) {
     & docker compose --env-file $DeployEnv -f $ComposeFile down
@@ -71,7 +62,6 @@ if (Test-Path -LiteralPath $DeployEnv) {
     Write-Host 'deploy/.env is missing; Docker Compose stop skipped.' -ForegroundColor DarkYellow
 }
 
-# Default cleanup removes only content that can be regenerated from source.
 @(
     'backend\target',
     'frontend-web\dist',
@@ -97,15 +87,14 @@ if ($RemoveLocalConfig) {
 if ($PurgePersistentData) {
     $confirmed = $Force
     if (-not $confirmed) {
-        $answer = Read-Host 'This permanently deletes project data. Type PURGE to confirm'
+        $answer = Read-Host "This permanently deletes $dataRoot/shopping. Type PURGE to confirm"
         $confirmed = $answer -ceq 'PURGE'
     }
 
     if (-not $confirmed) {
         Write-Host 'Persistent-data cleanup cancelled.' -ForegroundColor Yellow
     } else {
-        # Scope deletion to the shopping directory; preserve every sibling project.
-        Remove-PathIfPresent -Path (Join-Path $DataRootBeforeCleanup 'shopping')
+        Remove-PathIfPresent -Path (Join-Path $dataRoot 'shopping')
     }
 }
 

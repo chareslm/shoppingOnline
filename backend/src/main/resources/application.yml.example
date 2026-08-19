@@ -1,6 +1,9 @@
-# Shared backend configuration template.
-# Copy only when application.yml is missing; machine-specific values belong in
-# application-local.yml or environment variables and must not be committed here.
+# Documentation copy of committed application.yml.
+# Do not copy this file over backend/src/main/resources/application.yml.
+# Runtime values come from environment variables / application-local.yml / Compose.
+#
+# [REQUIRED] JWT_SECRET, and a datasource (Compose or application-local.yml)
+# [OPTIONAL] MAIL_*, CORS_ALLOWED_ORIGINS, MERCHANT_UPLOAD_DIR, health flags
 spring:
   application:
     name: shopping-backend
@@ -42,8 +45,9 @@ app:
   mail:
     from: ${MAIL_FROM:}
   merchant:
-    # Replace folder only in the copied local configuration or via MERCHANT_UPLOAD_DIR.
-    upload-dir: ${MERCHANT_UPLOAD_DIR:folder}
+    # [OPTIONAL] Native fallback when MERCHANT_UPLOAD_DIR is unset.
+    # Compose always overrides with /data/uploads.
+    upload-dir: ${MERCHANT_UPLOAD_DIR:${user.home}/shopping-data/uploads}
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml

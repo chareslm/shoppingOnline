@@ -3,12 +3,12 @@
     Prepare configuration and start the Windows development environment.
 
 .DESCRIPTION
-    Keeps local configuration separate from committed example templates,
-    validates required secrets, prepares persistent directories, starts
-    Docker Compose, waits for backend health, and optionally starts Vite.
+    Copies gitignored local files from examples when missing, fills empty
+    path/secret placeholders, starts Docker Compose, waits until the backend
+    health endpoint is UP, then starts Vite. Committed application.yml and
+    docker-compose.yml are never overwritten.
 
-    This executable script intentionally uses ASCII text for Windows
-    PowerShell 5 compatibility. Chinese usage notes are in README.md.
+    Chinese usage notes: scripts/windows/README.md
 #>
 [CmdletBinding()]
 param(
@@ -20,50 +20,26 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$DeployDir = Join-Path $RepoRoot 'deploy'
-$DeployEnv = Join-Path $DeployDir '.env'
-$ComposeFile = Join-Path $DeployDir 'docker-compose.yml'
+. (Join-Path $PSScriptRoot 'local-env.ps1')
 
-function Ensure-LocalCopy {
-    param(
-        [Parameter(Mandatory)] [string]$Example,
-        [Parameter(Mandatory)] [string]$Local
-    )
+$RepoRoot = Get-RepoRoot
+$DeployEnv = Get-DeployEnvPath
+$ComposeFile = Get-ComposeFilePath
 
-    if (-not (Test-Path -LiteralPath $Local)) {
-        Copy-Item -LiteralPath $Example -Destination $Local
-        Write-Host "Created local configuration: $Local" -ForegroundColor Yellow
-    }
-}
+$createdEnv = Ensure-LocalCopy `
+    -Example (Join-Path (Get-DeployDir) '.env.example') `
+    -Local $DeployEnv
+Initialize-DeployEnv -File $DeployEnv -Fresh:$createdEnv
 
-function Get-EnvValue {
-    param([Parameter(Mandatory)] [string]$Name)
-
-    $line = Get-Content -LiteralPath $DeployEnv |
-        Where-Object { $_ -match "^\s*$([regex]::Escape($Name))=" } |
-        Select-Object -Last 1
-    if (-not $line) { return $null }
-    return ($line -split '=', 2)[1].Trim()
-}
-
-function Assert-RequiredSecret {
-    param([Parameter(Mandatory)] [string]$Name)
-
-    $value = Get-EnvValue -Name $Name
-    if ([string]::IsNullOrWhiteSpace($value) -or $value -like 'replace-*') {
-        throw "Set $Name in deploy/.env before running this script again."
-    }
-}
-
-function Assert-LocalPath {
-    param([Parameter(Mandatory)] [string]$Name)
-
-    $value = Get-EnvValue -Name $Name
-    if ([string]::IsNullOrWhiteSpace($value) -or $value -eq 'folder') {
-        throw "Replace the folder placeholder for $Name in deploy/.env."
-    }
-}
+Ensure-LocalCopy `
+    -Example (Join-Path $RepoRoot 'backend\src\main\resources\application-local.yml.example') `
+    -Local (Join-Path $RepoRoot 'backend\src\main\resources\application-local.yml') | Out-Null
+Ensure-LocalCopy `
+    -Example (Join-Path $RepoRoot 'frontend-web\.env.example') `
+    -Local (Join-Path $RepoRoot 'frontend-web\.env') | Out-Null
+Ensure-LocalCopy `
+    -Example (Join-Path $RepoRoot 'frontend-admin\.env.example') `
+    -Local (Join-Path $RepoRoot 'frontend-admin\.env') | Out-Null
 
 function Test-LocalPort {
     param([Parameter(Mandatory)] [int]$Port)
@@ -88,42 +64,19 @@ function Start-Frontend {
         if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed for $Title." }
     }
 
-    # A separate terminal preserves Vite logs and gives the developer an obvious stop point.
     $escapedDirectory = $Directory.Replace("'", "''")
     $command = "`$host.UI.RawUI.WindowTitle='$Title'; Set-Location -LiteralPath '$escapedDirectory'; npm run dev"
     Start-Process powershell -ArgumentList '-NoExit', '-Command', $command | Out-Null
 }
 
-Ensure-LocalCopy `
-    -Example (Join-Path $DeployDir '.env.example') `
-    -Local $DeployEnv
-Ensure-LocalCopy `
-    -Example (Join-Path $DeployDir 'docker-compose.yml.example') `
-    -Local $ComposeFile
-Ensure-LocalCopy `
-    -Example (Join-Path $RepoRoot 'backend\src\main\resources\application-local.yml.example') `
-    -Local (Join-Path $RepoRoot 'backend\src\main\resources\application-local.yml')
-Ensure-LocalCopy `
-    -Example (Join-Path $RepoRoot 'backend\src\main\resources\application.yml.example') `
-    -Local (Join-Path $RepoRoot 'backend\src\main\resources\application.yml')
-Ensure-LocalCopy `
-    -Example (Join-Path $RepoRoot 'frontend-web\.env.example') `
-    -Local (Join-Path $RepoRoot 'frontend-web\.env')
-Ensure-LocalCopy `
-    -Example (Join-Path $RepoRoot 'frontend-admin\.env.example') `
-    -Local (Join-Path $RepoRoot 'frontend-admin\.env')
-
-Assert-RequiredSecret -Name 'MYSQL_APP_PASSWORD'
-Assert-RequiredSecret -Name 'MYSQL_ROOT_PASSWORD'
-Assert-RequiredSecret -Name 'JWT_SECRET'
-Assert-LocalPath -Name 'DATA_DIR'
-Assert-LocalPath -Name 'MAVEN_REPO_DIR'
-
 $DataRoot = Get-EnvValue -Name 'DATA_DIR'
-if ([string]::IsNullOrWhiteSpace($DataRoot)) { $DataRoot = 'D:/Project/data' }
-$ProjectDataRoot = Join-Path $DataRoot 'shopping'
 @('mysql', 'redis', 'elasticsearch', 'uploads') | ForEach-Object {
-    New-Item -ItemType Directory -Force -Path (Join-Path $ProjectDataRoot $_) | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $DataRoot "shopping\$_") | Out-Null
+}
+
+$mavenRepo = Get-EnvValue -Name 'MAVEN_REPO_DIR'
+if (-not [string]::IsNullOrWhiteSpace($mavenRepo)) {
+    New-Item -ItemType Directory -Force -Path $mavenRepo | Out-Null
 }
 
 & docker info *> $null
@@ -137,18 +90,23 @@ if ($Recreate) { $composeArgs += '--force-recreate' }
 & docker @composeArgs
 if ($LASTEXITCODE -ne 0) { throw 'Docker services failed to start.' }
 
-& powershell -ExecutionPolicy Bypass -File (Join-Path $RepoRoot 'scripts/windows/wait-backend.ps1') -TimeoutSeconds 360
+$healthUrl = Get-BackendHealthUrl
+& powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'wait-backend.ps1') -TimeoutSeconds 360 -HealthUrl $healthUrl
 if ($LASTEXITCODE -ne 0) {
     & docker compose --env-file $DeployEnv -f $ComposeFile logs --tail 80 backend
     throw 'Backend did not become healthy within six minutes.'
 }
 
 if (-not $SkipFrontends) {
-    Start-Frontend -Directory (Join-Path $RepoRoot 'frontend-admin') -Port 5173 -Title 'Shopping Admin'
-    Start-Frontend -Directory (Join-Path $RepoRoot 'frontend-web') -Port 5174 -Title 'Shopping Web'
+    Start-Frontend -Directory (Join-Path $RepoRoot 'frontend-admin') -Port $script:AdminDevPort -Title 'Shopping Admin'
+    Start-Frontend -Directory (Join-Path $RepoRoot 'frontend-web') -Port $script:WebDevPort -Title 'Shopping Web'
 }
 
+$backendPort = Get-EnvValue -Name 'BACKEND_PORT'
+if ([string]::IsNullOrWhiteSpace($backendPort)) { $backendPort = '8080' }
+
 Write-Host 'Local environment is ready:' -ForegroundColor Green
-Write-Host '  Admin:   http://localhost:5173'
-Write-Host '  Web:     http://127.0.0.1:5174'
-Write-Host '  Backend: http://localhost:8080'
+Write-Host "  Admin:   http://localhost:$script:AdminDevPort"
+Write-Host "  Web:     http://127.0.0.1:$script:WebDevPort"
+Write-Host "  Backend: http://localhost:$backendPort"
+Write-Host "  Data:    $DataRoot/shopping"

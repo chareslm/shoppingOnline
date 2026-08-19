@@ -49,7 +49,7 @@ OPEN / SUSPENDED / FROZEN / CLOSED
 ## 数据保护
 
 - 证件号与统一社会信用代码仅用于审核，管理列表不返回明文。
-- 资质文件写入 `app.merchant.upload-dir`。本机默认 `D:/Project/data/shopping/uploads`，Compose 通过 `MERCHANT_UPLOAD_DIR=/data/uploads` 覆盖；禁止静态目录映射。
+- 资质文件写入 `app.merchant.upload-dir`。本机未设置时默认为 `${user.home}/shopping-data/uploads`；Compose 通过 `MERCHANT_UPLOAD_DIR=/data/uploads` 覆盖，对应宿主机 `${DATA_DIR}/shopping/uploads`。禁止静态目录映射。
 - 数据库只保存随机存储键、原始文件名、内容类型、大小和摘要。
 - 商品图片写入同一上传根目录的 `product/` 前缀，通过 `GET /api/product-media/{id}` 公开读取；资质文件仍禁止静态映射。
 - 账号密码只保存 BCrypt 哈希；临时明文密码仅在创建后交给邮件发送组件，不持久化。
