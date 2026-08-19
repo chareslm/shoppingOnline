@@ -1,5 +1,6 @@
 import 'package:shopping_app/core/auth/session.dart';
 import 'package:shopping_app/core/network/api_client.dart';
+import 'package:shopping_app/core/network/api_exception.dart';
 import 'package:shopping_app/core/network/api_response.dart';
 import 'package:shopping_app/features/account/domain/auth_models.dart';
 
@@ -60,5 +61,25 @@ class AuthApi {
   Future<AuthenticatedUser> currentUser() async {
     final response = await _client.get('/api/auth/me');
     return unwrapApiResponse(response.data, AuthenticatedUser.fromJson);
+  }
+
+  Future<List<DeviceSession>> devices() async {
+    final response = await _client.get('/api/auth/devices');
+    return unwrapApiResponse(response.data, (value) {
+      if (value is! List) {
+        throw const ApiException(message: '登录设备响应格式错误');
+      }
+      return value.map(DeviceSession.fromJson).toList(growable: false);
+    });
+  }
+
+  Future<void> revokeDevice(String deviceId) async {
+    final response = await _client.post('/api/auth/devices/$deviceId/revoke');
+    unwrapApiResponse<void>(response.data, (_) {});
+  }
+
+  Future<void> revokeOtherDevices() async {
+    final response = await _client.post('/api/auth/devices/revoke-others');
+    unwrapApiResponse<void>(response.data, (_) {});
   }
 }

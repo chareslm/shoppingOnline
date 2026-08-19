@@ -34,12 +34,12 @@ Page({
     wx.navigateTo({ url: '/pages/address-edit/index' })
   },
 
-  editAddress(event: { currentTarget: { dataset: { id?: number } } }) {
+  editAddress(event: { currentTarget: { dataset: { id?: string } } }) {
     const id = event.currentTarget.dataset.id
     if (id) wx.navigateTo({ url: `/pages/address-edit/index?id=${id}` })
   },
 
-  async setDefault(event: { currentTarget: { dataset: { id?: number } } }) {
+  async setDefault(event: { currentTarget: { dataset: { id?: string } } }) {
     const id = event.currentTarget.dataset.id
     if (!id) return
     try {
@@ -50,7 +50,7 @@ Page({
     }
   },
 
-  async deleteAddress(event: { currentTarget: { dataset: { id?: number } } }) {
+  async deleteAddress(event: { currentTarget: { dataset: { id?: string } } }) {
     const id = event.currentTarget.dataset.id
     if (!id) return
     const result = await wx.showModal({ title: '删除地址', content: '确认删除这条收货地址吗？' })

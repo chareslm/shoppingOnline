@@ -14,7 +14,7 @@ class UserProfile {
   factory UserProfile.fromJson(Object? value) {
     final json = requireJsonMap(value);
     return UserProfile(
-      userId: (json['userId'] as num).toInt(),
+      userId: json['userId'].toString(),
       nickname: json['nickname'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
       realName: json['realName'] as String?,
@@ -26,7 +26,7 @@ class UserProfile {
     );
   }
 
-  final int userId;
+  final String userId;
   final String? nickname;
   final String? avatarUrl;
   final String? realName;
@@ -54,7 +54,7 @@ class UserAddress {
   factory UserAddress.fromJson(Object? value) {
     final json = requireJsonMap(value);
     return UserAddress(
-      id: (json['id'] as num).toInt(),
+      id: json['id'].toString(),
       recipientName: json['recipientName'] as String,
       recipientPhone: json['recipientPhone'] as String,
       provinceCode: json['provinceCode'] as String?,
@@ -69,7 +69,7 @@ class UserAddress {
     );
   }
 
-  final int id;
+  final String id;
   final String recipientName;
   final String recipientPhone;
   final String? provinceCode;
@@ -138,7 +138,7 @@ class UserPreference {
     final json = requireJsonMap(value);
     final extra = json['extraPreferences'];
     return UserPreference(
-      userId: (json['userId'] as num).toInt(),
+      userId: json['userId'].toString(),
       marketingEnabled: json['marketingEnabled'] == true,
       orderNotificationEnabled: json['orderNotificationEnabled'] == true,
       systemNotificationEnabled: json['systemNotificationEnabled'] == true,
@@ -148,7 +148,7 @@ class UserPreference {
     );
   }
 
-  final int userId;
+  final String userId;
   final bool marketingEnabled;
   final bool orderNotificationEnabled;
   final bool systemNotificationEnabled;

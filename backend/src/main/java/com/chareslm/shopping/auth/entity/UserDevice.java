@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @TableName("user_device")
@@ -18,5 +20,8 @@ public class UserDevice {
     private String deviceName;
     private String appVersion;
     private String lastIp;
+    private LocalDateTime lastActiveAt;
     private String status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

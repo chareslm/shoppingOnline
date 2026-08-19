@@ -39,13 +39,57 @@ class RegisteredUser {
   factory RegisteredUser.fromJson(Object? value) {
     final json = requireJsonMap(value);
     return RegisteredUser(
-      userId: (json['userId'] as num).toInt(),
+      userId: json['userId'].toString(),
       username: json['username'] as String,
       status: json['status'] as String,
     );
   }
 
-  final int userId;
+  final String userId;
   final String username;
   final String status;
+}
+
+class DeviceSession {
+  const DeviceSession({
+    required this.id,
+    required this.deviceType,
+    required this.status,
+    required this.current,
+    required this.lastActiveAt,
+    required this.createdAt,
+    this.deviceName,
+    this.appVersion,
+    this.maskedIp,
+    this.sessionExpiresAt,
+  });
+
+  factory DeviceSession.fromJson(Object? value) {
+    final json = requireJsonMap(value);
+    return DeviceSession(
+      id: json['id'].toString(),
+      deviceType: json['deviceType']?.toString() ?? 'UNKNOWN',
+      deviceName: json['deviceName'] as String?,
+      appVersion: json['appVersion'] as String?,
+      maskedIp: json['maskedIp'] as String?,
+      lastActiveAt: DateTime.parse(json['lastActiveAt'].toString()),
+      createdAt: DateTime.parse(json['createdAt'].toString()),
+      status: json['status']?.toString() ?? 'REVOKED',
+      current: json['current'] == true,
+      sessionExpiresAt: json['sessionExpiresAt'] == null
+          ? null
+          : DateTime.parse(json['sessionExpiresAt'].toString()),
+    );
+  }
+
+  final String id;
+  final String deviceType;
+  final String? deviceName;
+  final String? appVersion;
+  final String? maskedIp;
+  final DateTime lastActiveAt;
+  final DateTime createdAt;
+  final String status;
+  final bool current;
+  final DateTime? sessionExpiresAt;
 }

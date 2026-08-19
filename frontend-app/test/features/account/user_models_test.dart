@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shopping_app/features/account/domain/auth_models.dart';
 import 'package:shopping_app/features/account/domain/user_models.dart';
 
 void main() {
@@ -42,5 +43,24 @@ void main() {
 
     expect(address.isDefault, isTrue);
     expect(preference.extraPreferences['theme'], 'system');
+  });
+
+  test('解析登录设备响应并兼容字符串 ID', () {
+    final device = DeviceSession.fromJson({
+      'id': '201',
+      'deviceType': 'ANDROID',
+      'deviceName': 'Pixel',
+      'appVersion': null,
+      'maskedIp': '192.168.*.*',
+      'lastActiveAt': '2026-08-19T18:00:00',
+      'createdAt': '2026-08-10T09:00:00',
+      'status': 'ACTIVE',
+      'current': true,
+      'sessionExpiresAt': '2026-08-26T18:00:00',
+    });
+
+    expect(device.id, '201');
+    expect(device.current, isTrue);
+    expect(device.sessionExpiresAt, isNotNull);
   });
 }

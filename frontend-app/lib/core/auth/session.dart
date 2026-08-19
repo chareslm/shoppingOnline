@@ -11,14 +11,14 @@ class AuthenticatedUser {
   factory AuthenticatedUser.fromJson(Object? value) {
     final json = requireJsonMap(value);
     return AuthenticatedUser(
-      userId: (json['userId'] as num).toInt(),
+      userId: json['userId'].toString(),
       username: json['username'] as String,
       roles: readStringList(json['roles']),
       permissions: readStringList(json['permissions']),
     );
   }
 
-  final int userId;
+  final String userId;
   final String username;
   final List<String> roles;
   final List<String> permissions;
