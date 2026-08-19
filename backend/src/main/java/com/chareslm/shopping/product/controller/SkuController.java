@@ -26,8 +26,9 @@ public class SkuController {
     }
 
     @GetMapping("/{skuId}")
+    @PreAuthorize("hasAnyAuthority('product:create','product:update','product:stock:adjust')")
     public ApiResponse<SkuResponse> get(@PathVariable Long skuId) {
-        return ApiResponse.success(skuService.get(skuId));
+        return ApiResponse.success(skuService.get(CurrentUser.require().userId(), skuId));
     }
 
     @PutMapping("/{skuId}")

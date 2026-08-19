@@ -1,5 +1,5 @@
 import PlaceholderPage from '@/components/PlaceholderPage.vue'
-import { MERCHANT_PORTAL_ROLES } from '@/types/auth'
+import { MERCHANT_OPERATOR_ROLES } from '@/types/auth'
 import type { WebModuleContribution } from '../types'
 
 export const tradeModule: WebModuleContribution = {
@@ -20,12 +20,12 @@ export const tradeModule: WebModuleContribution = {
         title: '订单',
         description: '本店订单、发货、售后与退款处理将在此接入。',
       },
-      meta: { portalModes: ['merchant'], roles: MERCHANT_PORTAL_ROLES },
+      meta: { portalModes: ['merchant'], roles: MERCHANT_OPERATOR_ROLES },
     },
   ],
   menuItems: [
     { to: '/cart', label: '购物车', portalModes: ['user'], roles: ['USER'] },
     { to: '/orders', label: '我的订单', portalModes: ['user'], roles: ['USER'] },
-    { to: '/merchant/orders', label: '订单', portalModes: ['merchant'], roles: MERCHANT_PORTAL_ROLES, order: 50 },
+    { to: '/merchant/orders', label: '订单', portalModes: ['merchant'], roles: MERCHANT_OPERATOR_ROLES, order: 50 },
   ],
 }

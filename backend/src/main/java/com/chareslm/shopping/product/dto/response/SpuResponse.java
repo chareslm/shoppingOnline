@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public record SpuResponse(
         Long id,
         Long shopId,
+        String shopName,
         Long categoryId,
         String brand,
         String name,

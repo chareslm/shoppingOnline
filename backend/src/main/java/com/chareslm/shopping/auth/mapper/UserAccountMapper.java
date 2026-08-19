@@ -55,6 +55,9 @@ public interface UserAccountMapper extends BaseMapper<UserAccount> {
     @Update("UPDATE `user` SET password_hash = #{passwordHash}, must_change_password = 1 WHERE id = #{userId}")
     int updateTemporaryPassword(@Param("userId") Long userId, @Param("passwordHash") String passwordHash);
 
+    @Update("UPDATE `user` SET status = #{status} WHERE id = #{userId}")
+    int updateStatus(@Param("userId") Long userId, @Param("status") String status);
+
     @Update("""
             UPDATE `user`
             SET failed_login_count = failed_login_count + 1,

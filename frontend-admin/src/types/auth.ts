@@ -66,6 +66,6 @@ export interface CreatedAdminUser {
   maskedEmail?: string | null
   status: string
   mustChangePassword: boolean
-  mailDeliveryStatus: 'SENT' | 'MAIL_FAILED'
+  mailDeliveryStatus: 'SENT' | 'MAIL_FAILED' | 'SKIPPED'
   roles: Role[]
 }

@@ -52,7 +52,11 @@ public class SmtpAdminController {
                 : current.username();
         if (!hasText(to) || !to.contains("@")) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR.code(),
-                    "请填写收件人，或先保存完整的 163 邮箱账号作为发件人");
+                    "请填写收件人，或先保存发件人邮箱");
+        }
+        if (!mailService.isEnabled()) {
+            throw new BusinessException(ErrorCode.MAIL_SEND_FAILED.code(),
+                    "SMTP 已关闭。新建账号不会发信，初始密码为 123456QWERqwer!@");
         }
         try {
             mailService.sendTestMessage(to);

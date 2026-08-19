@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class SmtpSetting {
     @TableId
     private Integer id;
+    private Boolean enabled;
     private String host;
     private Integer port;
     private String username;

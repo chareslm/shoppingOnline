@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { canAccessWebMenu, portalHomePath } from '@/modules/types'
 import { webModuleMenuItems } from '@/modules/registry'
 import { useAuthStore } from '@/stores/auth'
+import { isCustomerServiceOnly } from '@/types/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -11,7 +12,8 @@ const menuOpen = ref(false)
 const displayName = computed(() => auth.session?.username || '用户')
 const initial = computed(() => displayName.value.slice(0, 1).toUpperCase())
 const isMerchantPortal = computed(() => auth.session?.portalMode === 'merchant')
-const homePath = computed(() => portalHomePath(auth.session?.portalMode))
+const homePath = computed(() => portalHomePath(auth.session?.portalMode, auth.session?.roles ?? []))
+const isCustomerService = computed(() => isCustomerServiceOnly(auth.session?.roles ?? []))
 const visibleMenuItems = computed(() =>
   webModuleMenuItems
     .filter((item) => canAccessWebMenu(item, auth.session?.portalMode, auth.session?.roles ?? []))
@@ -29,7 +31,7 @@ async function logout() {
     <header class="topbar">
       <router-link class="brand" :to="homePath" @click="menuOpen = false">
         <span class="brand-mark">S</span>
-        <span><strong>SHOP</strong><small>{{ isMerchantPortal ? '商家工作台' : '用户中心' }}</small></span>
+        <span><strong>SHOP</strong><small>{{ isCustomerService ? '客服工作台' : isMerchantPortal ? '商家工作台' : '用户中心' }}</small></span>
       </router-link>
       <nav :class="['main-nav', { open: menuOpen }]">
         <router-link v-for="item in visibleMenuItems" :key="item.to" :to="item.to" @click="menuOpen = false">
@@ -44,6 +46,6 @@ async function logout() {
       </div>
     </header>
     <main class="page-container"><router-view /></main>
-    <footer>{{ isMerchantPortal ? 'SHOP · 商家工作台' : 'SHOP · 统一账号与用户中心基础能力' }}</footer>
+    <footer>{{ isCustomerService ? 'SHOP · 客服工作台' : isMerchantPortal ? 'SHOP · 商家工作台' : 'SHOP · 统一账号与用户中心基础能力' }}</footer>
   </div>
 </template>

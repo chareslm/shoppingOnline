@@ -33,7 +33,7 @@ export const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
-  const homeName = portalHomeName(auth.session?.portalMode)
+  const homeName = portalHomeName(auth.session?.portalMode, auth.session?.roles ?? [])
 
   if (to.meta.public) return auth.isAuthenticated ? { name: homeName } : true
   if (!auth.isAuthenticated) return { name: 'login', query: { redirect: to.fullPath } }

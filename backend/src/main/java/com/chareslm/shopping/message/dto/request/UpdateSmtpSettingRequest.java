@@ -13,6 +13,7 @@ public record UpdateSmtpSettingRequest(
         @Size(max = 254) String fromAddress,
         Boolean smtpAuth,
         Boolean starttlsEnabled,
+        Boolean enabled,
         @NotBlank @Size(max = 64) String currentPassword
 ) {
 }

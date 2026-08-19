@@ -85,7 +85,30 @@
 - SMTP 失败不回滚审核与账号；申请记录为 `MAIL_FAILED`，平台官员可重试。
 - 临时密码、身份证件号码、SMTP 密码不得写入日志或审计详情。
 
-## 5. SMTP 环境变量
+## 5. 店铺客服账号
+
+商家主账号（权限 `merchant:staff:manage`）在用户 Web 提交客服申请，平台管理员审核通过后才开通登录，规则与商家入驻一致：商家不能自行启用账号。客服只有 `CUSTOMER_SERVICE` 角色，不含 `USER`，不能登录管理端（`deviceType=ADMIN_WEB` 返回 `40301`）。客服须在用户 Web 选择商家身份登录，且只能访问「用户沟通」。
+
+商家接口：
+
+- `GET /api/merchant/shop`（`product:create` / `product:update` / `product:stock:adjust` / `merchant:staff:manage`）：当前账号所属已开通店铺 `{ id, name, status }`。
+- `GET /api/merchant/staff`：本店客服列表，含 `shopId`、`shopName`。
+- `POST /api/merchant/staff`：提交客服申请。请求 `{ email, displayName, username? }`。账号先为禁用，记录状态 `PENDING_AUDIT`，此时不发开通邮件。
+- `POST /api/merchant/staff/{staffId}/credential-email/retry`：仅已通过且仍须改密时可重发临时密码。
+
+平台审核接口均要求 `merchant:staff:audit`：
+
+- `GET /api/admin/merchant/staff`：按 `status` 筛选（`PENDING_AUDIT` / `ACTIVE` / `REJECTED` / `REVOKED`）。每条含所属 `shopId`、`shopName`。
+- `POST /api/admin/merchant/staff/{staffId}/audit`：`{ result: APPROVE|REJECT, remark? }`。通过后激活账号、发放临时密码并发送开通邮件（SMTP 关闭则为固定初始密码且 `SKIPPED`）。
+- `POST /api/admin/merchant/staff/{staffId}/revoke`：撤销已通过客服，禁用登录。
+- `POST /api/admin/merchant/staff/{staffId}/restore`：对已驳回或已撤销客服重新授予。
+- `POST /api/admin/merchant/staff/{staffId}/credential-email/retry`：已通过且仍须改密时重发。
+
+客服状态：`PENDING_AUDIT` → `ACTIVE`（通过）或 `REJECTED`（驳回）；`ACTIVE` → `REVOKED`；`REJECTED` / `REVOKED` → `ACTIVE`（重新授予）。
+
+新建客服不得复用已有邮箱/用户名。
+
+## 6. SMTP 环境变量
 
 ```text
 MAIL_HOST

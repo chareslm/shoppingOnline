@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { ApiResponse } from '../../../types/auth'
 import { http, readApiError } from '../../../services/http'
-import type { MerchantApplication, MerchantApplicationPage } from '../types'
+import type { AdminShopStaff, MerchantApplication, MerchantApplicationPage } from '../types'
 
 function unwrap<T>(response: ApiResponse<T>) {
   if (response.code !== 0) throw new Error(response.message)
@@ -91,5 +91,24 @@ export const merchantAdminApi = {
     } catch (error) {
       throw new Error(await readBlobRequestError(error, '资质文件下载失败'))
     }
+  },
+  async staff(status?: string) {
+    return unwrap((await http.get<ApiResponse<AdminShopStaff[]>>('/api/admin/merchant/staff', { params: { status } })).data)
+  },
+  async auditStaff(staffId: string, result: 'APPROVE' | 'REJECT', remark?: string) {
+    return unwrap(
+      (await http.post<ApiResponse<AdminShopStaff>>(`/api/admin/merchant/staff/${staffId}/audit`, { result, remark })).data,
+    )
+  },
+  async revokeStaff(staffId: string, remark?: string) {
+    return unwrap((await http.post<ApiResponse<AdminShopStaff>>(`/api/admin/merchant/staff/${staffId}/revoke`, { remark })).data)
+  },
+  async restoreStaff(staffId: string, remark?: string) {
+    return unwrap((await http.post<ApiResponse<AdminShopStaff>>(`/api/admin/merchant/staff/${staffId}/restore`, { remark })).data)
+  },
+  async retryStaffEmail(staffId: string) {
+    return unwrap(
+      (await http.post<ApiResponse<AdminShopStaff>>(`/api/admin/merchant/staff/${staffId}/credential-email/retry`)).data,
+    )
   },
 }

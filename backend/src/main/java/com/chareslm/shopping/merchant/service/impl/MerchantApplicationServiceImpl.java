@@ -27,6 +27,7 @@ import com.chareslm.shopping.merchant.mapper.MerchantQualificationFileMapper;
 import com.chareslm.shopping.merchant.mapper.ShopMapper;
 import com.chareslm.shopping.merchant.service.MerchantApplicationService;
 import com.chareslm.shopping.merchant.service.QualificationFileStorage;
+import com.chareslm.shopping.merchant.util.TemporaryPasswords;
 import com.chareslm.shopping.message.service.MailService;
 import com.chareslm.shopping.user.entity.UserPreference;
 import com.chareslm.shopping.user.entity.UserProfile;
@@ -39,9 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -50,12 +49,6 @@ import java.util.Locale;
  */
 @Service
 public class MerchantApplicationServiceImpl implements MerchantApplicationService {
-    private static final SecureRandom RANDOM = new SecureRandom();
-    private static final char[] LOWER = "abcdefghijkmnopqrstuvwxyz".toCharArray();
-    private static final char[] UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ".toCharArray();
-    private static final char[] DIGITS = "23456789".toCharArray();
-    private static final char[] SPECIAL = "!@#$%^&*".toCharArray();
-
     private final MerchantApplicationMapper applicationMapper;
     private final MerchantQualificationFileMapper fileMapper;
     private final ShopMapper shopMapper;
@@ -246,7 +239,7 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
         }
         String temporaryPassword = null;
         if (!Boolean.TRUE.equals(application.getAccountReused())) {
-            temporaryPassword = generatePassword();
+            temporaryPassword = TemporaryPasswords.issue(mailService.isEnabled());
             userMapper.updateTemporaryPassword(application.getAccountUserId(), passwordEncoder.encode(temporaryPassword));
         }
         deliverEmail(id, new ProvisionedAccount(application.getAccountUserId(),
@@ -307,6 +300,10 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
 
     private void notifyMerchantAccessChange(Long applicationId, Shop shop, boolean restored) {
         MerchantApplication application = requireApplication(applicationId);
+        if (!mailService.isEnabled()) {
+            applicationMapper.updateEmailStatus(applicationId, "SKIPPED");
+            return;
+        }
         try {
             if (restored) {
                 mailService.sendMerchantRestoredNotice(application.getContactEmail(), shop.getName());
@@ -328,7 +325,7 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
         boolean reused = user != null;
         String temporaryPassword = null;
         if (user == null) {
-            temporaryPassword = generatePassword();
+            temporaryPassword = TemporaryPasswords.issue(mailService.isEnabled());
             user = new UserAccount();
             user.setEmail(application.getContactEmail());
             user.setPhone(application.getContactPhone());
@@ -378,6 +375,10 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
     }
 
     private void deliverEmail(Long applicationId, ProvisionedAccount provisioned) {
+        if (!mailService.isEnabled()) {
+            applicationMapper.updateEmailStatus(applicationId, "SKIPPED");
+            return;
+        }
         try {
             if (provisioned.reused()) {
                 mailService.sendMerchantEnabledNotice(provisioned.email(), provisioned.shopName());
@@ -412,24 +413,6 @@ public class MerchantApplicationServiceImpl implements MerchantApplicationServic
         MerchantApplication application = applicationMapper.selectById(id);
         if (application == null) throw new BusinessException(ErrorCode.NOT_FOUND);
         return application;
-    }
-
-    private static String generatePassword() {
-        List<Character> chars = new ArrayList<>();
-        chars.add(random(LOWER));
-        chars.add(random(UPPER));
-        chars.add(random(DIGITS));
-        chars.add(random(SPECIAL));
-        char[] all = (new String(LOWER) + new String(UPPER) + new String(DIGITS) + new String(SPECIAL)).toCharArray();
-        while (chars.size() < 20) chars.add(random(all));
-        Collections.shuffle(chars, RANDOM);
-        StringBuilder result = new StringBuilder(chars.size());
-        chars.forEach(result::append);
-        return result.toString();
-    }
-
-    private static char random(char[] source) {
-        return source[RANDOM.nextInt(source.length)];
     }
 
     private static String maskIdentity(String value) {

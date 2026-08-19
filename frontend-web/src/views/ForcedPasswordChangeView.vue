@@ -28,10 +28,10 @@ async function submit() {
   if (errorMessage.value) return
   saving.value = true
   try {
+    const portal = auth.session?.portalMode
     await authApi.changePassword(form.currentPassword, form.newPassword)
-    // 后端会撤销现有会话；清理本地认证态后强制使用正式密码重新登录。
     await auth.logout()
-    await router.replace({ name: 'login', query: { passwordChanged: '1' } })
+    await router.replace({ name: 'login', query: { passwordChanged: '1', ...(portal === 'merchant' ? { portal: 'merchant' } : {}) } })
   } catch (error) {
     errorMessage.value = readApiError(error, '密码修改失败，请检查临时密码')
   } finally {

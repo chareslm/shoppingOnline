@@ -29,8 +29,10 @@ public enum ErrorCode {
     REVIEW_NOT_ELIGIBLE(40023, "review not eligible"),
     SEARCH_SERVICE_UNAVAILABLE(50001, "search service unavailable"),
     MERCHANT_APPLICATION_CONFLICT(40902, "merchant application state conflict"),
+    SKU_CODE_DUPLICATE(40903, "sku code already exists"),
     MERCHANT_FILE_INVALID(40030, "invalid qualification file"),
-    MAIL_SEND_FAILED(40031, "mail send failed");
+    MAIL_SEND_FAILED(40031, "mail send failed"),
+    PRODUCT_IMAGE_INVALID(40032, "invalid product image");
 
     private final int code;
     private final String message;

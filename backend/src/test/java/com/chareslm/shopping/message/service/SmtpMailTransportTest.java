@@ -10,7 +10,7 @@ class SmtpMailTransportTest {
     @Test
     void port465UsesImplicitSslAndDisablesStartTls() {
         var smtp = new SmtpRuntimeSettings.ResolvedSmtp(
-                "smtp.163.com", 465, "name@163.com", "auth-code", "other@163.com", true, true, true);
+                "smtp.163.com", 465, "name@163.com", "auth-code", "other@163.com", true, true, true, true);
 
         var properties = SmtpMailTransport.mailProperties(smtp);
 
@@ -24,7 +24,7 @@ class SmtpMailTransportTest {
     @Test
     void port587KeepsStartTls() {
         var smtp = new SmtpRuntimeSettings.ResolvedSmtp(
-                "smtp.example.com", 587, "mailer@example.com", "secret", "mailer@example.com", true, true, true);
+                "smtp.example.com", 587, "mailer@example.com", "secret", "mailer@example.com", true, true, true, true);
 
         var properties = SmtpMailTransport.mailProperties(smtp);
 
@@ -43,12 +43,22 @@ class SmtpMailTransportTest {
     @Test
     void neteasePrefersPort994Over465() {
         var smtp = new SmtpRuntimeSettings.ResolvedSmtp(
-                "smtp.163.com", 465, "name@163.com", "auth-code", "name@163.com", true, false, true);
+                "smtp.163.com", 465, "name@163.com", "auth-code", "name@163.com", true, false, true, true);
 
         var profiles = SmtpMailTransport.deliveryProfiles(smtp);
 
         assertEquals(994, profiles.getFirst().port());
         assertEquals(465, profiles.get(1).port());
         assertEquals("smtps", SmtpMailTransport.mailProtocol(994));
+    }
+
+    @Test
+    void explainFailureDoesNotExposeProviderInternals() {
+        assertEquals("无法与邮件服务器建立安全连接，请检查端口和加密方式。",
+                SmtpMailTransport.explainFailure(new IllegalStateException("SSL peer shut down incorrectly on Docker 465")));
+        assertEquals("SMTP 认证失败，请核对账号和密码。",
+                SmtpMailTransport.explainFailure(new IllegalStateException("javax.mail.AuthenticationFailedException: 535 163.com")));
+        assertEquals("邮件发送失败，请检查 SMTP 配置。",
+                SmtpMailTransport.explainFailure(new IllegalStateException("unknown vendor stack at SmtpMailTransport.java:54")));
     }
 }

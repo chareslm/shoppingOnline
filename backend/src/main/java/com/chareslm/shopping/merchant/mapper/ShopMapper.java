@@ -13,6 +13,9 @@ public interface ShopMapper extends BaseMapper<Shop> {
     @Select("SELECT * FROM shop WHERE application_id = #{applicationId}")
     Shop selectByApplicationId(@Param("applicationId") Long applicationId);
 
+    @Select("SELECT * FROM shop WHERE owner_user_id = #{ownerUserId}")
+    Shop selectByOwnerUserId(@Param("ownerUserId") Long ownerUserId);
+
     @Update("UPDATE shop SET status = #{toStatus} WHERE id = #{id} AND status = #{fromStatus}")
     int updateStatus(@Param("id") Long id, @Param("fromStatus") String fromStatus, @Param("toStatus") String toStatus);
 }

@@ -77,6 +77,9 @@ function createdMessage(result: CreatedAdminUser) {
   if (result.mailDeliveryStatus === 'SENT') {
     return '账号已创建，临时密码已发送到邮箱；对方首次登录后必须改密'
   }
+  if (result.mailDeliveryStatus === 'SKIPPED') {
+    return '账号已创建（SMTP 已关闭）。初始密码为 123456QWERqwer!@，首次登录后必须改密'
+  }
   return '账号已创建，但开通邮件发送失败。可在列表中重发临时密码'
 }
 

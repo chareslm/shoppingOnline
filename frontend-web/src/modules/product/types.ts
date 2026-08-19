@@ -43,6 +43,7 @@ export interface Sku {
 export interface SpuDetail {
   id: string
   shopId: string
+  shopName: string | null
   categoryId: string
   brand: string | null
   name: string
@@ -63,6 +64,7 @@ export interface SpuDetail {
 export interface SpuItem {
   id: string
   shopId: string
+  shopName: string | null
   categoryId: string
   brand: string | null
   name: string
@@ -126,7 +128,6 @@ export interface ReviewStats {
 // ---------- 请求体 ----------
 
 export interface SpuCreateRequest {
-  shopId: string
   categoryId: string
   brand?: string
   name: string
@@ -160,9 +161,26 @@ export const SPU_STATUS_LABELS: Record<string, string> = {
   DRAFT: '草稿',
   PENDING_AUDIT: '待审核',
   AUDIT_APPROVED: '审核通过',
-  AUDIT_REJECTED: '审核驳回',
+  AUDIT_REJECTED: '已驳回/已收回',
   ON_SALE: '上架中',
   OFF_SALE: '已下架',
+}
+
+/** 将 SKU attributes JSON 展示为「颜色：黑 / 内存：256GB」 */
+export function formatSkuAttributes(raw: string | null | undefined, empty = '默认规格'): string {
+  if (!raw?.trim()) return empty
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const parts = Object.entries(parsed as Record<string, unknown>)
+        .filter(([, value]) => value != null && String(value).trim())
+        .map(([key, value]) => `${key}：${String(value)}`)
+      if (parts.length) return parts.join(' / ')
+    }
+  } catch {
+    /* 历史脏数据可能不是 JSON */
+  }
+  return raw
 }
 
 export const SORT_OPTIONS = [

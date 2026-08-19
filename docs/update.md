@@ -1,5 +1,86 @@
 # 本地开发进度
 
+## 2026-08-19 第一次修改：商家商品与客服审核、SMTP 脱敏与关停、Flyway 合并、店铺数据范围
+
+承接 8/19 00:36「取消登录多余的 163 和后端提示词、合并商家资质与账号审核、资质预览、已通过可撤销/重新授予」。该凌晨交互已按当时要求写入下方「2026-08-18 第二次修改」。本节整理其后至当日晚间未归档内容：商家上架与平台商品审核、公开图与类目、客服须平台审核、SMTP 关闭发信与对外文案脱敏、校验/SKU/店铺开通失败提示、V8–V14 按功能合并，以及审核列表展示店铺、商家只看本店商品。
+
+### P0 — Bug 修复
+
+- 修复创建商品 `request validation failed`：`SkuAttributes` 接受 JSON 对象或 `颜色:黑,内存:256GB` 文本，非法规格返回 `40001` 中文说明，不再 500。
+- 修复 SKU 编码全局唯一导致添加商品 500（`Duplicate entry ... uk_sku_code`）：V10 改为 `(spu_id, sku_code)` 唯一；前端组合规格时自动去重编码；`DuplicateKeyException` 映射 `40903`「SKU 编码与已有商品冲突」。
+- 修复创建客服被误报「请填写商品名称」：`GlobalExceptionHandler.describeField` 不再用 `endsWith("name")`，改为精确字段（`name` / `displayName` / `username` 等）。
+- 修复创建客服 500：客服状态机与开通邮件路径与商家入驻对齐；提交时账号保持禁用、不发信。
+- 修复上传商品图 `permission denied` / 无店铺时笼统 `FORBIDDEN`：`MerchantShopQueryService.requireOpenShop` 区分「尚未开通店铺」与「店铺当前不可经营」；图片目录无写权限单独提示。Flyway 回放后须重新入驻并重新登录。
+- 修复商品审核详情把主图和详情图混在一处：主图与图文详情分区展示。
+- 修复 SMTP 测试/发信失败把 163/126、Docker、握手、类名等后端细节返回前端：`SmtpMailTransport.explainFailure` 仅概括中文（认证失败、无法安全连接、无法连接、发件人不一致、通用失败）。管理端 SMTP 占位改为 `smtp.example.com:587`，去掉「填入 163 默认值」。
+- 修复 Flyway 本地 schema 已到 v14、仓库脚本却要按功能重划导致 validate 失败：将客服表/权限、SMTP `enabled`、邮件 `SKIPPED`、客服审核状态并入 V8/V9，商品图与 SKU 唯一约束保留为 V10；删除独立 V11–V14 及对应 docs。回放时丢弃商家/SMTP/`product_media`/`must_change_password` 后重迁，身份用户保留；存量 SPU 可能出现失效 `shop_id`。容器 `target/classes/db/migration` 残留 V11–V14 须删掉，校验才能看到 10 条迁移。
+
+### P1 — 内容新增
+
+#### 后端与数据库
+
+- 商家商品：`POST /api/merchant/spu` 店铺取自当前已开通店铺，不信任请求 `shopId`；`GET /api/merchant/spu/page`（`shelf=LISTED|UNLISTED`）、详情、改状态 `SUBMIT|PUBLISH|OFF_SHELF`、追加 SKU、调整库存。待审核不可自行上架；管理员 `APPROVE` 即 `ON_SALE`，`REVOKE` 收回并下架，可再 `APPROVE`。
+- `GET /api/merchant/shop`：当前账号已开通店铺 `{ id, name, status }`。店主查不到时，已通过 `shop_staff` 也可解析店铺。
+- `GET /api/merchant/sku/{skuId}` 改为本店校验，非本店 `40301`。
+- SPU 列表 `SpuResponse` 增加 `shopName`；管理端/商家列表一次批量查店铺名。
+- 商品公开图：`POST /api/merchant/product-media`（JPEG/PNG，≤5MB），`GET /api/product-media/{id}` 公开读；资质文件不得走此接口。
+- 管理端类目：`GET/POST/PUT/DELETE /api/admin/categories`（`category:manage`），`level` 按父类目计算。
+- 店铺客服：商家提交 `PENDING_AUDIT`（账号 DISABLED、不发信）；平台 `merchant:staff:audit` 通过后激活、发临时密码（SMTP 关闭则为固定初始密码且 `SKIPPED`）；可驳回、撤销、重新授予、重发邮件。客服仅 `CUSTOMER_SERVICE`，不能登录管理端，用户 Web 只能进「用户沟通」。
+- SMTP `enabled`：关闭后立即停发（含环境变量回退），新账号初始密码 `123456QWERqwer!@`，仍须首次改密。
+- Flyway 当前为 **v10**：V8 入驻+店铺+客服审核表与权限；V9 SMTP 含 `enabled` 与 `SKIPPED`；V10 `product_media` + `uk_spu_sku_code`。
+- 单测：`SpuServiceImplTest`、`SkuServiceImplTest`、`SkuAttributesTest`、`ShopStaffServiceImplTest`、`MerchantShopQueryServiceTest`、`SmtpMailTransportTest.explainFailureDoesNotExposeProviderInternals` 等。
+
+#### 前端
+
+**用户 Web 商家身份**
+
+- 添加商品：类目、自定义规格维度（颜色/内存等可增删改名）、组合 SKU、主图/详情图上传；展示当前店铺名。
+- 商品浏览：仅本店；已上架/未上架；提交审核、下架/再上架、改可售库存。
+- 客服账号：提交后等平台审核；列表带店铺名。
+
+**平台管理端**
+
+- 商品类目维护。
+- 商品审核 / 全部商品：待审通过即上架、驳回、收回、重新通过；列表与详情展示店铺名、主图、SKU、图文、审核意见。
+- 客服审核：待审核 / 已通过 / 已驳回 / 已撤销，列表展示所属店铺。
+
+**系统管理端**
+
+- SMTP 可关停发信；测试失败不泄露运营商/堆栈；占位主机 `smtp.example.com`。
+
+#### 文档
+
+- 更新 `docs/api/product.md`、`docs/api/merchant.md`、`docs/api/system.md`、`docs/database/merchant-module.md`、`docs/database/product-module.md`、`docs/frontend-integration-guide.md`、`AGENTS.md`。
+- 删除已合并的 `docs/database/V12`–`V14` 类说明（若曾独立成文）。
+
+### P2 — 内容修改
+
+- 商品状态：管理员通过即上架；`AUDIT_APPROVED` 仅作历史中间态。
+- SKU 唯一从全局编码改为同一 SPU 内唯一。
+- 客服由商家自开通改为与商家入驻相同的平台审核。
+- `requireOpenShop` 覆盖店主与已通过客服；商家商品/SKU/图片接口以服务端店铺为准。
+- SMTP 对外文案去厂商与实现细节；内部仍可按网易主机走 994/465 `smtps`（见 8/18 第二次）。
+
+### P3 — 内容删除
+
+- 删除管理端 SMTP「填入 163 默认值」及失败信息中的 163/126/Docker/握手原文。
+- 删除独立迁移 `database/V11__shop_staff.sql`～`V14__shop_staff_audit.sql`（能力并入 V8/V9）。
+- 未删除聊天「用户沟通」占位实现（成员 5）。
+
+### 可选配置及修改位置
+
+- 关闭发信：系统管理员 SMTP 页将开关拨到关闭并保存。
+- 商品图与资质共用上传根：本机 `MERCHANT_UPLOAD_DIR`，Compose `/data/uploads`，商品键前缀 `product/`。
+- 回放 V8–V10 后必须重新商家入驻；旧商品可能指向已删除 `shop_id`。
+- 重启后端须等到 `http://127.0.0.1:8080/actuator/health` 为 `UP`（`scripts/windows/wait-backend.ps1`）。
+
+### 验证结果
+
+- 相关单测在 `shopping-backend` 容器内通过（含 SPU/SKU 归属、店铺解析、客服创建审核、SMTP `explainFailure`）。
+- 后端重启后 health 为 `UP`（最近一次含店铺名与本店过滤）。
+- 本地 Flyway 按 10 条迁移校验；商家须重新开通店铺后再上传/建品。
+- 未改 `docs/progress.md`；本文件为明确要求的阶段整合。
+
 ## 2026-08-18 第二次修改：运行时 SMTP、手动建号、商家一次审核与撤销
 
 承接同日第一次商家入驻落地之后的交互：系统管理员可在管理端维护 SMTP 并手动建号；商家资质审核通过即开通账号，不再单独账号审核；已通过商家可撤销、已撤销商家可重新授予；并修正登录提示、后端启动等待和资质文件路径。

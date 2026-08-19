@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { portalHomePath } from '@/modules/types'
 import { readApiError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 import type { PortalMode } from '@/types/auth'
@@ -33,7 +34,7 @@ async function submit() {
       typeof route.query.redirect === 'string'
         ? route.query.redirect
         : portalMode.value === 'merchant'
-          ? '/merchant/add-product'
+          ? portalHomePath('merchant', auth.session?.roles ?? [])
           : '/'
     await router.replace(redirect)
   } catch (error) {
@@ -52,7 +53,7 @@ async function submit() {
       <div>
         <p class="eyebrow">ONE ACCOUNT, EVERYWHERE</p>
         <h1>{{ portalMode === 'merchant' ? '用同一个账号，' : '把每一次购物' }}<br />{{ portalMode === 'merchant' ? '经营你的店铺。' : '都留在同一个账号里。' }}</h1>
-        <p>{{ portalMode === 'merchant' ? '选择商家身份后进入店铺工作台。添加商品、客服与订单页面已预留，审核通过的商家账号可在此登录。' : '统一管理个人资料、收货地址和购物订单。商家请切换到商家身份登录工作台。' }}</p>
+        <p>{{ portalMode === 'merchant' ? '商家主账号管理店铺。客服账号也在此选择商家身份登录，登录后只能进入用户沟通。' : '统一管理个人资料、收货地址和购物订单。商家与客服请切换到商家身份。' }}</p>
       </div>
       <div class="trust-row"><span>安全会话</span><span>设备管理</span><span>Token 自动续期</span></div>
     </section>
@@ -80,7 +81,7 @@ async function submit() {
             @click="portalMode = 'merchant'"
           >
             <strong>商家身份</strong>
-            <small>店铺工作台</small>
+            <small>店铺或客服工作台</small>
           </button>
         </div>
         <label>账号<input v-model="identifier" autocomplete="username" required placeholder="用户名 / 邮箱 / 手机号" /></label>

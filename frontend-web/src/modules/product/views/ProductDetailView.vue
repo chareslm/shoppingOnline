@@ -2,9 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { readApiError } from '@/services/http'
+import { mediaUrl } from '@/utils/media'
 import { useAuthStore } from '@/stores/auth'
 import { reviewApi, spuApi } from '../services/product'
-import { SPU_STATUS_LABELS, type Review, type ReviewStats, type SpuDetail } from '../types'
+import { formatSkuAttributes, SPU_STATUS_LABELS, type Review, type ReviewStats, type SpuDetail } from '../types'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -27,6 +28,22 @@ const ratingPercent = (count: string) => {
   return (Number(count) / total) * 100
 }
 
+const galleryImages = computed(() => {
+  if (!detail.value) return []
+  const urls = [detail.value.mainImage, ...(detail.value.images ?? [])].filter(Boolean) as string[]
+  return [...new Set(urls)]
+})
+
+const selectedImage = ref('')
+const detailHtml = computed(() => {
+  const raw = detail.value?.detail
+  if (!raw) return ''
+  if (!raw.includes('<')) return ''
+  return raw
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/src="(\/api\/product-media\/[^"]+)"/g, (_match, path: string) => `src="${mediaUrl(path)}"`)
+})
+
 function showMessage(text: string, error = false) {
   message.value = text
   isError.value = error
@@ -40,6 +57,7 @@ async function load() {
       reviewApi.stats(spuId),
       reviewApi.listBySpu(spuId).then((page) => page.items),
     ])
+    selectedImage.value = galleryImages.value[0] ?? ''
   } catch (error) {
     showMessage(readApiError(error, '商品加载失败'), true)
   } finally {
@@ -92,9 +110,14 @@ function formatDate(value: string) {
     <template v-else-if="detail">
       <div class="section-card product-hero">
         <div class="gallery">
-          <div class="gallery-main">🛍️</div>
-          <div v-if="detail.images.length" class="gallery-list">
-            <span v-for="(_, index) in detail.images" :key="index">图{{ index + 1 }}</span>
+          <div class="gallery-main">
+            <img v-if="selectedImage || galleryImages[0]" :src="mediaUrl(selectedImage || galleryImages[0])" :alt="detail.name" />
+            <span v-else>🛍️</span>
+          </div>
+          <div v-if="galleryImages.length" class="gallery-list">
+            <button v-for="url in galleryImages" :key="url" type="button" class="gallery-thumb" @click="selectedImage = url">
+              <img :src="mediaUrl(url)" :alt="detail.name" />
+            </button>
           </div>
         </div>
         <div class="product-info">
@@ -115,7 +138,7 @@ function formatDate(value: string) {
             </div>
             <div v-for="sku in detail.skus" :key="sku.id" class="sku-row">
               <span>{{ sku.skuCode || `#${sku.id}` }}</span>
-              <span class="muted">{{ sku.attributes || '—' }}</span>
+              <span class="muted">{{ formatSkuAttributes(sku.attributes, '—') }}</span>
               <strong>{{ formatMoney(sku.price) }}</strong>
               <span>{{ sku.availableStock }}</span>
             </div>
@@ -146,7 +169,8 @@ function formatDate(value: string) {
         <div class="section-card">
           <p class="eyebrow">DETAIL</p>
           <h2 class="section-title">图文详情</h2>
-          <p class="muted">{{ detail.detail || '暂无详情' }}</p>
+          <div v-if="detailHtml" class="rich-detail" v-html="detailHtml" />
+          <p v-else class="muted">{{ detail.detail || '暂无详情' }}</p>
         </div>
       </div>
 
@@ -209,19 +233,36 @@ function formatDate(value: string) {
   font-size: 120px;
   border-radius: 18px;
   background: #eef2ef;
+  overflow: hidden;
 }
-
+.gallery-main img,
+.gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .gallery-list {
   display: flex;
   gap: 10px;
 }
-
-.gallery-list span {
-  padding: 8px 14px;
+.gallery-thumb {
+  width: 72px;
+  height: 72px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 10px;
-  font-size: 13px;
-  color: var(--muted);
+  overflow: hidden;
+  background: #eef2ef;
+}
+.rich-detail {
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.rich-detail img {
+  display: block;
+  max-width: 100%;
+  margin: 12px 0;
+  border-radius: 12px;
 }
 
 .info-head {

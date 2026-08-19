@@ -17,10 +17,11 @@ public interface SmtpRuntimeSettings {
             String fromAddress,
             boolean smtpAuth,
             boolean starttlsEnabled,
-            boolean fromDatabase
+            boolean fromDatabase,
+            boolean enabled
     ) {
         public boolean ready() {
-            return hasText(host) && hasText(fromAddress);
+            return enabled && hasText(host) && hasText(fromAddress);
         }
 
         private static boolean hasText(String value) {

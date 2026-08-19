@@ -103,29 +103,26 @@ public final class SmtpMailTransport {
     private static SmtpRuntimeSettings.ResolvedSmtp withPort(SmtpRuntimeSettings.ResolvedSmtp smtp, int port) {
         return new SmtpRuntimeSettings.ResolvedSmtp(
                 smtp.host(), port, smtp.username(), smtp.password(), smtp.fromAddress(),
-                smtp.smtpAuth(), false, smtp.fromDatabase());
+                smtp.smtpAuth(), false, smtp.fromDatabase(), smtp.enabled());
     }
 
     public static String explainFailure(Throwable exception) {
         String detail = rootMessage(exception);
         String lower = detail.toLowerCase(Locale.ROOT);
         if (lower.contains("authenticationfailed") || lower.contains("535") || lower.contains("auth")) {
-            return "SMTP 认证失败。163/126 必须使用客户端授权码（不是网页登录密码），账号须为完整邮箱，例如 name@163.com。";
+            return "SMTP 认证失败，请核对账号和密码。";
         }
         if (lower.contains("553") || lower.contains("sender") && lower.contains("not")) {
-            return "163 要求发件人必须与 SMTP 账号完全一致。请把发件人留空或填同一个 163 邮箱。";
+            return "发件人与 SMTP 账号不一致，请改为同一邮箱后再试。";
         }
         if (lower.contains("peer shut down") || lower.contains("received fatal alert")
                 || lower.contains("sslhandshake") || lower.contains("bad greeting") || lower.contains("[eof]")) {
-            return "163 在当前网络下请使用 smtp.163.com 端口 994（SSL）。465 可能握手失败，25 常被拦截。不要勾选 STARTTLS，密码须为授权码。";
+            return "无法与邮件服务器建立安全连接，请检查端口和加密方式。";
         }
         if (lower.contains("timed out") || lower.contains("connection") || lower.contains("connect")) {
-            return "无法连接 SMTP 服务器。163 常用 smtp.163.com:465（SSL）；25/587 在部分网络会被拦截。";
+            return "无法连接 SMTP 服务器，请检查主机和端口。";
         }
-        if (!detail.isBlank()) {
-            return "邮件发送失败：" + detail;
-        }
-        return "邮件发送失败，请检查 SMTP 主机、端口、授权码和发件人。";
+        return "邮件发送失败，请检查 SMTP 配置。";
     }
 
     public static String normalizeUsername(String host, String username) {

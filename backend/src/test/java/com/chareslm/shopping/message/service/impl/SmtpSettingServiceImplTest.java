@@ -88,7 +88,7 @@ class SmtpSettingServiceImplTest {
         when(smtpSettingMapper.selectById(1)).thenReturn(stored);
 
         service.update(1L, new UpdateSmtpSettingRequest("smtp.saved.local", 587, "mailer", "  ",
-                "Shop Notifications", true, true, "Password123!"));
+                "Shop Notifications", true, true, true, "Password123!"));
 
         assertEquals("keep-me", stored.getPassword());
         assertEquals("smtp.saved.local", stored.getHost());
@@ -108,7 +108,7 @@ class SmtpSettingServiceImplTest {
         when(smtpSettingMapper.selectById(1)).thenReturn(stored);
 
         service.update(1L, new UpdateSmtpSettingRequest("smtp.163.com", 465, "name@163.com", "auth-code",
-                null, true, true, "Password123!"));
+                null, true, true, true, "Password123!"));
 
         assertEquals(465, stored.getPort());
         assertEquals("name@163.com", stored.getFromAddress());
@@ -123,8 +123,26 @@ class SmtpSettingServiceImplTest {
         when(userAccountMapper.selectById(1L)).thenReturn(operator);
 
         assertThrows(BusinessException.class, () -> service.update(1L,
-                new UpdateSmtpSettingRequest("smtp.saved.local", 587, null, null, null, true, true, "wrong")));
+                new UpdateSmtpSettingRequest("smtp.saved.local", 587, null, null, null, true, true, true, "wrong")));
 
         verify(auditService).record(1L, "SYSTEM", "SMTP_SETTING_UPDATE", "SMTP_SETTING", "1", false);
+    }
+
+    @Test
+    void disabledSmtpDoesNotFallBackToEnvironment() {
+        SmtpSetting stored = new SmtpSetting();
+        stored.setId(1);
+        stored.setEnabled(false);
+        stored.setHost("smtp.admin.local");
+        stored.setPort(465);
+        stored.setFromAddress("ops@admin.local");
+        when(smtpSettingMapper.selectById(1)).thenReturn(stored);
+
+        SmtpSettingResponse response = service.current();
+
+        assertFalse(response.enabled());
+        assertFalse(response.usingEnvironmentFallback());
+        assertFalse(service.settings().ready());
+        assertFalse(service.settings().enabled());
     }
 }

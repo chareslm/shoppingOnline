@@ -8,13 +8,14 @@
 
 `GET /api/admin/system/smtp`
 
-要求 `system:smtp:view`。`passwordConfigured` 仅表示是否已保存密码；`usingEnvironmentFallback` 为 true 时，当前发信仍使用环境变量。
+要求 `system:smtp:view`。`enabled` 为 false 时平台关闭发信；`passwordConfigured` 仅表示是否已保存密码；`usingEnvironmentFallback` 为 true 时，当前发信仍使用环境变量。
 
 ```json
 {
   "code": 0,
   "message": "success",
   "data": {
+    "enabled": true,
     "host": "smtp.example.com",
     "port": 587,
     "username": "noreply@example.com",
@@ -35,6 +36,7 @@
 
 ```json
 {
+  "enabled": true,
   "host": "smtp.example.com",
   "port": 587,
   "username": "noreply@example.com",
@@ -46,17 +48,17 @@
 }
 ```
 
-成功响应与查询接口相同。保存后立即用于商家开通邮件和手动建号邮件，无需重启后端。端口为 465 或 994 时服务端使用隐式 SSL（TLS 1.2），并忽略 STARTTLS。网易 163/126 发件人若留空或不是邮箱，将使用 SMTP 账号。
+成功响应与查询接口相同。`enabled: false` 时立即停止发信（含环境变量回退），商家开通 / 管理员建号 / 客服账号不再发邮件，初始密码固定为 `123456QWERqwer!@`（首次登录仍须改密）。保存后立即生效，无需重启后端。
 
 ## 发送测试邮件
 
 `POST /api/admin/system/smtp/test`
 
-要求 `system:smtp:update`，并再次提交当前管理员密码。`to` 可选；省略时发到已保存的发件人或 SMTP 账号。投递失败返回 HTTP `400` / `40031`，`message` 为可阅读的原因（认证失败、端口/TLS、发件人不一致等）。
+要求 `system:smtp:update`，并再次提交当前管理员密码。`to` 可选；省略时发到已保存的发件人或 SMTP 账号。投递失败返回 HTTP `400` / `40031`，`message` 为概括原因（认证失败、无法连接等），不返回底层异常或运营商实现细节。
 
 ```json
 {
-  "to": "name@163.com",
+  "to": "ops@example.com",
   "currentPassword": "Password123!"
 }
 ```

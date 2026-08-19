@@ -22,9 +22,14 @@ public class SmtpMailService implements MailService {
     }
 
     @Override
+    public boolean isEnabled() {
+        return smtpRuntimeSettings.settings().enabled();
+    }
+
+    @Override
     public boolean isConfigured() {
         SmtpRuntimeSettings.ResolvedSmtp smtp = smtpRuntimeSettings.settings();
-        return smtp.ready() && hasText(SmtpMailTransport.envelopeFrom(smtp));
+        return smtp.enabled() && smtp.ready() && hasText(SmtpMailTransport.envelopeFrom(smtp));
     }
 
     @Override
@@ -58,12 +63,23 @@ public class SmtpMailService implements MailService {
     }
 
     @Override
+    public void sendCustomerServiceCredential(String email, String shopName, String loginHint, String temporaryPassword) {
+        send(email, "客服账号已开通",
+                "店铺“" + shopName + "”已为你开通客服账号。\n请在用户 Web 选择商家身份登录。\n登录标识：" + loginHint
+                        + "\n临时密码：" + temporaryPassword
+                        + "\n首次登录后必须立即修改密码。客服仅可使用用户沟通页面。");
+    }
+
+    @Override
     public void sendTestMessage(String email) {
         send(email, "SMTP 配置测试", "这是一封来自综合电商平台的测试邮件。如果能看到它，说明运行时 SMTP 已可用。");
     }
 
     private void send(String to, String subject, String text) {
         SmtpRuntimeSettings.ResolvedSmtp smtp = smtpRuntimeSettings.settings();
+        if (!smtp.enabled()) {
+            throw new IllegalStateException("SMTP 已关闭，不会发送邮件。新建账号初始密码为 123456QWERqwer!@");
+        }
         String from = SmtpMailTransport.envelopeFrom(smtp);
         if (!smtp.ready() || !hasText(from)) {
             throw new IllegalStateException("SMTP 未配置完整：需要主机，以及发件人或完整的 SMTP 账号邮箱");

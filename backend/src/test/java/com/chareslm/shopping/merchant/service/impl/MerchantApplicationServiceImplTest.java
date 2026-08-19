@@ -64,6 +64,7 @@ class MerchantApplicationServiceImplTest {
         profileMapper = mock(UserProfileMapper.class);
         preferenceMapper = mock(UserPreferenceMapper.class);
         mailService = mock(MailService.class);
+        when(mailService.isEnabled()).thenReturn(true);
         TransactionTemplate transactions = mock(TransactionTemplate.class);
         when(transactions.execute(any(TransactionCallback.class))).thenAnswer(invocation ->
                 invocation.<TransactionCallback<Object>>getArgument(0)

@@ -61,6 +61,7 @@ class AuthorizationManagementServiceImplTest {
         userPreferenceMapper = mock(UserPreferenceMapper.class);
         auditService = mock(AuditService.class);
         mailService = mock(MailService.class);
+        when(mailService.isEnabled()).thenReturn(true);
         passwordEncoder = new BCryptPasswordEncoder();
         TransactionTemplate transactions = mock(TransactionTemplate.class);
         when(transactions.execute(any(TransactionCallback.class))).thenAnswer(invocation ->

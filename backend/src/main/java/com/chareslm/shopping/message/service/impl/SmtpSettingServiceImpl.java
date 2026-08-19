@@ -61,10 +61,11 @@ public class SmtpSettingServiceImpl implements SmtpSettingService, SmtpRuntimeSe
     @Override
     public SmtpSettingResponse current() {
         ResolvedSmtp resolved = settings();
-        boolean usingFallback = !resolved.fromDatabase() && hasText(resolved.host());
+        boolean usingFallback = resolved.enabled() && !resolved.fromDatabase() && hasText(resolved.host());
         SmtpSetting stored = smtpSettingMapper.selectById(SETTING_ID);
         boolean editingStored = stored != null && hasText(stored.getHost());
         return new SmtpSettingResponse(
+                mailEnabled(stored),
                 blankToNull(editingStored ? stored.getHost() : resolved.host()),
                 editingStored && stored.getPort() != null ? stored.getPort() : resolved.port(),
                 blankToNull(editingStored ? stored.getUsername() : resolved.username()),
@@ -108,6 +109,7 @@ public class SmtpSettingServiceImpl implements SmtpSettingService, SmtpRuntimeSe
         stored.setStarttlsEnabled(SmtpMailTransport.implicitSsl(port)
                 ? Boolean.FALSE
                 : request.starttlsEnabled() == null || request.starttlsEnabled());
+        stored.setEnabled(request.enabled() == null || request.enabled());
         stored.setUpdatedBy(operatorUserId);
         smtpSettingMapper.updateById(stored);
         auditService.record(operatorUserId, "SYSTEM", "SMTP_SETTING_UPDATE", "SMTP_SETTING", "1", true);
@@ -128,6 +130,19 @@ public class SmtpSettingServiceImpl implements SmtpSettingService, SmtpRuntimeSe
     @Override
     public ResolvedSmtp settings() {
         SmtpSetting stored = smtpSettingMapper.selectById(SETTING_ID);
+        boolean mailEnabled = mailEnabled(stored);
+        if (!mailEnabled) {
+            return new ResolvedSmtp(
+                    stored != null ? nullToEmpty(stored.getHost()) : "",
+                    stored != null && stored.getPort() != null ? stored.getPort() : 587,
+                    stored != null ? nullToEmpty(stored.getUsername()) : "",
+                    stored != null ? nullToEmpty(stored.getPassword()) : "",
+                    stored != null ? firstNonBlank(stored.getFromAddress(), stored.getUsername()) : "",
+                    stored == null || stored.getSmtpAuth() == null || stored.getSmtpAuth(),
+                    stored == null || stored.getStarttlsEnabled() == null || stored.getStarttlsEnabled(),
+                    stored != null && hasText(stored.getHost()),
+                    false);
+        }
         if (stored != null && hasText(stored.getHost())) {
             return new ResolvedSmtp(
                     stored.getHost().trim(),
@@ -137,6 +152,7 @@ public class SmtpSettingServiceImpl implements SmtpSettingService, SmtpRuntimeSe
                     firstNonBlank(stored.getFromAddress(), stored.getUsername(), envFrom),
                     stored.getSmtpAuth() == null || stored.getSmtpAuth(),
                     stored.getStarttlsEnabled() == null || stored.getStarttlsEnabled(),
+                    true,
                     true);
         }
         return new ResolvedSmtp(
@@ -147,7 +163,12 @@ public class SmtpSettingServiceImpl implements SmtpSettingService, SmtpRuntimeSe
                 nullToEmpty(envFrom),
                 envAuth,
                 envStarttls,
-                false);
+                false,
+                true);
+    }
+
+    private static boolean mailEnabled(SmtpSetting stored) {
+        return stored == null || stored.getEnabled() == null || stored.getEnabled();
     }
 
     private SmtpSetting requireRow() {
@@ -158,6 +179,7 @@ public class SmtpSettingServiceImpl implements SmtpSettingService, SmtpRuntimeSe
             stored.setPort(587);
             stored.setSmtpAuth(true);
             stored.setStarttlsEnabled(true);
+            stored.setEnabled(true);
             smtpSettingMapper.insert(stored);
         }
         return stored;

@@ -24,7 +24,7 @@ export interface MerchantApplication {
   status: MerchantApplicationStatus
   shopStatus?: 'OPEN' | 'SUSPENDED' | 'FROZEN' | 'CLOSED' | null
   rejectionReason?: string | null
-  emailDeliveryStatus?: 'PENDING' | 'SENT' | 'MAIL_FAILED'
+  emailDeliveryStatus?: 'PENDING' | 'SENT' | 'MAIL_FAILED' | 'SKIPPED'
   accountUserId?: string | null
   accountReused?: boolean | null
   files?: QualificationFile[]
@@ -37,4 +37,19 @@ export interface MerchantApplicationPage {
   total: number
   page: number
   pageSize: number
+}
+
+export interface AdminShopStaff {
+  id: string
+  shopId: string
+  shopName: string | null
+  userId: string
+  displayName: string
+  maskedEmail: string | null
+  username: string | null
+  status: 'PENDING_AUDIT' | 'ACTIVE' | 'REJECTED' | 'REVOKED' | 'DISABLED'
+  auditRemark: string | null
+  emailDeliveryStatus: 'PENDING' | 'SENT' | 'MAIL_FAILED' | 'SKIPPED'
+  mustChangePassword: boolean
+  createdAt: string
 }

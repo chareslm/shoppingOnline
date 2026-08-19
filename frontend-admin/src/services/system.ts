@@ -2,6 +2,7 @@ import type { ApiResponse } from '../types/auth'
 import { http } from './http'
 
 export interface SmtpSetting {
+  enabled: boolean
   host?: string | null
   port: number
   username?: string | null
@@ -26,6 +27,7 @@ export const systemApi = {
   },
 
   async updateSmtp(payload: {
+    enabled: boolean
     host?: string
     port: number
     username?: string

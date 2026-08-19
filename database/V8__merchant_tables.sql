@@ -1,3 +1,5 @@
+-- 商家模块：入驻申请、店铺、资质文件、客服账号与审核权限（含 SMTP 关闭时的 SKIPPED）。
+
 ALTER TABLE `user`
     ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 AFTER password_hash;
 
@@ -35,7 +37,7 @@ CREATE TABLE merchant_application (
     CONSTRAINT fk_merchant_application_account_auditor FOREIGN KEY (account_audited_by) REFERENCES `user` (id),
     CONSTRAINT chk_merchant_application_type CHECK (merchant_type IN ('ENTERPRISE', 'SOLE_PROPRIETOR', 'INDIVIDUAL')),
     CONSTRAINT chk_merchant_application_status CHECK (status IN ('SUBMITTED', 'QUALIFICATION_APPROVED', 'ACCOUNT_APPROVED', 'REJECTED')),
-    CONSTRAINT chk_merchant_application_email_status CHECK (email_delivery_status IN ('PENDING', 'SENT', 'MAIL_FAILED'))
+    CONSTRAINT chk_merchant_application_email_status CHECK (email_delivery_status IN ('PENDING', 'SENT', 'MAIL_FAILED', 'SKIPPED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='商家入驻申请';
 
 CREATE TABLE shop (
@@ -68,12 +70,40 @@ CREATE TABLE merchant_qualification_file (
     CONSTRAINT fk_merchant_qualification_application FOREIGN KEY (application_id) REFERENCES merchant_application (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='商家资质私有文件';
 
+CREATE TABLE shop_staff (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    shop_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    display_name VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'PENDING_AUDIT',
+    audit_remark VARCHAR(512) NULL,
+    email_delivery_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_shop_staff_user (user_id),
+    KEY idx_shop_staff_shop (shop_id),
+    CONSTRAINT fk_shop_staff_shop FOREIGN KEY (shop_id) REFERENCES shop (id),
+    CONSTRAINT fk_shop_staff_user FOREIGN KEY (user_id) REFERENCES `user` (id),
+    CONSTRAINT chk_shop_staff_status CHECK (status IN ('PENDING_AUDIT', 'ACTIVE', 'REJECTED', 'REVOKED', 'DISABLED')),
+    CONSTRAINT chk_shop_staff_email_status CHECK (email_delivery_status IN ('PENDING', 'SENT', 'MAIL_FAILED', 'SKIPPED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='店铺客服账号';
+
 INSERT INTO permission (code, name, resource, action, description, status) VALUES
-    ('merchant:qualification:audit', '审核商家资质与账号', 'merchant:qualification', 'audit', '查看商家申请敏感详情、审核、下载资质及重试开通邮件', 'ACTIVE')
-ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), status = VALUES(status);
+    ('merchant:qualification:audit', '审核商家资质与账号', 'merchant:qualification', 'audit', '查看商家申请敏感详情、审核、下载资质及重试开通邮件', 'ACTIVE'),
+    ('merchant:staff:manage', '管理店铺客服账号', 'merchant:staff', 'manage', '商家主账号提交客服申请并重发已开通邮件', 'ACTIVE'),
+    ('merchant:staff:audit', '审核店铺客服账号', 'merchant:staff', 'audit', '平台审核、撤销和恢复店铺客服账号', 'ACTIVE')
+AS incoming
+ON DUPLICATE KEY UPDATE name = incoming.name, description = incoming.description, status = incoming.status;
 
 INSERT IGNORE INTO role_permission (role_id, permission_id)
 SELECT r.id, p.id
 FROM `role` r
-JOIN permission p ON p.code = 'merchant:qualification:audit'
+JOIN permission p ON p.code IN ('merchant:qualification:audit', 'merchant:staff:audit')
 WHERE r.code IN ('ADMIN', 'SUPER_ADMIN');
+
+INSERT IGNORE INTO role_permission (role_id, permission_id)
+SELECT r.id, p.id
+FROM `role` r
+JOIN permission p ON p.code = 'merchant:staff:manage'
+WHERE r.code = 'MERCHANT_OWNER';

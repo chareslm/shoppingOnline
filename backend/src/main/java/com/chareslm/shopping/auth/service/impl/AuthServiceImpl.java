@@ -12,6 +12,7 @@ import com.chareslm.shopping.auth.entity.RefreshToken;
 import com.chareslm.shopping.auth.entity.UserAccount;
 import com.chareslm.shopping.auth.entity.UserDevice;
 import com.chareslm.shopping.auth.entity.UserRole;
+import com.chareslm.shopping.auth.enums.DeviceType;
 import com.chareslm.shopping.auth.mapper.AuditLogMapper;
 import com.chareslm.shopping.auth.mapper.PermissionMapper;
 import com.chareslm.shopping.auth.mapper.RefreshTokenMapper;
@@ -153,9 +154,15 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
         }
 
+        Set<String> roles = Set.copyOf(roleMapper.selectCodesByUserId(user.getId()));
+        if (request.deviceType() == DeviceType.ADMIN_WEB
+                && roles.stream().noneMatch(code -> "ADMIN".equals(code) || "SUPER_ADMIN".equals(code))) {
+            writeAudit(user.getId(), "PASSWORD_LOGIN", false);
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+
         Long deviceId = upsertDevice(user.getId(), request, clientIp);
         userAccountMapper.markLoginSucceeded(user.getId());
-        Set<String> roles = Set.copyOf(roleMapper.selectCodesByUserId(user.getId()));
         Set<String> permissions = Set.copyOf(permissionMapper.selectCodesByUserId(user.getId()));
         LoginResponse response = issueTokens(user, deviceId, roles, permissions);
         writeAudit(user.getId(), "PASSWORD_LOGIN", true);

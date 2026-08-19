@@ -15,6 +15,7 @@ import com.chareslm.shopping.auth.service.AuthorizationManagementService;
 import com.chareslm.shopping.auth.service.AuditService;
 import com.chareslm.shopping.common.api.ErrorCode;
 import com.chareslm.shopping.common.exception.BusinessException;
+import com.chareslm.shopping.merchant.util.TemporaryPasswords;
 import com.chareslm.shopping.message.service.MailService;
 import com.chareslm.shopping.user.entity.UserPreference;
 import com.chareslm.shopping.user.entity.UserProfile;
@@ -26,9 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -36,11 +34,6 @@ import java.util.Set;
 @Service
 public class AuthorizationManagementServiceImpl implements AuthorizationManagementService {
     private static final Set<String> PLATFORM_ROLE_CODES = Set.of("USER", "ADMIN", "SUPER_ADMIN");
-    private static final SecureRandom RANDOM = new SecureRandom();
-    private static final char[] LOWER = "abcdefghijkmnopqrstuvwxyz".toCharArray();
-    private static final char[] UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ".toCharArray();
-    private static final char[] DIGITS = "23456789".toCharArray();
-    private static final char[] SPECIAL = "!@#$%^&*".toCharArray();
 
     private final UserAccountMapper userAccountMapper;
     private final RoleMapper roleMapper;
@@ -112,7 +105,7 @@ public class AuthorizationManagementServiceImpl implements AuthorizationManageme
         }
         List<Role> roles = requirePlatformRoles(request.roleIds());
 
-        String temporaryPassword = generatePassword();
+        String temporaryPassword = TemporaryPasswords.issue(mailService.isEnabled());
         UserAccount created = transactionTemplate.execute(status -> persistCreatedUser(
                 operatorUserId, username, email, phone, temporaryPassword, roles));
         if (created == null) {
@@ -139,7 +132,7 @@ public class AuthorizationManagementServiceImpl implements AuthorizationManageme
         if (!Boolean.TRUE.equals(target.getMustChangePassword())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR);
         }
-        String temporaryPassword = generatePassword();
+        String temporaryPassword = TemporaryPasswords.issue(mailService.isEnabled());
         userAccountMapper.updateTemporaryPassword(target.getId(), passwordEncoder.encode(temporaryPassword));
         refreshTokenMapper.revokeActiveByUserId(target.getId(), "TEMPORARY_PASSWORD_ROTATED");
         String mailStatus = deliverCredential(target.getEmail(), loginHint(target), temporaryPassword);
@@ -218,6 +211,9 @@ public class AuthorizationManagementServiceImpl implements AuthorizationManageme
     }
 
     private String deliverCredential(String email, String loginHint, String temporaryPassword) {
+        if (!mailService.isEnabled()) {
+            return "SKIPPED";
+        }
         try {
             mailService.sendAccountCredential(email, loginHint, temporaryPassword);
             return "SENT";
@@ -240,26 +236,6 @@ public class AuthorizationManagementServiceImpl implements AuthorizationManageme
             return user.getUsername();
         }
         return user.getEmail();
-    }
-
-    private static String generatePassword() {
-        List<Character> chars = new ArrayList<>();
-        chars.add(random(LOWER));
-        chars.add(random(UPPER));
-        chars.add(random(DIGITS));
-        chars.add(random(SPECIAL));
-        char[] all = (new String(LOWER) + new String(UPPER) + new String(DIGITS) + new String(SPECIAL)).toCharArray();
-        while (chars.size() < 20) {
-            chars.add(random(all));
-        }
-        Collections.shuffle(chars, RANDOM);
-        StringBuilder result = new StringBuilder(chars.size());
-        chars.forEach(result::append);
-        return result.toString();
-    }
-
-    private static char random(char[] source) {
-        return source[RANDOM.nextInt(source.length)];
     }
 
     private static String maskEmail(String email) {

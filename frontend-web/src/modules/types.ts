@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import type { PortalMode } from '@/types/auth'
+import { isCustomerServiceOnly } from '@/types/auth'
 
 export interface WebMenuItem {
   to: string
@@ -22,10 +23,16 @@ export function canAccessWebMenu(item: WebMenuItem, portalMode?: PortalMode, rol
   return matchesMode && matchesRole
 }
 
-export function portalHomePath(portalMode?: PortalMode) {
-  return portalMode === 'merchant' ? '/merchant/add-product' : '/'
+export function portalHomePath(portalMode?: PortalMode, roles: string[] = []) {
+  if (portalMode === 'merchant') {
+    return isCustomerServiceOnly(roles) ? '/merchant/inbox' : '/merchant/add-product'
+  }
+  return '/'
 }
 
-export function portalHomeName(portalMode?: PortalMode) {
-  return portalMode === 'merchant' ? 'merchant-add-product' : 'overview'
+export function portalHomeName(portalMode?: PortalMode, roles: string[] = []) {
+  if (portalMode === 'merchant') {
+    return isCustomerServiceOnly(roles) ? 'merchant-inbox' : 'merchant-add-product'
+  }
+  return 'overview'
 }

@@ -47,7 +47,7 @@
 }
 ```
 
-成功响应中的 `accessToken` 应通过 `Authorization: Bearer <accessToken>` 发送；有效期当前为 30 分钟。`refreshToken` 有效期为 7 天，只能提交给刷新接口，不能用于访问业务接口。
+成功响应中的 `accessToken` 应通过 `Authorization: Bearer <accessToken>` 发送；有效期当前为 30 分钟。`refreshToken` 有效期为 7 天，只能提交给刷新接口，不能用于访问业务接口。`ADMIN_WEB` 仅允许 `ADMIN` / `SUPER_ADMIN`；商家与客服使用用户 Web 的 `WEB` 登录。
 
 ```json
 {
@@ -199,6 +199,6 @@
 }
 ```
 
-成功响应包含 `mailDeliveryStatus`：`SENT` 或 `MAIL_FAILED`。邮件失败不回滚建号。首次登录后必须修改密码；在改密完成前，服务端只允许访问本人信息、改密和退出。
+成功响应包含 `mailDeliveryStatus`：`SENT`、`MAIL_FAILED` 或 `SKIPPED`（SMTP 已关闭）。邮件失败或关闭发信均不回滚建号。首次登录后必须修改密码；在改密完成前，服务端只允许访问本人信息、改密和退出。SMTP 关闭时初始密码为 `123456QWERqwer!@`。
 
 `POST /api/admin/authorization/users/{userId}/credential-email` 仅允许对仍标记 `mustChangePassword` 且已有邮箱的账号重发。重发会轮换临时密码并撤销该账号 Refresh Token。

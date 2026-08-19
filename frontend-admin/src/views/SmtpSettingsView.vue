@@ -8,6 +8,7 @@ const loading = ref(false)
 const saving = ref(false)
 const testing = ref(false)
 const form = reactive({
+  enabled: true,
   host: '',
   port: 465,
   username: '',
@@ -24,6 +25,7 @@ const meta = reactive({
 })
 
 function applySetting(setting: SmtpSetting) {
+  form.enabled = setting.enabled !== false
   form.host = setting.host ?? ''
   form.port = setting.port || 465
   form.username = setting.username ?? ''
@@ -36,17 +38,11 @@ function applySetting(setting: SmtpSetting) {
   meta.usingEnvironmentFallback = setting.usingEnvironmentFallback
 }
 
-function apply163Defaults() {
-  form.host = 'smtp.163.com'
-  form.port = 994
+function applyExampleHost() {
+  form.host = 'smtp.example.com'
+  form.port = 587
   form.smtpAuth = true
-  form.starttlsEnabled = false
-  if (form.username && !form.username.includes('@')) {
-    form.username = `${form.username}@163.com`
-  }
-  if (!form.fromAddress.trim() && form.username.includes('@')) {
-    form.fromAddress = form.username.trim()
-  }
+  form.starttlsEnabled = true
 }
 
 watch(
@@ -80,6 +76,7 @@ async function save() {
   saving.value = true
   try {
     const saved = await systemApi.updateSmtp({
+      enabled: form.enabled,
       host: form.host.trim() || undefined,
       port: form.port || 465,
       username: form.username.trim() || undefined,
@@ -90,7 +87,7 @@ async function save() {
       currentPassword: form.currentPassword,
     })
     applySetting(saved)
-        ElMessage.success('SMTP 配置已保存。163 请用授权码、端口 994，然后发送测试邮件确认')
+        ElMessage.success(form.enabled ? 'SMTP 配置已保存' : '已关闭 SMTP。新建账号不会发信，初始密码为 123456QWERqwer!@')
   } catch (error) {
     const message = readApiError(error, 'SMTP 配置保存失败')
     ElMessage.error(message === 'invalid credentials' ? '当前管理员密码错误' : message)
@@ -130,11 +127,20 @@ onMounted(load)
       <div>
         <p class="eyebrow">SYSTEM MAIL</p>
         <h1>SMTP 配置</h1>
-        <p>保存后立即用于商家开通和管理员手动建号邮件。密码不会回显；留空表示保持现有密码。</p>
+        <p>保存后立即用于商家开通和管理员手动建号邮件。可关闭发信：关闭后不发送邮件，新账号初始密码固定为 123456QWERqwer!@。</p>
       </div>
     </div>
 
     <el-card v-loading="loading" shadow="never">
+      <el-alert
+        v-if="!form.enabled"
+        class="smtp-alert"
+        title="SMTP 已关闭"
+        description="平台不会发送任何邮件。商家开通、管理员建号、客服账号的初始密码均为 123456QWERqwer!@，首次登录仍须改密。"
+        type="error"
+        :closable="false"
+        show-icon
+      />
       <el-alert
         v-if="meta.usingEnvironmentFallback"
         class="smtp-alert"
@@ -146,42 +152,45 @@ onMounted(load)
       />
       <el-alert
         class="smtp-alert"
-        title="网易 163/126 发信说明"
-        description="请使用客户端授权码，不是网页登录密码。主机填 smtp.163.com，端口填 994（SSL）。本机 Docker 下 465 常握手失败，25 常被拦截。发件人必须与 163 账号完全一致，不要勾选 STARTTLS。"
-        type="warning"
+        title="发信说明"
+        description="请使用邮箱服务商提供的 SMTP 授权码，不要使用网页登录密码。发件人建议与 SMTP 账号一致。"
+        type="info"
         :closable="false"
         show-icon
       />
       <el-form label-position="top" class="smtp-form" @submit.prevent="save">
+        <el-form-item label="发信开关">
+          <el-switch v-model="form.enabled" active-text="启用 SMTP" inactive-text="关闭 SMTP" />
+        </el-form-item>
         <el-form-item label="SMTP 主机">
-          <el-input v-model="form.host" placeholder="smtp.163.com" />
+          <el-input v-model="form.host" placeholder="smtp.example.com" />
         </el-form-item>
         <el-form-item label="端口">
           <el-input-number v-model="form.port" :min="1" :max="65535" />
         </el-form-item>
         <el-form-item label="SMTP 账号">
-          <el-input v-model="form.username" autocomplete="off" placeholder="name@163.com" />
+          <el-input v-model="form.username" autocomplete="off" placeholder="mailer@example.com" />
         </el-form-item>
         <el-form-item :label="meta.passwordConfigured ? 'SMTP 密码（已配置，留空则保持）' : 'SMTP 密码 / 授权码'">
-          <el-input v-model="form.password" type="password" show-password autocomplete="new-password" placeholder="163 请填授权码" />
+          <el-input v-model="form.password" type="password" show-password autocomplete="new-password" placeholder="SMTP 授权码" />
         </el-form-item>
         <el-form-item label="发件人">
-          <el-input v-model="form.fromAddress" placeholder="必须与 163 账号相同，可留空自动使用账号" />
+          <el-input v-model="form.fromAddress" placeholder="可留空，默认使用 SMTP 账号" />
         </el-form-item>
         <el-form-item label="连接选项">
           <el-checkbox v-model="form.smtpAuth">SMTP AUTH</el-checkbox>
-          <el-checkbox v-model="form.starttlsEnabled" :disabled="form.port === 465 || form.port === 994">STARTTLS（465/994 使用 SSL，不要勾选）</el-checkbox>
+          <el-checkbox v-model="form.starttlsEnabled" :disabled="form.port === 465 || form.port === 994">STARTTLS</el-checkbox>
         </el-form-item>
         <el-form-item label="测试收件人（可选）">
-          <el-input v-model="form.testTo" placeholder="默认发到上面的 163 账号" />
+          <el-input v-model="form.testTo" placeholder="默认发到已保存的发件人" />
         </el-form-item>
         <el-form-item label="当前管理员密码">
           <el-input v-model="form.currentPassword" type="password" show-password autocomplete="current-password" placeholder="用于二次确认" />
         </el-form-item>
         <el-form-item>
-          <el-button @click="apply163Defaults">填入 163 默认值</el-button>
+          <el-button @click="applyExampleHost">填入示例主机</el-button>
           <el-button type="primary" :loading="saving" native-type="submit">保存配置</el-button>
-          <el-button type="success" :loading="testing" @click="testMail">发送测试邮件</el-button>
+          <el-button type="success" :loading="testing" :disabled="!form.enabled" @click="testMail">发送测试邮件</el-button>
         </el-form-item>
       </el-form>
     </el-card>

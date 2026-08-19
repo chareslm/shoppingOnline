@@ -9,6 +9,14 @@ public interface MailService {
     /**
      * @return true when a host and from-address are available from saved SMTP settings or environment fallback
      */
+    /**
+     * @return true when a super administrator has left SMTP enabled
+     */
+    boolean isEnabled();
+
+    /**
+     * @return true when SMTP is enabled and a host and from-address are available
+     */
     boolean isConfigured();
 
     /**
@@ -45,6 +53,11 @@ public interface MailService {
      * @throws RuntimeException SMTP 配置无效或邮件服务器未接受投递时抛出
      */
     void sendAccountCredential(String email, String loginHint, String temporaryPassword);
+
+    /**
+     * 向商家创建的客服账号发送登录标识和一次性临时密码。
+     */
+    void sendCustomerServiceCredential(String email, String shopName, String loginHint, String temporaryPassword);
 
     /**
      * 向指定地址发送一封测试邮件，用于管理端校验运行时 SMTP。

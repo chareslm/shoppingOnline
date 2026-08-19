@@ -135,6 +135,22 @@ class AuthServiceImplTest {
     }
 
     @Test
+    void adminWebLoginIsRejectedForCustomerService() {
+        UserAccount user = new UserAccount();
+        user.setId(101L);
+        user.setUsername("cs_one");
+        user.setPasswordHash(passwordEncoder.encode("Password123!"));
+        user.setStatus("ACTIVE");
+        when(userAccountMapper.selectByLoginIdentifier("cs_one")).thenReturn(user);
+        when(roleMapper.selectCodesByUserId(101L)).thenReturn(List.of("CUSTOMER_SERVICE"));
+
+        assertThrows(BusinessException.class, () -> authService.loginWithPassword(
+                new PasswordLoginRequest("cs_one", "Password123!", "admin-1", DeviceType.ADMIN_WEB, null, null),
+                "127.0.0.1"));
+        verify(userAccountMapper, never()).markLoginSucceeded(101L);
+    }
+
+    @Test
     void refreshRotatesRefreshTokenAndSignsNewAccessToken() {
         UserAccount user = new UserAccount();
         user.setId(101L);
