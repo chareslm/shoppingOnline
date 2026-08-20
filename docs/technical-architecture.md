@@ -114,7 +114,7 @@ SUPER_ADMIN
 
 基础表：`user`、`role`、`permission`、`user_role`、`role_permission`。权限仍按 `resource:action` 设计，例如 `product:audit`、`merchant:audit`、`user:disable`、`statistics:view`。
 
-当前已实现的认证基线：注册、密码登录、本人改密、30 分钟 Access Token、7 天且轮换使用的 Refresh Token、设备登出、本人设备列表、指定设备撤销、其他设备批量撤销与当前用户查询。新签发的 Access Token 携带服务端内部设备标识，用于判断当前设备；撤销设备同步吊销对应 Refresh Token 并记录审计。后台角色、权限、用户查询及平台角色分配接口已落地；角色分配要求权限校验和密码二次确认，并写入审计日志。接口契约见 `docs/api/auth.md`，本地首次超级管理员初始化见 `docs/auth-bootstrap.md`。
+当前已实现的认证基线：注册、密码登录、本人改密、30 分钟 Access Token、7 天且轮换使用的 Refresh Token、设备登出、本人设备列表、指定设备撤销、其他设备批量撤销与当前用户查询。新签发的 Access Token 携带服务端内部设备标识，用于判断当前设备；撤销设备同步吊销对应 Refresh Token 并记录审计。后台角色、权限、用户查询及平台角色分配接口已落地；角色分配要求权限校验和密码二次确认，并写入审计日志。管理端审计查询使用独立 `system:audit:view` 权限，当前仅 `SUPER_ADMIN` 拥有平台全量数据范围；支持按操作者、模块、动作、结果和时间分页筛选，响应对 IP、客户端指纹及 JSON 详情中的凭据和个人信息递归脱敏。接口契约见 `docs/api/auth.md`、`docs/api/audit.md`，本地首次超级管理员初始化见 `docs/auth-bootstrap.md`。
 
 角色变更会撤销目标账号的 Refresh Token；已签发的 Access Token 最多仍可使用至其 30 分钟有效期结束。若后续需要立即失效，再引入认证版本号或 Token 黑名单。
 

@@ -1,4 +1,4 @@
-import type { AdminUser, ApiResponse, AuthenticatedUser, LoginRequest, LoginResponse, PageResponse, Permission, Role } from '../types/auth'
+import type { AdminUser, ApiResponse, AuditLog, AuthenticatedUser, LoginRequest, LoginResponse, PageResponse, Permission, Role } from '../types/auth'
 import { http } from './http'
 
 function unwrap<T>(response: ApiResponse<T>) {
@@ -49,6 +49,20 @@ export const authApi = {
       roleIds,
       currentPassword,
     })
+    return unwrap(data)
+  },
+
+  async auditLogs(params: {
+    actorKeyword?: string
+    module?: string
+    actionCode?: string
+    success?: boolean
+    startAt?: string
+    endAt?: string
+    page: number
+    pageSize: number
+  }) {
+    const { data } = await http.get<ApiResponse<PageResponse<AuditLog>>>('/api/admin/audit-logs', { params })
     return unwrap(data)
   },
 }

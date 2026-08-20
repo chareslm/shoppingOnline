@@ -275,6 +275,7 @@ public class AuthServiceImpl implements AuthService {
         log.setTargetType("USER");
         log.setTargetId(actorUserId == null ? null : actorUserId.toString());
         log.setSuccess(success);
+        AuditRequestMetadata.populate(log);
         auditLogMapper.insert(log);
     }
 

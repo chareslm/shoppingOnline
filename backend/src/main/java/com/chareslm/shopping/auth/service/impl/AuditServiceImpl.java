@@ -26,6 +26,7 @@ public class AuditServiceImpl implements AuditService {
         log.setTargetType(targetType);
         log.setTargetId(targetId);
         log.setSuccess(success);
+        AuditRequestMetadata.populate(log);
         auditLogMapper.insert(log);
     }
 }

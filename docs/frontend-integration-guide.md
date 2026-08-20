@@ -66,6 +66,7 @@ export const productModule: AdminModuleContribution = {
 
 管理端当前约定：
 
+- 项目管理员的 `system` 模块已提供权限概览、用户与角色、审计日志页面；审计菜单和路由必须同时要求 `system:audit:view`。
 - 业务路由使用模块前缀，例如 `merchant/shops`、`product/list`、`trade/orders`。
 - 路由名称使用模块前缀，例如 `merchant-shop-list`。
 - `meta.permissions` 和菜单 `permissions` 当前采用“任意一个匹配即可”的语义。

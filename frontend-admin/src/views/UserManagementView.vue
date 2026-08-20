@@ -31,7 +31,7 @@ async function loadUsers() {
       pageSize: query.pageSize,
     })
     users.value = result.items
-    total.value = result.total
+    total.value = Number(result.total)
   } catch (error) {
     ElMessage.error(readApiError(error, '用户列表加载失败'))
   } finally {
