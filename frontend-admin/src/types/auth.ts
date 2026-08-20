@@ -6,7 +6,7 @@ export interface ApiResponse<T> {
 
 export interface PageResponse<T> {
   items: T[]
-  total: number
+  total: string
   page: number
   pageSize: number
 }
@@ -54,4 +54,22 @@ export interface AdminUser {
   roles: Role[]
   createdAt: string
   lastLoginAt?: string | null
+}
+
+export interface AuditLog {
+  id: string
+  actorUserId?: string | null
+  actorUsername?: string | null
+  module: string
+  actionCode: string
+  targetType?: string | null
+  targetId?: string | null
+  success: boolean
+  traceId?: string | null
+  requestMethod?: string | null
+  requestPath?: string | null
+  maskedClientIp?: string | null
+  client?: string | null
+  detail?: unknown
+  createdAt: string
 }

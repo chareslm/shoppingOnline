@@ -1,6 +1,6 @@
 # 项目上下文记录
 
-> 最后更新：2026-08-19
+> 最后更新：2026-08-20
 
 ## 项目定位
 
@@ -9,9 +9,9 @@
 ## 当前仓库状态
 
 - GitHub 仓库：`https://github.com/chareslm/shoppingOnline.git`。
-- 当前集成分支：`develop`；认证权限、强密码与本人改密、管理端认证及用户角色管理、Redis/Elasticsearch 本地 Compose、用户资料/地址/偏好接口、商品/搜索/评价、交易后端及用户 Web 商品/交易页面均已集成。设备与会话管理正在 `feature/device-session-management` 开发，包含后端本人设备接口及用户 Web、Flutter、小程序页面；最新集成提交以远程 `origin/develop` 为准，`main` 尚未包含这些功能。
+- 当前集成分支：`develop`；认证权限、强密码与本人改密、管理端认证及用户角色管理、Redis/Elasticsearch 本地 Compose、用户资料/地址/偏好接口、商品/搜索/评价、交易后端及用户 Web 商品/交易页面均已集成。设备与会话管理已集成至 `develop`；审计日志查询、独立权限、脱敏和管理端页面正在 `feature/audit-log-management` 开发。最新集成提交以远程 `origin/develop` 为准，`main` 尚未包含这些功能。
 - 代表性功能提交：`5e13a13`（管理端认证基础）、`3ffad2d`（Redis/Elasticsearch 本地 Compose）、`eb6f4ba`（用户资料、地址与偏好接口）、`29ea2f9`（管理端用户与角色管理）、`09cc2da`（账号密码安全）、`ba2745e`（前端团队模块接入基础）、`30ffc16`（共享 `AGENTS.md`）；完整集成历史以 `git log origin/develop` 为准。
-- `frontend-admin` 已完成认证、用户角色和模块化菜单/路由注册；`frontend-web` 已完成账号中心及模块化导航/路由注册，四位成员均有独立业务目录；`frontend-app` 已完成 Android 工程、统一认证、本人改密、USER 角色限制、用户中心和五模块注册基础；`frontend-miniapp` 已在功能分支初始化原生 TypeScript 工程、统一认证、用户中心和五模块注册基础。
+- `frontend-admin` 已完成认证、用户角色、审计日志页面和模块化菜单/路由注册；`frontend-web` 已完成账号中心及模块化导航/路由注册，四位成员均有独立业务目录；`frontend-app` 已完成 Android 工程、统一认证、本人改密、USER 角色限制、用户中心和五模块注册基础；`frontend-miniapp` 已完成原生 TypeScript 工程、统一认证、用户中心和五模块注册基础。
 - 仓库根目录：`backend/`、`frontend-web/`、`frontend-app/`、`frontend-miniapp/`、`frontend-admin/`、`database/`、`deploy/`、`docs/`。
 
 ## 业务分工
@@ -44,4 +44,4 @@ feature/* 或 fix/* → 项目管理员集成至 develop → Pull Request + 非�
 
 ## 下一阶段建议
 
-Flutter App 已使用 Android 16 / API 36 模拟器完成真实认证与用户中心联调。微信原生 TypeScript 小程序已完成统一请求、Token 自动刷新、USER 角色限制、账号和用户中心页面，并完成真实注册、登录、Token 轮换、资料、地址、偏好、改密和退出接口联调。当前优先完成设备列表、指定设备退出、其他设备退出和跨端 Token 失效联调；随后建设审计日志查询接口与统一管理端页面。用户 Web 已接入商品和交易页面，App 与小程序的商品、交易和消息页面继续等待各模块稳定契约。店铺关注关系因商家／店铺模块尚未落地，仅保留数据库预留与跨模块边界说明，不创建接口。其他模块始终从认证上下文获取用户、商家或管理员数据范围。
+Flutter App 已使用 Android 16 / API 36 模拟器完成真实认证、用户中心和设备管理联调。微信原生 TypeScript 小程序已完成统一请求、Token 自动刷新、USER 角色限制、账号、用户中心和设备管理接口联调。设备与会话管理已经完成并集成；当前优先完成审计日志查询功能的回归与集成，随后进行项目管理员范围跨端回归和统计模块准备。用户 Web 已接入商品和交易页面，App 与小程序的商品、交易和消息页面继续等待各模块稳定契约。店铺关注关系因商家／店铺模块尚未落地，仅保留数据库预留与跨模块边界说明，不创建接口。其他模块始终从认证上下文获取用户、商家或管理员数据范围。

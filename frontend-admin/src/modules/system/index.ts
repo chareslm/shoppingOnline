@@ -1,4 +1,4 @@
-import { Key, UserFilled } from '@element-plus/icons-vue'
+import { Document, Key, UserFilled } from '@element-plus/icons-vue'
 import AuthorizationView from '../../views/AuthorizationView.vue'
 import UserManagementView from '../../views/UserManagementView.vue'
 import type { AdminModuleContribution } from '../types'
@@ -19,6 +19,12 @@ export const systemModule: AdminModuleContribution = {
       component: UserManagementView,
       meta: { permissions: ['system:user:view'] },
     },
+    {
+      path: 'audit-logs',
+      name: 'audit-logs',
+      component: () => import('../../views/AuditLogView.vue'),
+      meta: { permissions: ['system:audit:view'] },
+    },
   ],
   menuItems: [
     {
@@ -32,6 +38,12 @@ export const systemModule: AdminModuleContribution = {
       label: '用户与角色',
       icon: UserFilled,
       permissions: ['system:user:view'],
+    },
+    {
+      index: '/audit-logs',
+      label: '审计日志',
+      icon: Document,
+      permissions: ['system:audit:view'],
     },
   ],
 }
