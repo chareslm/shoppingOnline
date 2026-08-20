@@ -63,8 +63,9 @@ function showDetail(log: AuditLog) {
 }
 
 function defaultTimeRange(): [string, string] {
-  const end = new Date()
-  const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const now = new Date()
+  const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const end = new Date(Math.floor(now.getTime() / 1000) * 1000 + 1000)
   return [formatInputTime(start), formatInputTime(end)]
 }
 

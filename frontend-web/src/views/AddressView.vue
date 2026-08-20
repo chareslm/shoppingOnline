@@ -118,7 +118,7 @@ async function remove(address: UserAddress) {
         <div class="modal-head"><div><p class="eyebrow">ADDRESS</p><h2>{{ editingId ? '编辑地址' : '添加地址' }}</h2></div><button class="icon-button" type="button" aria-label="关闭" @click="modalOpen = false">×</button></div>
         <div class="form-grid compact">
           <label>收货人<input v-model="form.recipientName" required maxlength="64" /></label>
-          <label>联系电话<input v-model="form.recipientPhone" required maxlength="32" pattern="[0-9+() -]{6,32}" /></label>
+          <label>联系电话<input v-model="form.recipientPhone" required maxlength="32" pattern="[0-9+\(\) \-]{6,32}" /></label>
           <label>省/直辖市<input v-model="form.provinceName" required maxlength="64" placeholder="例如：浙江省" /></label>
           <label>城市<input v-model="form.cityName" required maxlength="64" placeholder="例如：杭州市" /></label>
           <label>区/县<input v-model="form.districtName" required maxlength="64" placeholder="例如：西湖区" /></label>
