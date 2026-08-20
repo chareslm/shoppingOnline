@@ -25,7 +25,7 @@ export const userApi = {
     return apiRequest({ path: '/api/users/me/addresses', method: 'POST', data: input })
   },
 
-  updateAddress(addressId: number, input: SaveUserAddress): Promise<UserAddress> {
+  updateAddress(addressId: string, input: SaveUserAddress): Promise<UserAddress> {
     return apiRequest({
       path: `/api/users/me/addresses/${addressId}`,
       method: 'PUT',
@@ -33,14 +33,14 @@ export const userApi = {
     })
   },
 
-  setDefaultAddress(addressId: number): Promise<void> {
+  setDefaultAddress(addressId: string): Promise<void> {
     return apiRequest({
       path: `/api/users/me/addresses/${addressId}/default`,
       method: 'PUT',
     })
   },
 
-  deleteAddress(addressId: number): Promise<void> {
+  deleteAddress(addressId: string): Promise<void> {
     return apiRequest({
       path: `/api/users/me/addresses/${addressId}`,
       method: 'DELETE',

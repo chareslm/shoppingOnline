@@ -4,7 +4,7 @@ import { userApi } from '../../features/account/data/user-api'
 
 Page({
   data: {
-    addressId: 0,
+    addressId: '',
     recipientName: '',
     recipientPhone: '',
     region: [] as string[],
@@ -20,8 +20,8 @@ Page({
   },
 
   async onLoad(options: Record<string, string | undefined>) {
-    const addressId = Number(options.id ?? 0)
-    if (!Number.isSafeInteger(addressId) || addressId <= 0) return
+    const addressId = options.id ?? ''
+    if (!addressId) return
     this.setData({ addressId, loading: true })
     try {
       const addresses = await userApi.addresses()
@@ -93,7 +93,7 @@ Page({
       isDefault: this.data.isDefault,
     }
     try {
-      if (this.data.addressId > 0) {
+      if (this.data.addressId) {
         await userApi.updateAddress(this.data.addressId, input)
       } else {
         await userApi.createAddress(input)

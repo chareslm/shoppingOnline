@@ -37,6 +37,7 @@ Page({
   goAddresses() { wx.navigateTo({ url: '/pages/addresses/index' }) },
   goPreferences() { wx.navigateTo({ url: '/pages/preferences/index' }) },
   goPassword() { wx.navigateTo({ url: '/pages/change-password/index' }) },
+  goDevices() { wx.navigateTo({ url: '/pages/devices/index' }) },
 
   async logout() {
     this.setData({ loading: true, error: '' })

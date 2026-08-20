@@ -22,7 +22,7 @@ interface RawResponse {
 }
 
 interface RefreshResponse extends SessionTokens {
-  userId: number
+  userId: string
   username: string
   roles: string[]
   permissions: string[]

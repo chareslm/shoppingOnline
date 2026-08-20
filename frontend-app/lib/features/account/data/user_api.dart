@@ -51,7 +51,7 @@ class UserApi {
   }
 
   Future<UserAddress> updateAddress(
-    int addressId,
+    String addressId,
     SaveUserAddress address,
   ) async {
     final response = await _client.put(
@@ -61,14 +61,14 @@ class UserApi {
     return unwrapApiResponse(response.data, UserAddress.fromJson);
   }
 
-  Future<void> setDefaultAddress(int addressId) async {
+  Future<void> setDefaultAddress(String addressId) async {
     final response = await _client.put(
       '/api/users/me/addresses/$addressId/default',
     );
     unwrapApiResponse<void>(response.data, (_) {});
   }
 
-  Future<void> deleteAddress(int addressId) async {
+  Future<void> deleteAddress(String addressId) async {
     final response = await _client.delete('/api/users/me/addresses/$addressId');
     unwrapApiResponse<void>(response.data, (_) {});
   }

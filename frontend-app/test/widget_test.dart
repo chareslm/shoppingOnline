@@ -29,7 +29,7 @@ void main() {
         accessToken: 'access',
         refreshToken: 'refresh',
         user: AuthenticatedUser(
-          userId: 8,
+          userId: '8',
           username: 'admin',
           roles: ['ADMIN'],
           permissions: [],

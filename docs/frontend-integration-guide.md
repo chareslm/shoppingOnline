@@ -118,7 +118,7 @@ features/
 
 公共网络层、Token 安全存储、刷新队列、路由守卫和通用响应解析放在 `core/`，业务模块不得复制。Flutter 使用 Riverpod、go_router 和 Dio；微信小程序使用 TypeScript，并由统一请求封装注入 Bearer Token。
 
-Flutter 当前公共基础位于 `frontend-app/lib/core/`，认证、修改密码、个人资料、收货地址和偏好设置位于 `frontend-app/lib/features/account/`。登录固定提交 `deviceType: ANDROID`，用户端路由要求账号包含 `USER` 角色；API 地址通过 `--dart-define=API_BASE_URL=...` 配置，Android 模拟器访问宿主机时默认使用 `http://10.0.2.2:8080`。Debug 构建仅为本地联调允许明文 HTTP，Release 构建必须使用 HTTPS。
+Flutter 当前公共基础位于 `frontend-app/lib/core/`，认证、修改密码、个人资料、收货地址、偏好设置和登录设备管理位于 `frontend-app/lib/features/account/`。登录固定提交 `deviceType: ANDROID`，用户端路由要求账号包含 `USER` 角色；API 地址通过 `--dart-define=API_BASE_URL=...` 配置，Android 模拟器访问宿主机时默认使用 `http://10.0.2.2:8080`。Debug 构建仅为本地联调允许明文 HTTP，Release 构建必须使用 HTTPS。
 
 Flutter 模块注册约定：
 
@@ -136,12 +136,13 @@ Flutter 模块注册约定：
 - 公共请求必须复用 `core/http/api-client.ts`，不得在业务模块中重复实现 Token 注入、刷新队列或统一响应解析。
 - 登录固定提交 `deviceType: MINIAPP`；启动会话和用户页面要求账号包含 `USER` 角色，但客户端角色判断不替代后端授权。
 - 开发 API 默认由 `config/environment.ts` 指向 `http://127.0.0.1:8080`；其他本机端口通过小程序存储键 `shopping.apiBaseUrl.development` 覆盖，不修改源码。公共 `project.config.json` 固定使用 `touristappid`，成员在被 Git 忽略的 `project.private.config.json` 配置个人测试 AppID。正式版必须使用 HTTPS，并在微信公众平台登记 `request` 合法域名。
+- 用户 Web、Flutter 与小程序均提供本人登录设备列表、指定设备退出和其他设备退出；当前设备只能依据服务端签发的 Access Token 设备标识判断。撤销当前设备成功后，各端只清理本地会话，不再重复调用普通退出接口。
 
 ## 6. API 与类型约定
 
 1. 开发页面前先在 `docs/api/` 增加或确认模块接口契约。
 2. 接口统一返回 `{ code, message, data }`；分页使用 `{ items, total, page, pageSize }`。
-3. ID、角色和数据范围以服务端响应为准，不从 URL、本地存储或表单字段推断当前主体。
+3. ID、角色和数据范围以服务端响应为准，不从 URL、本地存储或表单字段推断当前主体；HTTP 接口中的 Java `Long` 统一按字符串处理，避免 JavaScript 精度丢失，并保持四端模型一致。
 4. 前端只保存页面所需类型；跨模块共享类型需要先确认契约，禁止直接导入其他模块内部类型。
 5. 错误提示通过公共解析器处理；表单可针对明确业务码提供更具体的中文提示。
 6. 密码、Token、密钥、完整手机号和完整邮箱不得写入日志、截图、测试夹具或仓库文件。

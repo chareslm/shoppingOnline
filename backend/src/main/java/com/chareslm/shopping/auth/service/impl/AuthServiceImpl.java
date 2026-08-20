@@ -193,7 +193,7 @@ public class AuthServiceImpl implements AuthService {
         }
         saveRefreshToken(user.getId(), device.getId(), next);
         writeAudit(user.getId(), "TOKEN_REFRESH", true);
-        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions);
+        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions, device.getId());
         return new LoginResponse(user.getId(), user.getUsername(), jwtTokenService.createAccessToken(loginUser),
                 next.token(), jwtProperties.accessTokenTtl().toSeconds(), roles, permissions);
     }
@@ -225,6 +225,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
         refreshTokenMapper.revokeActiveByUserAndDevice(userId, device.getId(), "LOGOUT");
+        userDeviceMapper.markRevoked(userId, device.getId());
         writeAudit(userId, "LOGOUT", true);
     }
 
@@ -248,7 +249,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private LoginResponse issueTokens(UserAccount user, Long deviceId, Set<String> roles, Set<String> permissions) {
-        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions);
+        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions, deviceId);
         JwtTokenService.IssuedRefreshToken refreshToken = jwtTokenService.createRefreshToken(user.getId(), deviceId);
         saveRefreshToken(user.getId(), deviceId, refreshToken);
         return new LoginResponse(user.getId(), user.getUsername(), jwtTokenService.createAccessToken(loginUser),
