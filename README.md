@@ -23,3 +23,5 @@
 日常开发从 `develop` 创建功能分支，并通过 Pull Request 合并回 `develop`。详细规则见 [docs/git-workflow.md](docs/git-workflow.md)。
 
 微信小程序的导入、API 地址和本地联调说明见 [frontend-miniapp/README.md](frontend-miniapp/README.md)。
+
+统计模块的指标口径、权限、数据范围、事件和聚合边界见 [docs/architecture/statistics-foundation.md](docs/architecture/statistics-foundation.md)。
