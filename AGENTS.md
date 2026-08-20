@@ -6,7 +6,7 @@
 
 - 项目名称：综合电商平台课程设计。
 - 仓库：`https://github.com/chareslm/shoppingOnline.git`。
-- 当前阶段：身份认证与 RBAC、强密码与本人改密、统一管理端认证及用户角色管理、Redis/Elasticsearch 本地基础设施、用户资料/地址/偏好接口、用户 Web 用户中心、设备与会话管理，以及管理端/用户 Web 团队模块接入基础均已集成至 `develop`；Flutter Android App 与微信原生 TypeScript 小程序的统一认证、用户中心、设备管理和模块注册基础均已完成真实接口联调。审计日志查询、独立权限、脱敏规则和管理端页面正在 `feature/audit-log-management` 开发。成员 3 的商品（类目/SPU/SKU/库存/上下架/审核）、搜索（ES 索引/同步/MySQL 降级检索/热词/建议）与评价（资格校验/评价/回复/评分聚合）后端已集成，数据库迁移 V5~V7 已落地；成员 4 的购物车/订单/支付/退款后端已集成，数据库迁移 V4 已落地。成员 2 商家模块与成员 5 客服聊天/消息中心尚待建设。
+- 当前阶段：身份认证与 RBAC、强密码与本人改密、统一管理端认证及用户角色管理、Redis/Elasticsearch 本地基础设施、用户资料/地址/偏好接口、用户 Web 用户中心、设备与会话管理、审计日志查询和综合回归修复均已集成至 `develop`；Flutter Android App 与微信原生 TypeScript 小程序的统一认证、用户中心、设备管理和模块注册基础均已完成真实接口联调。统计模块的指标口径、查询权限和聚合边界准备基线已完成，当前等待商家数据范围和交易金额契约满足开发准入条件。成员 3 的商品（类目/SPU/SKU/库存/上下架/审核）、搜索（ES 索引/同步/MySQL 降级检索/热词/建议）与评价（资格校验/评价/回复/评分聚合）后端已集成，数据库迁移 V5~V7 已落地；成员 4 的购物车/订单/支付/退款后端已集成，数据库迁移 V4 已落地。成员 2 商家模块与成员 5 客服聊天/消息中心尚待建设。
 - 开发策略：先采用模块化单体，后端使用 Java 21 + Spring Boot 4.1；本地 Compose 已提供 MySQL、Redis 和 Elasticsearch，消息队列在后期确有异步需求时再接入；Web 端使用 Vue 3 + TypeScript。
 - 终端范围：一期建设用户 Web、Android Flutter App、微信原生小程序和统一管理端；三端共用同一后端 API、账号与业务规则。
 
@@ -55,6 +55,7 @@ docs/             需求、接口、架构和协作文档
 - `docs/progress.md`：本地开发进度、已完成工作、风险与下一步；开始新任务前必须阅读，完成一个功能后必须更新。
 - `docs/git-workflow.md`：完整 Git 协作规范。
 - `docs/architecture/module-ownership.md`：模块分工及跨模块边界。
+- `docs/architecture/statistics-foundation.md`：统计指标口径、权限、数据范围、事件和聚合边界；统计开发前必须阅读。
 - `docs/project-context.md`：项目决策与当前状态记录。
 - `docs/frontend-integration-guide.md`：四端公共基础层、前端模块目录、路由菜单注册和成员接入检查清单。
 - `docs/api/auth.md`：认证与 RBAC 接口调用契约；业务模块接入 Bearer Token 前必须阅读。
