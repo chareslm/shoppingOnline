@@ -1,6 +1,10 @@
 # 本地超级管理员初始化
 
-系统不提供默认管理员账号。仅在本地开发需要首次创建管理账号时，使用一次性环境变量启用初始化器：
+系统不提供默认管理员账号。本地可用下面任一方式做**一次性**初始化（仅 `local` Profile 生效）：
+
+1. **Compose / 一键脚本（推荐）**：`deploy/.env` 中的 `BOOTSTRAP_SUPER_ADMIN_ENABLED` / `USERNAME` / `PASSWORD`。首次运行 `scripts/windows/deploy-local.ps1` 若新创建 `.env`，会生成并打印密码。
+2. **本机直接跑 Spring Boot**：复制 `application-local.yml.example`，设置 `security.bootstrap-super-admin`。
+3. **临时环境变量**：
 
 ```powershell
 $env:BOOTSTRAP_SUPER_ADMIN_ENABLED = "true"
@@ -9,7 +13,7 @@ $env:BOOTSTRAP_SUPER_ADMIN_PASSWORD = "replace-with-a-strong-local-password"
 $env:SPRING_PROFILES_ACTIVE = "local"
 ```
 
-启动后，初始化器仅在不存在任何 `SUPER_ADMIN` 时创建该账号、分配 `SUPER_ADMIN` 角色并写入审计日志；不会输出密码。创建成功后应立刻关闭该环境变量。若账号已存在或系统已有超级管理员，初始化器不会覆盖密码或权限。
+启动后，初始化器仅在不存在任何 `SUPER_ADMIN` 时创建该账号、分配 `SUPER_ADMIN` 角色并写入审计日志；不会输出密码。创建成功后应关闭 `BOOTSTRAP_SUPER_ADMIN_ENABLED`（`.env` 或环境变量）。若账号已存在或系统已有超级管理员，初始化器不会覆盖密码或权限。
 
 初始化密码必须为 12–64 个字符、UTF-8 编码不超过 72 字节，并同时包含大写字母、小写字母、数字和特殊字符。不得使用 `123456`、项目名、用户名或其他已泄露的常见密码。
 

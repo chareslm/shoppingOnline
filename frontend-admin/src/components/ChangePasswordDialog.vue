@@ -5,6 +5,7 @@ import { authApi } from '../services/auth'
 import { readApiError } from '../services/http'
 
 const visible = defineModel<boolean>({ required: true })
+defineProps<{ forced?: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
 const formRef = ref<FormInstance>()
 const saving = ref(false)
@@ -57,7 +58,7 @@ async function submit() {
 </script>
 
 <template>
-  <el-dialog v-model="visible" title="修改登录密码" width="520px" :close-on-click-modal="false" destroy-on-close @closed="reset">
+  <el-dialog v-model="visible" :title="forced ? '首次登录必须修改密码' : '修改登录密码'" width="520px" :close-on-click-modal="false" :show-close="!forced" :close-on-press-escape="!forced" destroy-on-close @closed="reset">
     <el-alert
       title="修改成功后，所有设备上的 Refresh Token 都会失效，当前管理端也会退出并要求重新登录。"
       type="warning"
@@ -77,7 +78,7 @@ async function submit() {
       <p class="password-hint">至少 12 位，同时包含大写字母、小写字母、数字和特殊字符。</p>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
+      <el-button v-if="!forced" @click="visible = false">取消</el-button>
       <el-button type="primary" :loading="saving" @click="submit">确认修改</el-button>
     </template>
   </el-dialog>

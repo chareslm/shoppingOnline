@@ -12,6 +12,7 @@ import com.chareslm.shopping.auth.entity.RefreshToken;
 import com.chareslm.shopping.auth.entity.UserAccount;
 import com.chareslm.shopping.auth.entity.UserDevice;
 import com.chareslm.shopping.auth.entity.UserRole;
+import com.chareslm.shopping.auth.enums.DeviceType;
 import com.chareslm.shopping.auth.mapper.AuditLogMapper;
 import com.chareslm.shopping.auth.mapper.PermissionMapper;
 import com.chareslm.shopping.auth.mapper.RefreshTokenMapper;
@@ -153,9 +154,15 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
         }
 
+        Set<String> roles = Set.copyOf(roleMapper.selectCodesByUserId(user.getId()));
+        if (request.deviceType() == DeviceType.ADMIN_WEB
+                && roles.stream().noneMatch(code -> "ADMIN".equals(code) || "SUPER_ADMIN".equals(code))) {
+            writeAudit(user.getId(), "PASSWORD_LOGIN", false);
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+
         Long deviceId = upsertDevice(user.getId(), request, clientIp);
         userAccountMapper.markLoginSucceeded(user.getId());
-        Set<String> roles = Set.copyOf(roleMapper.selectCodesByUserId(user.getId()));
         Set<String> permissions = Set.copyOf(permissionMapper.selectCodesByUserId(user.getId()));
         LoginResponse response = issueTokens(user, deviceId, roles, permissions);
         writeAudit(user.getId(), "PASSWORD_LOGIN", true);
@@ -185,6 +192,9 @@ public class AuthServiceImpl implements AuthService {
                 || !"ACTIVE".equals(device.getStatus())) {
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
+        if (Boolean.TRUE.equals(user.getMustChangePassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_CHANGE_REQUIRED);
+        }
         Set<String> roles = Set.copyOf(roleMapper.selectCodesByUserId(user.getId()));
         Set<String> permissions = Set.copyOf(permissionMapper.selectCodesByUserId(user.getId()));
         JwtTokenService.IssuedRefreshToken next = jwtTokenService.createRefreshToken(user.getId(), device.getId());
@@ -193,9 +203,11 @@ public class AuthServiceImpl implements AuthService {
         }
         saveRefreshToken(user.getId(), device.getId(), next);
         writeAudit(user.getId(), "TOKEN_REFRESH", true);
-        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions, device.getId());
+        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions,
+                Boolean.TRUE.equals(user.getMustChangePassword()));
         return new LoginResponse(user.getId(), user.getUsername(), jwtTokenService.createAccessToken(loginUser),
-                next.token(), jwtProperties.accessTokenTtl().toSeconds(), roles, permissions);
+                next.token(), jwtProperties.accessTokenTtl().toSeconds(), roles, permissions,
+                Boolean.TRUE.equals(user.getMustChangePassword()));
     }
 
     @Override
@@ -249,11 +261,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private LoginResponse issueTokens(UserAccount user, Long deviceId, Set<String> roles, Set<String> permissions) {
-        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions, deviceId);
+        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions,
+                Boolean.TRUE.equals(user.getMustChangePassword()));
         JwtTokenService.IssuedRefreshToken refreshToken = jwtTokenService.createRefreshToken(user.getId(), deviceId);
         saveRefreshToken(user.getId(), deviceId, refreshToken);
         return new LoginResponse(user.getId(), user.getUsername(), jwtTokenService.createAccessToken(loginUser),
-                refreshToken.token(), jwtProperties.accessTokenTtl().toSeconds(), roles, permissions);
+                refreshToken.token(), jwtProperties.accessTokenTtl().toSeconds(), roles, permissions,
+                Boolean.TRUE.equals(user.getMustChangePassword()));
     }
 
     private void saveRefreshToken(Long userId, Long deviceId, JwtTokenService.IssuedRefreshToken issuedToken) {

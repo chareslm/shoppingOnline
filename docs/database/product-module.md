@@ -1,7 +1,7 @@
 # 商品 / 搜索 / 评价数据库设计（成员 3）
 
 > 电商平台课程设计 · 商品模块（类目 / SPU / SKU / 状态流转）+ 评价模块 + 搜索日志
-> 本文档定义成员 3 全部表结构、状态机与库存并发策略，是 `database/V5~V7__*.sql` 的唯一依据。
+> 本文档定义成员 3 全部表结构、状态机与库存并发策略，是 `database/V5~V7` 与 `database/V10__product_media.sql` 的依据。
 
 ## 1. 模块边界与依赖
 
@@ -22,6 +22,7 @@
 
 ```
 category（自关联树形结构：parent_id）
+spu 1 ── n product_media（店铺商品图）
 spu 1 ── n sku
 spu 1 ── n product_status_log
 spu 1 ── n review 1 ── 1 review_reply
@@ -48,6 +49,17 @@ search_log（独立，热词统计）
 | status | TINYINT | DEFAULT 1 | 1 启用 / 0 停用 |
 | 五件套 | — | — | created_at/updated_at/created_by/updated_by/version |
 
+#### product_media（商品公开图，V10）
+| 字段 | 类型 | 约束 | 说明 |
+| --- | --- | --- | --- |
+| id | BIGINT | PK | 雪花 ID |
+| shop_id | BIGINT | NOT NULL, idx | 所属店铺 |
+| storage_key | VARCHAR(512) | UNIQUE | 必须以 `product/` 开头 |
+| content_type / original_name / file_size | — | NOT NULL | 仅 JPEG/PNG |
+| 五件套 | — | — | — |
+
+公开读取走 `/api/product-media/{id}`，不暴露存储键。
+
 #### spu（商品）
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
@@ -72,7 +84,7 @@ search_log（独立，热词统计）
 | --- | --- | --- | --- |
 | id | BIGINT | PK | 雪花 ID |
 | spu_id | BIGINT | NOT NULL, idx_spu | 所属 SPU |
-| sku_code | VARCHAR(64) | NULL, UNIQUE | 商家自定义编码 |
+| sku_code | VARCHAR(64) | NULL, UNIQUE(spu_id, sku_code) | 同一商品内唯一；不同商品可重复 |
 | attributes | JSON | NULL | 规格属性 |
 | image | VARCHAR(512) | NULL | SKU 图 |
 | price | DECIMAL(10,2) | NOT NULL, CHECK≥0 | 销售价 |
@@ -88,7 +100,7 @@ search_log（独立，热词统计）
 | id | BIGINT | PK | 雪花 ID |
 | spu_id | BIGINT | NOT NULL, idx_spu | 关联 SPU |
 | operator_id | BIGINT | NULL | 操作者 ID |
-| action | VARCHAR(32) | NOT NULL | SUBMIT/APPROVE/REJECT/PUBLISH/OFF_SHELF |
+| action | VARCHAR(32) | NOT NULL | SUBMIT/APPROVE/REJECT/REVOKE/PUBLISH/OFF_SHELF |
 | from_status / to_status | VARCHAR(32) | NULL | 状态流转 |
 | remark | VARCHAR(255) | NULL | 备注 |
 | created_at | DATETIME | NOT NULL | 操作时间（仅 created_at） |
@@ -139,12 +151,12 @@ search_log（独立，热词统计）
 | --- | --- | --- |
 | DRAFT | 草稿 | 商家新建/编辑后 |
 | PENDING_AUDIT | 待审核 | 提交审核 |
-| AUDIT_APPROVED | 审核通过 | 管理员通过，待上架 |
-| AUDIT_REJECTED | 审核驳回 | 管理员驳回 |
+| AUDIT_APPROVED | 审核通过 | 历史中间态（待商家上架）；新审核通过直接进入 ON_SALE |
+| AUDIT_REJECTED | 审核驳回/已收回 | 管理员驳回或收回 |
 | ON_SALE | 上架中 | 可搜索、可购买 |
 | OFF_SALE | 已下架 | 商家下架 |
 
-状态流转：`DRAFT → PENDING_AUDIT → AUDIT_APPROVED → ON_SALE → OFF_SALE → ON_SALE`；`PENDING_AUDIT` 可驳回至 `AUDIT_REJECTED`；`DRAFT/AUDIT_REJECTED` 可重新提交。修改受审字段（名称/主图/详情等）会使审核结果失效，已上架/待上架商品回到 `DRAFT`。每次流转写 `product_status_log`。
+状态流转：商家 `DRAFT/AUDIT_REJECTED → PENDING_AUDIT`；管理员 `APPROVE` 至 `ON_SALE`（也可对已收回商品重新通过）；`REJECT`/`REVOKE` 至 `AUDIT_REJECTED`；商家 `ON_SALE → OFF_SALE → ON_SALE`。修改受审字段（名称/主图/详情等）会使审核结果失效，已上架/待上架商品回到 `DRAFT`。每次流转写 `product_status_log`（含 APPROVE/REJECT/REVOKE）。
 
 ## 5. 库存并发策略
 
@@ -160,7 +172,7 @@ search_log（独立，热词统计）
 | --- | --- | --- |
 | category | idx_parent / idx_level_sort | 树形查询 |
 | spu | idx_shop / idx_category / idx_status / idx_name | 商家/类目/状态/名称检索 |
-| sku | uk_sku_code / idx_spu / idx_status | 编码唯一、SPU 展开 |
+| sku | uk_spu_sku_code / idx_spu / idx_status | 同一 SPU 内编码唯一 |
 | product_status_log | idx_spu | 流转审计 |
 | review | uk_review_order_item / idx_spu / idx_sku / idx_user / idx_shop_status | 评价资格、聚合、用户/店铺查询 |
 | review_reply | uk_reply_review / idx_shop | 一评价一回复 |

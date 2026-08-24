@@ -1,10 +1,11 @@
-import type { AuthenticatedUser, LoginResponse } from '../types/auth'
+import type { AdminMode, AuthenticatedUser, LoginResponse } from '../types/auth'
 
 const SESSION_KEY = 'shopping.admin.session'
 
 export interface SavedSession extends AuthenticatedUser {
   accessToken: string
   refreshToken: string
+  adminMode: AdminMode
 }
 
 export function getSession(): SavedSession | null {
@@ -21,14 +22,16 @@ export function getSession(): SavedSession | null {
   }
 }
 
-export function saveLoginSession(login: LoginResponse) {
+export function saveLoginSession(login: LoginResponse, adminMode: AdminMode) {
   const session: SavedSession = {
     userId: login.userId,
     username: login.username,
     roles: login.roles,
     permissions: login.permissions,
+    mustChangePassword: login.mustChangePassword,
     accessToken: login.accessToken,
     refreshToken: login.refreshToken,
+    adminMode,
   }
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   return session

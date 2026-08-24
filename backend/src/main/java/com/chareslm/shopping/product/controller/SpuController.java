@@ -58,11 +58,32 @@ public class SpuController {
         return ApiResponse.success(spuService.page(categoryId, keyword, "ON_SALE", page, pageSize));
     }
 
-    /** 商家创建商品（SPU + 首个 SKU 列表）。 */
+    /** 商家创建商品。店铺取自当前账号，不信任请求中的 shopId。 */
     @PostMapping("/merchant/spu")
     @PreAuthorize("hasAuthority('product:create')")
     public ApiResponse<SpuDetailResponse> create(@Valid @RequestBody SpuCreateRequest request) {
         return ApiResponse.success(spuService.create(CurrentUser.require().userId(), request));
+    }
+
+    /** 商家查看本店商品；shelf=LISTED|UNLISTED 过滤已上架/未上架。 */
+    @GetMapping("/merchant/spu/page")
+    @PreAuthorize("hasAnyAuthority('product:create','product:update','product:stock:adjust')")
+    public ApiResponse<PageResponse<SpuResponse>> merchantPage(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String shelf,
+            @RequestParam(defaultValue = "1") @Min(1) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(50) int pageSize) {
+        return ApiResponse.success(spuService.pageForMerchant(
+                CurrentUser.require().userId(), categoryId, keyword, status, shelf, page, pageSize));
+    }
+
+    /** 商家查看本店商品详情（含未上架）。 */
+    @GetMapping("/merchant/spu/{spuId}")
+    @PreAuthorize("hasAnyAuthority('product:create','product:update','product:stock:adjust')")
+    public ApiResponse<SpuDetailResponse> merchantDetail(@PathVariable Long spuId) {
+        return ApiResponse.success(spuService.getOwnedDetail(CurrentUser.require().userId(), spuId));
     }
 
     /** 商家编辑商品基础信息。 */
@@ -95,6 +116,13 @@ public class SpuController {
     public ApiResponse<SpuResponse> audit(@PathVariable Long spuId,
                                           @Valid @RequestBody SpuAuditRequest request) {
         return ApiResponse.success(spuService.audit(CurrentUser.require().userId(), spuId, request));
+    }
+
+    /** 管理员查看任意状态商品详情。 */
+    @GetMapping("/admin/spu/{spuId}")
+    @PreAuthorize("hasAuthority('product:audit')")
+    public ApiResponse<SpuDetailResponse> adminDetail(@PathVariable Long spuId) {
+        return ApiResponse.success(spuService.getDetail(spuId));
     }
 
     /** 管理员按状态分页查询商品（管理端商品列表）。 */

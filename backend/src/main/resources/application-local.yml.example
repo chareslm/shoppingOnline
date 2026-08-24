@@ -1,19 +1,36 @@
-# Copy this file to application-local.yml and replace placeholders locally.
-# Do not commit application-local.yml.
+# Native Windows backend template. Copy to application-local.yml (gitignored).
+# Compose injects datasource, JWT and upload dir via environment variables, so
+# this file is only required when you run Spring Boot on the host.
+#
+# [REQUIRED] spring.datasource.password and security.jwt.secret must match
+#            MYSQL_APP_PASSWORD and JWT_SECRET in deploy/.env
+# [OPTIONAL] Everything else. Keep bootstrap disabled after the first admin exists.
 spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/shopping?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: change-me
+    username: shopping_app
+    password: replace-with-local-application-password
+  flyway:
+    # [OPTIONAL] true only when adopting a pre-Flyway database. See docs/auth-bootstrap.md
+    baseline-on-migrate: false
 
 security:
   jwt:
     secret: replace-with-a-random-secret-of-at-least-32-bytes
   bootstrap-super-admin:
+    # [OPTIONAL] One-time local SUPER_ADMIN. Prefer deploy/.env BOOTSTRAP_SUPER_ADMIN_*
+    # when using Compose. Enable here only for a host-run backend.
     enabled: false
-    username:
-    password:
+    username: admin_local
+    password: replace-with-a-strong-one-time-bootstrap-password
 
 app:
   cors:
+    # [OPTIONAL] Change only when Vite host/ports change (default 5173 admin, 5174 web).
     allowed-origins: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174
+  merchant:
+    # [NATIVE][OPTIONAL] Host-run upload dir. Compose sets MERCHANT_UPLOAD_DIR=/data/uploads.
+    upload-dir: ${MERCHANT_UPLOAD_DIR:${user.home}/shopping-data/uploads}
+
+# [OPTIONAL] SMTP: set MAIL_* in deploy/.env or the system-admin SMTP page.
+# Leave MAIL_HOST empty to skip sending mail.

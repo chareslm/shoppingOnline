@@ -9,6 +9,7 @@ public enum ErrorCode {
     ACCOUNT_LOCKED(42301, "account is temporarily locked"),
     UNAUTHORIZED(40101, "authentication required"),
     FORBIDDEN(40301, "permission denied"),
+    PASSWORD_CHANGE_REQUIRED(40303, "password change required"),
     NOT_FOUND(40401, "resource not found"),
     INTERNAL_ERROR(50000, "internal server error"),
     CART_EMPTY(40010, "no checked items to checkout"),
@@ -27,7 +28,12 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(40405, "review not found"),
     REVIEW_ALREADY_EXISTS(40022, "review already exists"),
     REVIEW_NOT_ELIGIBLE(40023, "review not eligible"),
-    SEARCH_SERVICE_UNAVAILABLE(50001, "search service unavailable");
+    SEARCH_SERVICE_UNAVAILABLE(50001, "search service unavailable"),
+    MERCHANT_APPLICATION_CONFLICT(40902, "merchant application state conflict"),
+    SKU_CODE_DUPLICATE(40903, "sku code already exists"),
+    MERCHANT_FILE_INVALID(40030, "invalid qualification file"),
+    MAIL_SEND_FAILED(40031, "mail send failed"),
+    PRODUCT_IMAGE_INVALID(40032, "invalid product image");
 
     private final int code;
     private final String message;

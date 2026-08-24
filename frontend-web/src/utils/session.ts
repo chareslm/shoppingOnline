@@ -1,31 +1,40 @@
-import type { AuthenticatedUser, LoginResponse } from '@/types/auth'
+import type { AuthenticatedUser, LoginResponse, PortalMode } from '@/types/auth'
 
 const SESSION_KEY = 'shopping.web.session'
 
 export interface SavedSession extends AuthenticatedUser {
   accessToken: string
   refreshToken: string
+  portalMode: PortalMode
 }
 
 export function getSession(): SavedSession | null {
   const raw = localStorage.getItem(SESSION_KEY)
   if (!raw) return null
   try {
-    return JSON.parse(raw) as SavedSession
+    const session = JSON.parse(raw) as SavedSession
+    // Migrate sessions created before the Web portal identity choice was introduced.
+    if (!session.portalMode) {
+      session.portalMode = session.roles.includes('USER') ? 'user' : 'merchant'
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+    }
+    return session
   } catch {
     clearSession()
     return null
   }
 }
 
-export function saveLoginSession(login: LoginResponse) {
+export function saveLoginSession(login: LoginResponse, portalMode: PortalMode) {
   const session: SavedSession = {
     userId: login.userId,
     username: login.username,
     roles: login.roles,
     permissions: login.permissions,
+    mustChangePassword: login.mustChangePassword,
     accessToken: login.accessToken,
     refreshToken: login.refreshToken,
+    portalMode,
   }
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   return session

@@ -1,6 +1,6 @@
 # 项目上下文记录
 
-> 最后更新：2026-08-20
+> 最后更新：2026-08-18
 
 ## 项目定位
 
@@ -11,7 +11,8 @@
 - GitHub 仓库：`https://github.com/chareslm/shoppingOnline.git`。
 - 当前集成分支：`develop`；认证权限、强密码与本人改密、管理端认证及用户角色管理、Redis/Elasticsearch 本地 Compose、用户资料/地址/偏好、设备与会话、审计日志、商品/搜索/评价、交易后端及用户 Web 商品/交易页面均已集成，综合回归发现的前端问题也已修复。统计模块的指标口径、查询权限、数据范围、事件与聚合边界准备基线已完成，当前等待来源模块满足开发准入条件。最新集成提交以远程 `origin/develop` 为准，`main` 尚未包含这些功能。
 - 代表性功能提交：`5e13a13`（管理端认证基础）、`3ffad2d`（Redis/Elasticsearch 本地 Compose）、`eb6f4ba`（用户资料、地址与偏好接口）、`29ea2f9`（管理端用户与角色管理）、`09cc2da`（账号密码安全）、`ba2745e`（前端团队模块接入基础）、`30ffc16`（共享 `AGENTS.md`）；完整集成历史以 `git log origin/develop` 为准。
-- `frontend-admin` 已完成认证、用户角色、审计日志页面和模块化菜单/路由注册；`frontend-web` 已完成账号中心及模块化导航/路由注册，四位成员均有独立业务目录；`frontend-app` 已完成 Android 工程、统一认证、本人改密、USER 角色限制、用户中心和五模块注册基础；`frontend-miniapp` 已完成原生 TypeScript 工程、统一认证、用户中心和五模块注册基础。
+- `frontend-admin` 系统管理员可维护运行时 SMTP，并手动创建必须带邮箱、首次登录强制改密的平台账号。
+- 商家入驻链路已实现：用户 Web 可提交企业、个体工商户或个人商家申请及私有资质文件；平台管理员在管理端「商家审核」中一次资质审核通过即开通账号。已通过商家可以撤销，已撤销商家可以重新授予，变更均发送邮件。商家登录走用户 Web 的商家身份，不再进入管理端。
 - 仓库根目录：`backend/`、`frontend-web/`、`frontend-app/`、`frontend-miniapp/`、`frontend-admin/`、`database/`、`deploy/`、`docs/`。
 
 ## 业务分工

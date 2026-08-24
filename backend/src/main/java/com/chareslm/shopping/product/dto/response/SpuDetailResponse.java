@@ -10,7 +10,9 @@ import java.util.List;
 public record SpuDetailResponse(
         Long id,
         Long shopId,
+        String shopName,
         Long categoryId,
+        String categoryName,
         String brand,
         String name,
         String subtitle,

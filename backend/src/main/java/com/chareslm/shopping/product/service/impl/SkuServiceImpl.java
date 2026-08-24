@@ -2,12 +2,17 @@ package com.chareslm.shopping.product.service.impl;
 
 import com.chareslm.shopping.common.api.ErrorCode;
 import com.chareslm.shopping.common.exception.BusinessException;
+import com.chareslm.shopping.merchant.entity.Shop;
+import com.chareslm.shopping.merchant.service.MerchantShopQueryService;
 import com.chareslm.shopping.product.dto.request.SkuStockAdjustRequest;
 import com.chareslm.shopping.product.dto.request.SkuUpdateRequest;
 import com.chareslm.shopping.product.dto.response.SkuResponse;
 import com.chareslm.shopping.product.entity.Sku;
+import com.chareslm.shopping.product.entity.Spu;
 import com.chareslm.shopping.product.mapper.SkuMapper;
+import com.chareslm.shopping.product.mapper.SpuMapper;
 import com.chareslm.shopping.product.service.SkuService;
+import com.chareslm.shopping.product.util.SkuAttributes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,13 +22,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class SkuServiceImpl implements SkuService {
 
     private final SkuMapper skuMapper;
+    private final SpuMapper spuMapper;
+    private final MerchantShopQueryService merchantShopQueryService;
 
     @Override
     @Transactional
     public SkuResponse update(Long operatorId, Long skuId, SkuUpdateRequest request) {
-        Sku sku = requireSku(skuId);
+        Sku sku = requireOwnedSku(operatorId, skuId);
         sku.setSkuCode(trimToNull(request.skuCode()));
-        sku.setAttributes(trimToNull(request.attributes()));
+        sku.setAttributes(SkuAttributes.normalize(request.attributes()));
         sku.setImage(trimToNull(request.image()));
         sku.setPrice(request.price());
         skuMapper.updateById(sku);
@@ -33,7 +40,7 @@ public class SkuServiceImpl implements SkuService {
     @Override
     @Transactional
     public SkuResponse adjustStock(Long operatorId, Long skuId, SkuStockAdjustRequest request) {
-        Sku sku = requireSku(skuId);
+        Sku sku = requireOwnedSku(operatorId, skuId);
         int change = request.change();
         if (change == 0) {
             return toResponse(sku);
@@ -49,8 +56,21 @@ public class SkuServiceImpl implements SkuService {
     }
 
     @Override
-    public SkuResponse get(Long skuId) {
-        return toResponse(requireSku(skuId));
+    public SkuResponse get(Long operatorId, Long skuId) {
+        return toResponse(requireOwnedSku(operatorId, skuId));
+    }
+
+    private Sku requireOwnedSku(Long operatorId, Long skuId) {
+        Sku sku = requireSku(skuId);
+        Spu spu = spuMapper.selectById(sku.getSpuId());
+        if (spu == null) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        Shop shop = merchantShopQueryService.requireOpenShop(operatorId);
+        if (!shop.getId().equals(spu.getShopId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return sku;
     }
 
     private Sku requireSku(Long skuId) {

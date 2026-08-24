@@ -19,6 +19,14 @@ public interface SpuService {
 
     PageResponse<SpuResponse> page(Long categoryId, String keyword, String status, int page, int pageSize);
 
+    PageResponse<SpuResponse> pageForShop(Long shopId, Long categoryId, String keyword, String status,
+                                          String shelf, int page, int pageSize);
+
+    PageResponse<SpuResponse> pageForMerchant(Long operatorId, Long categoryId, String keyword, String status,
+                                              String shelf, int page, int pageSize);
+
+    SpuDetailResponse getOwnedDetail(Long operatorId, Long spuId);
+
     /**
      * 商品检索（仅上架商品，支持关键词/类目/品牌/价格区间/排序）。
      * sort: DEFAULT / SALES_DESC / PRICE_ASC / PRICE_DESC / RATING_DESC / NEWEST。
@@ -30,7 +38,7 @@ public interface SpuService {
     /** 商家状态流转：SUBMIT 提交审核 / PUBLISH 上架 / OFF_SHELF 下架。 */
     SpuResponse changeStatus(Long operatorId, Long spuId, SpuStatusRequest request);
 
-    /** 管理员审核：APPROVE 通过 / REJECT 驳回。 */
+    /** 管理员审核：APPROVE 通过并上架 / REJECT 驳回 / REVOKE 收回审核。 */
     SpuResponse audit(Long operatorId, Long spuId, SpuAuditRequest request);
 
     /** 为已有 SPU 追加 SKU。 */

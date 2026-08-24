@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { readApiError } from '@/services/http'
+import { mediaUrl } from '@/utils/media'
 import { categoryApi, searchApi } from '../services/product'
 import { SORT_OPTIONS, type CategoryNode, type SearchItem } from '../types'
 
@@ -152,7 +153,10 @@ onMounted(() => {
     <template v-else>
       <div class="product-grid">
         <button v-for="item in items" :key="item.spuId" class="product-card" type="button" @click="goDetail(item)">
-          <div class="product-thumb">{{ item.mainImage ? '📦' : '🛍️' }}</div>
+          <div class="product-thumb">
+            <img v-if="item.mainImage" :src="mediaUrl(item.mainImage)" :alt="item.name" />
+            <span v-else>🛍️</span>
+          </div>
           <div class="product-body">
             <strong class="product-name">{{ item.name }}</strong>
             <small class="muted product-subtitle">{{ item.subtitle || item.brand || '—' }}</small>
@@ -245,6 +249,12 @@ onMounted(() => {
   place-items: center;
   font-size: 52px;
   background: #eef2ef;
+  overflow: hidden;
+}
+.product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-body {

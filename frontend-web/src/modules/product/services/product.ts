@@ -26,6 +26,18 @@ export const categoryApi = {
   },
 }
 
+export const productMediaApi = {
+  async upload(file: File) {
+    const body = new FormData()
+    body.append('file', file)
+    return unwrap(
+      (await http.post<ApiResponse<{ id: string; url: string; contentType: string }>>('/api/merchant/product-media', body, {
+        timeout: 30_000,
+      })).data,
+    )
+  },
+}
+
 export const spuApi = {
   async detail(spuId: string) {
     return unwrap((await http.get<ApiResponse<SpuDetail>>(`/api/spu/${spuId}`)).data)
@@ -39,6 +51,19 @@ export const spuApi = {
     return unwrap(
       (await http.get<ApiResponse<Page<SpuItem>>>('/api/admin/spu/page', { params })).data,
     )
+  },
+  async merchantPage(params: {
+    categoryId?: string
+    keyword?: string
+    status?: string
+    shelf?: 'LISTED' | 'UNLISTED'
+    page: number
+    pageSize: number
+  }) {
+    return unwrap((await http.get<ApiResponse<Page<SpuItem>>>('/api/merchant/spu/page', { params })).data)
+  },
+  async merchantDetail(spuId: string) {
+    return unwrap((await http.get<ApiResponse<SpuDetail>>(`/api/merchant/spu/${spuId}`)).data)
   },
   async create(payload: SpuCreateRequest) {
     return unwrap((await http.post<ApiResponse<SpuDetail>>('/api/merchant/spu', payload)).data)

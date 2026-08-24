@@ -10,5 +10,5 @@ public interface SkuService {
 
     SkuResponse adjustStock(Long operatorId, Long skuId, SkuStockAdjustRequest request);
 
-    SkuResponse get(Long skuId);
+    SkuResponse get(Long operatorId, Long skuId);
 }

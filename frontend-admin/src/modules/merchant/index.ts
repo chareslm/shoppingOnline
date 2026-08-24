@@ -1,11 +1,52 @@
-import { Shop } from '@element-plus/icons-vue'
+import { Service, Shop } from '@element-plus/icons-vue'
+import MerchantReviewView from './views/MerchantReviewView.vue'
+import StaffAuditView from './views/StaffAuditView.vue'
 import type { AdminModuleContribution } from '../types'
+
+const platformAdmin = { permissions: ['merchant:qualification:audit'], roles: ['ADMIN', 'SUPER_ADMIN'], adminModes: ['platform'] as const }
+const staffAudit = { permissions: ['merchant:staff:audit'], roles: ['ADMIN', 'SUPER_ADMIN'], adminModes: ['platform'] as const }
 
 export const merchantModule: AdminModuleContribution = {
   key: 'merchant',
   owner: '成员 2',
-  routes: [],
+  routes: [
+    {
+      path: 'merchant/review',
+      name: 'merchant-review',
+      component: MerchantReviewView,
+      meta: platformAdmin,
+    },
+    {
+      path: 'merchant/staff-review',
+      name: 'merchant-staff-review',
+      component: StaffAuditView,
+      meta: staffAudit,
+    },
+    {
+      path: 'merchant/qualification-review',
+      redirect: { name: 'merchant-review' },
+    },
+    {
+      path: 'merchant/account-review',
+      redirect: { name: 'merchant-review' },
+    },
+  ],
   menuItems: [
-    { index: 'merchant-pending', label: '商家模块（待接入）', icon: Shop, disabled: true },
+    {
+      index: '/merchant/review',
+      label: '商家审核',
+      icon: Shop,
+      permissions: ['merchant:qualification:audit'],
+      roles: ['ADMIN', 'SUPER_ADMIN'],
+      adminModes: ['platform'],
+    },
+    {
+      index: '/merchant/staff-review',
+      label: '客服审核',
+      icon: Service,
+      permissions: ['merchant:staff:audit'],
+      roles: ['ADMIN', 'SUPER_ADMIN'],
+      adminModes: ['platform'],
+    },
   ],
 }

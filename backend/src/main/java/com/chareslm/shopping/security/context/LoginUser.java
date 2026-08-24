@@ -6,7 +6,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collection;
 import java.util.Set;
 
-public record LoginUser(Long userId, String username, Set<String> roles, Set<String> permissions, Long deviceId) {
+public record LoginUser(Long userId, String username, Set<String> roles, Set<String> permissions,
+                        boolean mustChangePassword) {
 
     public Collection<? extends GrantedAuthority> authorities() {
         return permissions.stream().map(SimpleGrantedAuthority::new).toList();

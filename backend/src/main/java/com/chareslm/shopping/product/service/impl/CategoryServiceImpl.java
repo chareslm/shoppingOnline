@@ -52,13 +52,18 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryResponse create(Long operatorId, CategoryCreateRequest request) {
         Long parentId = request.parentId() == null ? 0L : request.parentId();
-        if (parentId != 0 && categoryMapper.selectById(parentId) == null) {
-            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
+        int level = 1;
+        if (parentId != 0) {
+            Category parent = requireCategory(parentId);
+            if (parent.getLevel() != null && parent.getLevel() >= 3) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+            }
+            level = (parent.getLevel() == null ? 1 : parent.getLevel()) + 1;
         }
         Category category = new Category();
         category.setParentId(parentId);
         category.setName(request.name().trim());
-        category.setLevel(request.level() == null ? 1 : request.level());
+        category.setLevel(level);
         category.setSortOrder(request.sortOrder() == null ? 0 : request.sortOrder());
         category.setIcon(request.icon());
         category.setStatus(request.status() == null ? 1 : request.status());

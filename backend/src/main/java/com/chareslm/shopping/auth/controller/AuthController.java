@@ -71,7 +71,8 @@ public class AuthController {
     @org.springframework.web.bind.annotation.GetMapping("/me")
     public ApiResponse<CurrentUserResponse> currentUser() {
         LoginUser user = CurrentUser.require();
-        return ApiResponse.success(new CurrentUserResponse(user.userId(), user.username(), user.roles(), user.permissions()));
+        return ApiResponse.success(new CurrentUserResponse(user.userId(), user.username(), user.roles(),
+                user.permissions(), user.mustChangePassword()));
     }
 
     @GetMapping("/devices")

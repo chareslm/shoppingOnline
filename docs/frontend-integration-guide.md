@@ -66,9 +66,12 @@ export const productModule: AdminModuleContribution = {
 
 管理端当前约定：
 
-- 项目管理员的 `system` 模块已提供权限概览、用户与角色、审计日志页面；审计菜单和路由必须同时要求 `system:audit:view`。
-- 业务路由使用模块前缀，例如 `merchant/shops`、`product/list`、`trade/orders`。
-- 路由名称使用模块前缀，例如 `merchant-shop-list`。
+- 登录必须选择身份：系统管理员要求 `SUPER_ADMIN`，平台管理员要求 `ADMIN`（`SUPER_ADMIN` 也可进入平台管理员工作区以便本地审核）。商家与客服角色不能建立管理端会话。
+- 系统管理员菜单：用户与角色、SMTP 配置、系统日志。路由和菜单须带 `roles: ['SUPER_ADMIN']` 与 `adminModes: ['system']`。
+- 用户与角色页可手动创建平台账号（邮箱必填，首次登录强制改密）；SMTP 配置页可保存运行时发信参数，查询不回显密码。
+- 平台管理员菜单：商家审核（统合资质与账号）、客服审核、商品类目、商品审核、全部商品、消息发布。路由和菜单须带 `roles: ['ADMIN']` 与 `adminModes: ['platform']`。
+- 业务路由使用模块前缀，例如 `merchant/review`、`product/audit`、`message/publish`。
+- 路由名称使用模块前缀，例如 `merchant-review`。
 - `meta.permissions` 和菜单 `permissions` 当前采用“任意一个匹配即可”的语义。
 - 页面组件优先使用动态 `import()`，避免继续扩大管理端首屏 bundle。
 - API 封装放在模块自己的 `api/` 或 `services/` 中，并复用公共 `services/http.ts`。
@@ -103,6 +106,18 @@ export const tradeModule: WebModuleContribution = {
 ```
 
 商品详情等不适合顶层导航的页面只注册路由，不加入 `menuItems`。
+
+用户 Web 当前约定：
+
+- 登录必须选择身份：用户身份要求 `USER`，商家身份要求 `MERCHANT_OWNER` / `MERCHANT_STAFF` / `CUSTOMER_SERVICE`。
+- 用户身份菜单：概览、个人资料、收货地址、偏好设置，以及已接入的商品、购物车和订单。
+- 商家身份菜单：添加商品（含主图/详情图上传）、商品浏览已接入，接口只返回本店商品；客服账号仅 `MERCHANT_OWNER` 可见，提交后由平台审核通过才可登录；用户沟通对商家主账号与客服开放。订单仍为占位。客服账号（仅 `CUSTOMER_SERVICE`）登录后只能看到用户沟通。
+- `/register` 提供个人账号与商家入驻切换；商家申请使用公开 multipart 接口，不提前创建账号或授予商家角色。
+- 管理台 `/merchant/review` 由 merchant 模块注册，待审核 / 已通过 / 已撤销三个队列共用同一权限 `merchant:qualification:audit`，并限定平台管理员身份。资质审核通过即开通账号；资质图片在详情中预览。
+- 管理台 `/merchant/staff-review` 审核店铺客服（`merchant:staff:audit`）：待审核 / 已通过 / 已驳回 / 已撤销，列表展示所属店铺。通过后才发放登录密码。
+- 平台管理端 `/product/categories` 维护类目（`category:manage`）；`/product/audit`、`/product/catalog` 为商品审核与全部商品列表（`product:audit`），列表展示所属店铺名称。
+- 新商家账号收到临时密码后，前端根据 `mustChangePassword` 强制进入改密流程；该前端限制不替代后端过滤器。
+- 资质文件不使用公开 URL，管理台通过带 Bearer Token 的下载接口获取。
 
 ## 5. Flutter 与微信小程序
 
@@ -155,7 +170,7 @@ Flutter 模块注册约定：
 3. 只修改本人后端包、数据库迁移和对应前端模块目录；公共层变更提前通知项目管理员。
 4. 增加模块路由和菜单贡献，使用真实权限编码。
 5. 完成后端测试、对应前端生产构建和至少一条真实接口联调。
-6. 在 `docs/progress.md` 记录完成内容、验证结果、风险和下一步，由项目管理员集成到 `develop`。
+6. 整理完成内容、验证结果、风险和下一步，并按项目管理员指定批次同步到 `docs/update.md` 后集成到 `develop`。
 
 ## 8. 接入检查清单
 

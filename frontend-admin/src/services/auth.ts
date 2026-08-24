@@ -1,4 +1,4 @@
-import type { AdminUser, ApiResponse, AuditLog, AuthenticatedUser, LoginRequest, LoginResponse, PageResponse, Permission, Role } from '../types/auth'
+import type { AdminUser, ApiResponse, AuthenticatedUser, CreatedAdminUser, LoginRequest, LoginResponse, PageResponse, Permission, Role } from '../types/auth'
 import { http } from './http'
 
 function unwrap<T>(response: ApiResponse<T>) {
@@ -41,6 +41,22 @@ export const authApi = {
 
   async users(params: { keyword?: string; status?: string; page: number; pageSize: number }) {
     const { data } = await http.get<ApiResponse<PageResponse<AdminUser>>>('/api/admin/authorization/users', { params })
+    return unwrap(data)
+  },
+
+  async createUser(payload: {
+    username?: string
+    email: string
+    phone?: string
+    roleIds: string[]
+    currentPassword: string
+  }) {
+    const { data } = await http.post<ApiResponse<CreatedAdminUser>>('/api/admin/authorization/users', payload)
+    return unwrap(data)
+  },
+
+  async retryCredentialEmail(userId: string) {
+    const { data } = await http.post<ApiResponse<CreatedAdminUser>>(`/api/admin/authorization/users/${userId}/credential-email`)
     return unwrap(data)
   },
 

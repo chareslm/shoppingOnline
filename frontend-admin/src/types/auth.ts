@@ -19,11 +19,14 @@ export interface LoginRequest {
   deviceName: string
 }
 
+export type AdminMode = 'system' | 'platform'
+
 export interface AuthenticatedUser {
   userId: string
   username: string
   roles: string[]
   permissions: string[]
+  mustChangePassword: boolean
 }
 
 export interface LoginResponse extends AuthenticatedUser {
@@ -51,25 +54,18 @@ export interface AdminUser {
   maskedEmail?: string | null
   maskedPhone?: string | null
   status: 'ACTIVE' | 'DISABLED' | 'LOCKED' | 'PENDING_VERIFICATION'
+  mustChangePassword: boolean
   roles: Role[]
   createdAt: string
   lastLoginAt?: string | null
 }
 
-export interface AuditLog {
-  id: string
-  actorUserId?: string | null
-  actorUsername?: string | null
-  module: string
-  actionCode: string
-  targetType?: string | null
-  targetId?: string | null
-  success: boolean
-  traceId?: string | null
-  requestMethod?: string | null
-  requestPath?: string | null
-  maskedClientIp?: string | null
-  client?: string | null
-  detail?: unknown
-  createdAt: string
+export interface CreatedAdminUser {
+  userId: string
+  username?: string | null
+  maskedEmail?: string | null
+  status: string
+  mustChangePassword: boolean
+  mailDeliveryStatus: 'SENT' | 'MAIL_FAILED' | 'SKIPPED'
+  roles: Role[]
 }
