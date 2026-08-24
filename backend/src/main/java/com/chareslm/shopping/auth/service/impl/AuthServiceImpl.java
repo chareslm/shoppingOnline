@@ -204,7 +204,7 @@ public class AuthServiceImpl implements AuthService {
         saveRefreshToken(user.getId(), device.getId(), next);
         writeAudit(user.getId(), "TOKEN_REFRESH", true);
         LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions,
-                Boolean.TRUE.equals(user.getMustChangePassword()));
+                Boolean.TRUE.equals(user.getMustChangePassword()), device.getId());
         return new LoginResponse(user.getId(), user.getUsername(), jwtTokenService.createAccessToken(loginUser),
                 next.token(), jwtProperties.accessTokenTtl().toSeconds(), roles, permissions,
                 Boolean.TRUE.equals(user.getMustChangePassword()));
@@ -262,7 +262,7 @@ public class AuthServiceImpl implements AuthService {
 
     private LoginResponse issueTokens(UserAccount user, Long deviceId, Set<String> roles, Set<String> permissions) {
         LoginUser loginUser = new LoginUser(user.getId(), user.getUsername(), roles, permissions,
-                Boolean.TRUE.equals(user.getMustChangePassword()));
+                Boolean.TRUE.equals(user.getMustChangePassword()), deviceId);
         JwtTokenService.IssuedRefreshToken refreshToken = jwtTokenService.createRefreshToken(user.getId(), deviceId);
         saveRefreshToken(user.getId(), deviceId, refreshToken);
         return new LoginResponse(user.getId(), user.getUsername(), jwtTokenService.createAccessToken(loginUser),

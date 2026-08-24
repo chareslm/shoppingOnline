@@ -33,7 +33,11 @@ public enum ErrorCode {
     SKU_CODE_DUPLICATE(40903, "sku code already exists"),
     MERCHANT_FILE_INVALID(40030, "invalid qualification file"),
     MAIL_SEND_FAILED(40031, "mail send failed"),
-    PRODUCT_IMAGE_INVALID(40032, "invalid product image");
+    PRODUCT_IMAGE_INVALID(40032, "invalid product image"),
+    MESSAGE_EMPTY(40040, "message content is empty"),
+    MESSAGE_RECALL_EXPIRED(40041, "message recall window has expired"),
+    NOTIFICATION_PREF_NOT_FOUND(40406, "notification preference not found"),
+    SESSION_ALLOCATION_CONFLICT(40904, "chat session already assigned");
 
     private final int code;
     private final String message;

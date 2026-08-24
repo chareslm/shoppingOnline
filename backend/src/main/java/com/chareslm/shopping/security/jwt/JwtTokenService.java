@@ -59,7 +59,8 @@ public class JwtTokenService {
                 claims.get("username", String.class),
                 roles == null ? Set.of() : Set.copyOf(roles),
                 permissions == null ? Set.of() : Set.copyOf(permissions),
-                Boolean.TRUE.equals(claims.get("mustChangePassword", Boolean.class))
+                Boolean.TRUE.equals(claims.get("mustChangePassword", Boolean.class)),
+                deviceId == null ? null : deviceId.longValue()
         );
     }
 

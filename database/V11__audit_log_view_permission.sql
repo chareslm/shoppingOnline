@@ -1,4 +1,5 @@
--- Audit log directory permission. V2 authorization permissions must be applied first.
+-- Audit log directory permission. Applied after V10 because V8 is already merchant tables.
+-- V2 authorization permissions must be applied first.
 
 INSERT INTO permission (code, name, resource, action, description, status) VALUES
     ('system:audit:view', '查看审计日志', 'system:audit', 'view', '查询平台安全审计日志；敏感字段按规则脱敏', 'ACTIVE')

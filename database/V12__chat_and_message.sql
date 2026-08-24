@@ -1,6 +1,6 @@
 -- ============================================================
 -- 模块5：聊天与消息通知 建表迁移
--- 文件: database/V5__chat_and_message.sql
+-- 文件: database/V12__chat_and_message.sql
 -- 说明: 包含客服聊天会话/消息、消息中心模板/通知
 --       新环境：CREATE TABLE IF NOT EXISTS 完整建表（含审计列）
 --       依赖: 引用成员1 user 表、成员2 shop 表的 ID（不建外键）
