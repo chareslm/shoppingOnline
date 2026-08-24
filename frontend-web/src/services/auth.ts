@@ -1,6 +1,6 @@
 import { http, unwrap } from '@/services/http'
 import type { ApiResponse } from '@/types/api'
-import type { AuthenticatedUser, LoginRequest, LoginResponse, RegisteredUser, RegisterRequest } from '@/types/auth'
+import type { AuthenticatedUser, DeviceSession, LoginRequest, LoginResponse, RegisteredUser, RegisterRequest } from '@/types/auth'
 
 export const authApi = {
   async register(payload: RegisterRequest) {

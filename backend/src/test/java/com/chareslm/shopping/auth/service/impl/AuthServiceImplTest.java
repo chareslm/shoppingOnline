@@ -5,8 +5,8 @@ import com.chareslm.shopping.auth.dto.request.PasswordLoginRequest;
 import com.chareslm.shopping.auth.dto.request.RegisterRequest;
 import com.chareslm.shopping.auth.dto.response.LoginResponse;
 import com.chareslm.shopping.auth.dto.response.RegisteredUserResponse;
-import com.chareslm.shopping.auth.entity.Role;
 import com.chareslm.shopping.auth.entity.AuditLog;
+import com.chareslm.shopping.auth.entity.Role;
 import com.chareslm.shopping.auth.entity.RefreshToken;
 import com.chareslm.shopping.auth.entity.UserAccount;
 import com.chareslm.shopping.auth.entity.UserDevice;
@@ -129,6 +129,9 @@ class AuthServiceImplTest {
         assertNotNull(response.refreshToken());
         assertEquals(1800L, response.expiresInSeconds());
         assertEquals(List.of("USER"), response.roles().stream().toList());
+        assertEquals(201L, new JwtTokenService(new JwtProperties(
+                "test-secret-with-at-least-32-bytes-long", Duration.ofMinutes(30), Duration.ofDays(7)))
+                .parseAccessToken(response.accessToken()).deviceId());
         verify(userDeviceMapper).insert(any(UserDevice.class));
         verify(userAccountMapper).markLoginSucceeded(101L);
         verify(auditLogMapper).insert(any(AuditLog.class));

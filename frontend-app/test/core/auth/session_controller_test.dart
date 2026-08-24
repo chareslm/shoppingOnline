@@ -5,7 +5,7 @@ import 'package:shopping_app/core/storage/session_store.dart';
 
 void main() {
   const user = AuthenticatedUser(
-    userId: 7,
+    userId: '7',
     username: 'alice_1',
     roles: ['USER'],
     permissions: [],

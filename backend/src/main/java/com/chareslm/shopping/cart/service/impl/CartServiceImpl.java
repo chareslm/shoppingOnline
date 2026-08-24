@@ -1,9 +1,11 @@
 package com.chareslm.shopping.cart.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.chareslm.shopping.cart.client.ProductQueryClient;
 import com.chareslm.shopping.cart.dto.CartDTO;
 import com.chareslm.shopping.cart.dto.CartGroupDTO;
 import com.chareslm.shopping.cart.dto.CartItemDTO;
+import com.chareslm.shopping.cart.dto.ProductSkuView;
 import com.chareslm.shopping.cart.entity.Cart;
 import com.chareslm.shopping.cart.entity.CartGroup;
 import com.chareslm.shopping.cart.entity.CartItem;
@@ -31,6 +33,7 @@ public class CartServiceImpl implements CartService {
     private final CartMapper cartMapper;
     private final CartGroupMapper cartGroupMapper;
     private final CartItemMapper cartItemMapper;
+    private final ProductQueryClient productQueryClient;
 
     @Override
     @Transactional
@@ -48,9 +51,18 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void addItem(Long userId, Long skuId, int quantity, Long shopId, BigDecimal price) {
-        if (quantity <= 0 || price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+        if (quantity <= 0) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR);
         }
+        // 商品有效性校验：SKU 存在且启用、所属 SPU 上架；价格以服务端为准，不信任客户端提交价
+        ProductSkuView sku = productQueryClient.getSkuSnapshot(skuId);
+        if (sku == null || !sku.onSale()) {
+            throw new BusinessException(ErrorCode.SKU_NOT_AVAILABLE);
+        }
+        if (!sku.shopId().equals(shopId)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+        }
+        BigDecimal serverPrice = sku.price();
         Cart cart = getOrCreateCart(userId);
         CartGroup group = cartGroupMapper.selectOne(new LambdaQueryWrapper<CartGroup>()
                 .eq(CartGroup::getCartId, cart.getId())
@@ -67,6 +79,7 @@ public class CartServiceImpl implements CartService {
                 .eq(CartItem::getSkuId, skuId));
         if (item != null) {
             item.setQuantity(item.getQuantity() + quantity);
+            item.setPriceSnapshot(serverPrice);
             item.setStatus(1);
             cartItemMapper.updateById(item);
         } else {
@@ -75,7 +88,7 @@ public class CartServiceImpl implements CartService {
             item.setGroupId(group.getId());
             item.setSkuId(skuId);
             item.setQuantity(quantity);
-            item.setPriceSnapshot(price);
+            item.setPriceSnapshot(serverPrice);
             item.setChecked(1);
             item.setStatus(1);
             cartItemMapper.insert(item);
@@ -145,6 +158,11 @@ public class CartServiceImpl implements CartService {
         CartItemDTO dto = new CartItemDTO();
         dto.setItemId(item.getId());
         dto.setSkuId(item.getSkuId());
+        ProductSkuView sku = productQueryClient.getSkuSnapshot(item.getSkuId());
+        if (sku != null) {
+            dto.setSkuName(sku.skuName());
+            dto.setSkuImage(sku.skuImage());
+        }
         dto.setPrice(item.getPriceSnapshot());
         dto.setQuantity(item.getQuantity());
         dto.setChecked(item.getChecked());

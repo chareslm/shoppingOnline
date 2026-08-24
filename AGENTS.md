@@ -56,9 +56,11 @@ docs/             需求、接口、架构和协作文档
 - `docs/update.md`：阶段总结；仅在明确提出整合时再更新。必须更新。
 - `docs/git-workflow.md`：完整 Git 协作规范。
 - `docs/architecture/module-ownership.md`：模块分工及跨模块边界。
+- `docs/architecture/statistics-foundation.md`：统计指标口径、权限、数据范围、事件和聚合边界；统计开发前必须阅读。
 - `docs/project-context.md`：项目决策与当前状态记录。
 - `docs/frontend-integration-guide.md`：四端公共基础层、前端模块目录、路由菜单注册和成员接入检查清单。
 - `docs/api/auth.md`：认证与 RBAC 接口调用契约；业务模块接入 Bearer Token 前必须阅读。
+- `docs/api/audit.md`：管理端审计日志查询、权限、筛选与脱敏契约。
 - `docs/api/user.md`：用户资料、收货地址与偏好接口契约；用户 Web 接入前必须阅读。
 - `docs/api/product.md`：商品（类目/SPU/SKU/库存/上下架）接口契约。
 - `docs/api/search.md`：商品搜索、建议与热词接口契约。

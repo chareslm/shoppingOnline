@@ -19,6 +19,10 @@ import com.chareslm.shopping.payment.mapper.PaymentOrderMapper;
 import com.chareslm.shopping.payment.mapper.PaymentRecordMapper;
 import com.chareslm.shopping.payment.mapper.RefundOrderMapper;
 import com.chareslm.shopping.payment.service.PaymentService;
+import com.chareslm.shopping.product.entity.Sku;
+import com.chareslm.shopping.product.entity.Spu;
+import com.chareslm.shopping.product.mapper.SkuMapper;
+import com.chareslm.shopping.product.mapper.SpuMapper;
 import com.chareslm.shopping.trade.client.MockStockClient;
 import com.chareslm.shopping.trade.dto.CreateOrderRequest;
 import com.chareslm.shopping.trade.dto.OrderDTO;
@@ -66,6 +70,7 @@ class TransactionConcurrencyTest {
     private static final BigDecimal PRICE = new BigDecimal("100.00");
 
     private final ExecutorService executor = Executors.newFixedThreadPool(8);
+    private Long spuId;
 
     @Autowired
     private CartService cartService;
@@ -97,16 +102,42 @@ class TransactionConcurrencyTest {
     private RefundOrderMapper refundOrderMapper;
     @Autowired
     private OrderTimeoutTask orderTimeoutTask;
+    @Autowired
+    private SkuMapper skuMapper;
+    @Autowired
+    private SpuMapper spuMapper;
 
     @BeforeEach
     void setUp() {
         mockStockClient.reset();
         mockStockClient.initStock(SKU_ID, 100);
+        // 结算校验要求 SKU 存在且所属 SPU 上架：插入真实商品记录（tearDown 清理）
+        Spu spu = new Spu();
+        spu.setShopId(SHOP_ID);
+        spu.setCategoryId(1L);
+        spu.setName("并发测试商品");
+        spu.setStatus("ON_SALE");
+        spuMapper.insert(spu);
+        spuId = spu.getId();
+        Sku sku = new Sku();
+        sku.setId(SKU_ID);
+        sku.setSpuId(spuId);
+        sku.setSkuCode("SKU-" + SKU_ID);
+        sku.setPrice(PRICE);
+        sku.setAvailableStock(100);
+        sku.setReservedStock(0);
+        sku.setSoldStock(0);
+        sku.setStatus(1);
+        skuMapper.insert(sku);
     }
 
     @AfterEach
     void tearDown() {
         cleanup(USER_ID);
+        skuMapper.deleteById(SKU_ID);
+        if (spuId != null) {
+            spuMapper.deleteById(spuId);
+        }
         executor.shutdownNow();
     }
 

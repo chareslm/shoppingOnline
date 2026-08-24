@@ -29,7 +29,7 @@ public class JwtTokenService {
 
     public String createAccessToken(LoginUser loginUser) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(String.valueOf(loginUser.userId()))
                 .claim("username", loginUser.username())
                 .claim("roles", loginUser.roles())
@@ -38,9 +38,11 @@ public class JwtTokenService {
                 .claim("mustChangePassword", loginUser.mustChangePassword())
                 .claim("tokenType", "access")
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(properties.accessTokenTtl())))
-                .signWith(signingKey)
-                .compact();
+                .expiration(Date.from(now.plus(properties.accessTokenTtl())));
+        if (loginUser.deviceId() != null) {
+            builder.claim("deviceId", loginUser.deviceId());
+        }
+        return builder.signWith(signingKey).compact();
     }
 
     @SuppressWarnings("unchecked")
@@ -51,6 +53,7 @@ public class JwtTokenService {
         }
         List<String> roles = claims.get("roles", List.class);
         List<String> permissions = claims.get("permissions", List.class);
+        Number deviceId = claims.get("deviceId", Number.class);
         return new LoginUser(
                 Long.valueOf(claims.getSubject()),
                 claims.get("username", String.class),

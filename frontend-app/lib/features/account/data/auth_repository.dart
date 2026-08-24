@@ -62,4 +62,13 @@ class AuthRepository {
     );
     await _sessionController.clear();
   }
+
+  Future<List<DeviceSession>> devices() => _api.devices();
+
+  Future<void> revokeDevice(String deviceId, {required bool current}) async {
+    await _api.revokeDevice(deviceId);
+    if (current) await _sessionController.clear();
+  }
+
+  Future<void> revokeOtherDevices() => _api.revokeOtherDevices();
 }

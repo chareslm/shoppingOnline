@@ -67,4 +67,18 @@ export const authApi = {
     })
     return unwrap(data)
   },
+
+  async auditLogs(params: {
+    actorKeyword?: string
+    module?: string
+    actionCode?: string
+    success?: boolean
+    startAt?: string
+    endAt?: string
+    page: number
+    pageSize: number
+  }) {
+    const { data } = await http.get<ApiResponse<PageResponse<AuditLog>>>('/api/admin/audit-logs', { params })
+    return unwrap(data)
+  },
 }

@@ -1,4 +1,5 @@
 import AddressView from '@/views/AddressView.vue'
+import DeviceSessionsView from '@/views/DeviceSessionsView.vue'
 import OverviewView from '@/views/OverviewView.vue'
 import PreferenceView from '@/views/PreferenceView.vue'
 import ProfileView from '@/views/ProfileView.vue'

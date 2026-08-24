@@ -49,6 +49,8 @@
 
 成功响应中的 `accessToken` 应通过 `Authorization: Bearer <accessToken>` 发送；有效期当前为 30 分钟。`refreshToken` 有效期为 7 天，只能提交给刷新接口，不能用于访问业务接口。`ADMIN_WEB` 仅允许 `ADMIN` / `SUPER_ADMIN`；商家与客服使用用户 Web 的 `WEB` 登录。
 
+新签发的 Access Token 同时携带服务端内部设备标识，用于可靠判断当前设备。该标识由服务端根据登录设备记录写入，客户端不得自行提交或覆盖。升级前签发且尚未过期的旧 Access Token 不含设备标识；访问设备管理接口时会返回 `401`，客户端应按现有机制刷新 Token 后自动重试。
+
 ```json
 {
   "code": 0,
@@ -93,6 +95,53 @@
 ```
 
 退出登录会撤销该设备全部未撤销的 Refresh Token。已经签发的 Access Token 不保存服务端黑名单，仍可能使用至其 30 分钟有效期结束。
+
+## 本人设备与会话管理
+
+以下接口均需要包含设备标识的新 Access Token，只能查询和操作当前认证用户本人的设备。服务端不接受客户端提交用户 ID 作为数据范围。
+
+### 设备列表
+
+`GET /api/auth/devices`
+
+按最后活跃时间倒序返回登录设备。IP 地址只返回脱敏值；`status` 根据是否仍有未撤销且未过期的 Refresh Token 计算。由于 HTTP 响应会将 Java `Long` 统一序列化为字符串，设备 `id` 必须按字符串处理。
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "id": "201",
+      "deviceType": "WEB",
+      "deviceName": "Chrome on Windows",
+      "appVersion": null,
+      "maskedIp": "192.168.*.*",
+      "lastActiveAt": "2026-08-19T18:00:00",
+      "createdAt": "2026-08-10T09:00:00",
+      "status": "ACTIVE",
+      "current": true,
+      "sessionExpiresAt": "2026-08-26T18:00:00"
+    }
+  ]
+}
+```
+
+### 退出指定设备
+
+`POST /api/auth/devices/{deviceId}/revoke`
+
+`deviceId` 为设备列表返回的内部设备 ID。接口会撤销该设备全部有效 Refresh Token、将设备标记为已撤销并写入 `DEVICE_REVOKE` 审计日志。重复调用保持成功幂等；目标设备不存在或不属于当前用户时统一返回 HTTP `404` / `40401`，避免泄露其他用户设备是否存在。
+
+如果退出的是当前设备，客户端应在成功后立即清除本地 Access Token 和 Refresh Token 并返回登录页。
+
+### 退出其他设备
+
+`POST /api/auth/devices/revoke-others`
+
+撤销当前用户除当前设备外的全部 Refresh Token，将其他设备标记为已撤销，并写入 `OTHER_DEVICES_REVOKE` 审计日志。当前设备依据签名 Access Token 中的服务端设备标识确定，不信任请求体参数。
+
+设备撤销、普通退出和退出其他设备都不维护 Access Token 黑名单；相关设备已经签发的 Access Token 最长仍可能使用 30 分钟，但无法继续刷新。
 
 ## 当前用户
 

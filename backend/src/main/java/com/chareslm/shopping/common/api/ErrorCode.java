@@ -24,6 +24,7 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(40403, "product not found"),
     PRODUCT_STATUS_INVALID(40021, "product status not allowed"),
     SKU_NOT_FOUND(40404, "sku not found"),
+    SKU_NOT_AVAILABLE(40024, "sku not available or not on sale"),
     REVIEW_NOT_FOUND(40405, "review not found"),
     REVIEW_ALREADY_EXISTS(40022, "review already exists"),
     REVIEW_NOT_ELIGIBLE(40023, "review not eligible"),

@@ -27,10 +27,10 @@ class UserRepository {
   Future<List<UserAddress>> addresses() => _api.addresses();
   Future<UserAddress> createAddress(SaveUserAddress address) =>
       _api.createAddress(address);
-  Future<UserAddress> updateAddress(int id, SaveUserAddress address) =>
+  Future<UserAddress> updateAddress(String id, SaveUserAddress address) =>
       _api.updateAddress(id, address);
-  Future<void> setDefaultAddress(int id) => _api.setDefaultAddress(id);
-  Future<void> deleteAddress(int id) => _api.deleteAddress(id);
+  Future<void> setDefaultAddress(String id) => _api.setDefaultAddress(id);
+  Future<void> deleteAddress(String id) => _api.deleteAddress(id);
   Future<UserPreference> preference() => _api.preference();
   Future<UserPreference> updatePreference({
     required bool marketingEnabled,

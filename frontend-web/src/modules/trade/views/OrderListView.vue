@@ -20,7 +20,9 @@ const FILTERS: { value: number | 'all'; label: string }[] = [
   { value: 2, label: '已发货' },
   { value: 3, label: '已完成' },
   { value: 4, label: '已取消' },
+  { value: 5, label: '已关闭' },
   { value: 6, label: '退款中' },
+  { value: 7, label: '退款完成' },
 ]
 
 const filteredOrders = computed(() =>
@@ -228,7 +230,9 @@ function formatTime(value: string | null) {
 .status-2 { background: #e9f5ef; color: #15553f; }
 .status-3 { background: #edf2ed; color: #526059; }
 .status-4 { background: #f0f0f0; color: #8b948f; }
+.status-5 { background: #f0f0f0; color: #8b948f; }
 .status-6 { background: #f3e8ff; color: #6b3fa0; }
+.status-7 { background: #e6f4ea; color: #1e7a46; }
 
 .order-goods {
   display: flex;

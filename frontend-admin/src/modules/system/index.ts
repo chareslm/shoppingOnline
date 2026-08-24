@@ -59,5 +59,11 @@ export const systemModule: AdminModuleContribution = {
       roles: ['SUPER_ADMIN'],
       adminModes: ['system'],
     },
+    {
+      index: '/audit-logs',
+      label: '审计日志',
+      icon: Document,
+      permissions: ['system:audit:view'],
+    },
   ],
 }

@@ -29,11 +29,11 @@ button { cursor: pointer; }
 .brand strong { letter-spacing: .1em; font-size: 18px; }
 .brand small { margin-top: 4px; color: var(--muted); font-size: 11px; }
 .main-nav { display: flex; align-items: stretch; align-self: stretch; gap: 6px; }
-.main-nav a { display: flex; align-items: center; padding: 0 16px; color: #526059; font-weight: 600; font-size: 14px; border-bottom: 2px solid transparent; }
+.main-nav a { display: flex; align-items: center; padding: 0 10px; color: #526059; font-weight: 600; font-size: 14px; white-space: nowrap; border-bottom: 2px solid transparent; }
 .main-nav a:hover, .main-nav a.router-link-active { color: var(--green); border-bottom-color: var(--green); }
 .user-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .avatar { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: white; font-weight: 700; }
-.user-name { font-size: 14px; font-weight: 600; }
+.user-name { max-width: 140px; overflow: hidden; color: var(--ink); font-size: 14px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
 .menu-toggle { display: none; border: 0; background: none; font-size: 22px; }
 .page-container { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 46px 0 72px; flex: 1; }
 footer { padding: 22px; text-align: center; border-top: 1px solid var(--line); color: #87918b; font-size: 12px; background: var(--paper); }

@@ -58,7 +58,7 @@ export interface OrderItem {
 export interface Order {
   orderId: string
   orderNo: string
-  /** 0 待支付 / 1 已支付 / 2 已发货 / 3 已完成 / 4 已取消 / 6 退款中 */
+  /** 0 待支付 / 1 已支付 / 2 已发货 / 3 已完成 / 4 已取消 / 5 已关闭（超时） / 6 退款中 / 7 退款完成 */
   status: number
   totalAmount: number
   discountAmount: number
@@ -125,7 +125,9 @@ export const ORDER_STATUS_LABELS: Record<number, string> = {
   2: '已发货',
   3: '已完成',
   4: '已取消',
+  5: '已关闭',
   6: '退款中',
+  7: '退款完成',
 }
 
 export const PAYMENT_STATUS_LABELS: Record<number, string> = {

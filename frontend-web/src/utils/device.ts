@@ -17,5 +17,26 @@ export function getDeviceId() {
 }
 
 export function getDeviceName() {
-  return navigator.userAgent.slice(0, 120) || 'Customer web browser'
+  const userAgent = navigator.userAgent
+  const browser = userAgent.match(/Edg\/([\d.]+)/)?.[1]
+    ? `Microsoft Edge ${userAgent.match(/Edg\/([\d.]+)/)?.[1]}`
+    : userAgent.match(/Chrome\/([\d.]+)/)?.[1]
+      ? `Chrome ${userAgent.match(/Chrome\/([\d.]+)/)?.[1]}`
+      : userAgent.match(/Firefox\/([\d.]+)/)?.[1]
+        ? `Firefox ${userAgent.match(/Firefox\/([\d.]+)/)?.[1]}`
+        : userAgent.match(/Version\/([\d.]+).*Safari/)?.[1]
+          ? `Safari ${userAgent.match(/Version\/([\d.]+).*Safari/)?.[1]}`
+          : 'Web browser'
+  const platform = /Windows/i.test(userAgent)
+    ? 'Windows'
+    : /Android/i.test(userAgent)
+      ? 'Android'
+      : /iPhone|iPad/i.test(userAgent)
+        ? 'iOS'
+        : /Macintosh/i.test(userAgent)
+          ? 'macOS'
+          : /Linux/i.test(userAgent)
+            ? 'Linux'
+            : 'Unknown OS'
+  return `${browser} on ${platform}`
 }

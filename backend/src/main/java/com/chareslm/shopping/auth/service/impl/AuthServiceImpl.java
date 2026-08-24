@@ -237,6 +237,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
         refreshTokenMapper.revokeActiveByUserAndDevice(userId, device.getId(), "LOGOUT");
+        userDeviceMapper.markRevoked(userId, device.getId());
         writeAudit(userId, "LOGOUT", true);
     }
 
@@ -288,6 +289,7 @@ public class AuthServiceImpl implements AuthService {
         log.setTargetType("USER");
         log.setTargetId(actorUserId == null ? null : actorUserId.toString());
         log.setSuccess(success);
+        AuditRequestMetadata.populate(log);
         auditLogMapper.insert(log);
     }
 

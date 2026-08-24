@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shopping_app/app/module.dart';
 import 'package:shopping_app/features/account/presentation/address_page.dart';
 import 'package:shopping_app/features/account/presentation/change_password_page.dart';
+import 'package:shopping_app/features/account/presentation/device_sessions_page.dart';
 import 'package:shopping_app/features/account/presentation/home_page.dart';
 import 'package:shopping_app/features/account/presentation/preference_page.dart';
 import 'package:shopping_app/features/account/presentation/profile_page.dart';
@@ -23,6 +24,10 @@ final accountModule = AppModuleContribution(
     GoRoute(
       path: '/change-password',
       builder: (context, state) => const ChangePasswordPage(),
+    ),
+    GoRoute(
+      path: '/devices',
+      builder: (context, state) => const DeviceSessionsPage(),
     ),
   ],
 );

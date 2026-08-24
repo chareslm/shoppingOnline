@@ -10,6 +10,10 @@ import com.chareslm.shopping.payment.entity.PaymentRecord;
 import com.chareslm.shopping.payment.mapper.PaymentOrderMapper;
 import com.chareslm.shopping.payment.mapper.PaymentRecordMapper;
 import com.chareslm.shopping.payment.service.PaymentService;
+import com.chareslm.shopping.product.entity.Sku;
+import com.chareslm.shopping.product.entity.Spu;
+import com.chareslm.shopping.product.mapper.SkuMapper;
+import com.chareslm.shopping.product.mapper.SpuMapper;
 import com.chareslm.shopping.trade.client.MockStockClient;
 import com.chareslm.shopping.trade.dto.CreateOrderRequest;
 import com.chareslm.shopping.trade.dto.OrderDTO;
@@ -66,10 +70,31 @@ class TransactionFlowIntegrationTest {
     private PaymentRecordMapper paymentRecordMapper;
     @Autowired
     private OrderTimeoutTask orderTimeoutTask;
+    @Autowired
+    private SkuMapper skuMapper;
+    @Autowired
+    private SpuMapper spuMapper;
 
     @BeforeEach
     void setUp() {
         mockStockClient.initStock(SKU_ID, 100);
+        // 结算校验要求 SKU 存在且所属 SPU 上架：插入真实商品记录（事务回滚，不污染数据库）
+        Spu spu = new Spu();
+        spu.setShopId(SHOP_ID);
+        spu.setCategoryId(1L);
+        spu.setName("集成测试商品");
+        spu.setStatus("ON_SALE");
+        spuMapper.insert(spu);
+        Sku sku = new Sku();
+        sku.setId(SKU_ID);
+        sku.setSpuId(spu.getId());
+        sku.setSkuCode("SKU-" + SKU_ID);
+        sku.setPrice(PRICE);
+        sku.setAvailableStock(100);
+        sku.setReservedStock(0);
+        sku.setSoldStock(0);
+        sku.setStatus(1);
+        skuMapper.insert(sku);
     }
 
     @Test
