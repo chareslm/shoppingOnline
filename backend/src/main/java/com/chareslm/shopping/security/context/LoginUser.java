@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Set;
 
 public record LoginUser(Long userId, String username, Set<String> roles, Set<String> permissions,
-                        boolean mustChangePassword) {
+                        boolean mustChangePassword, Long deviceId) {
 
     public Collection<? extends GrantedAuthority> authorities() {
         return permissions.stream().map(SimpleGrantedAuthority::new).toList();

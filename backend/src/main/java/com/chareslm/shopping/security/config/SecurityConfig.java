@@ -36,6 +36,7 @@ public class SecurityConfig {
                                 "/api/auth/refresh", "/api/merchant/applications").permitAll()
                         .requestMatchers("/api/mock/wechat/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/ws/chat/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/spu/**",
                                 "/api/search/**", "/api/review/**", "/api/product-media/**").permitAll()
                         .anyRequest().authenticated())

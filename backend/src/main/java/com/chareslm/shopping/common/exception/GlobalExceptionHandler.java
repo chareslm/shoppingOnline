@@ -29,8 +29,8 @@ public class GlobalExceptionHandler {
         return switch (code) {
             case 40101, 40102 -> HttpStatus.UNAUTHORIZED;
             case 40301, 40302, 40303 -> HttpStatus.FORBIDDEN;
-            case 40401 -> HttpStatus.NOT_FOUND;
-            case 40901, 40902, 40903 -> HttpStatus.CONFLICT;
+            case 40401, 40406 -> HttpStatus.NOT_FOUND;
+            case 40901, 40902, 40903, 40904 -> HttpStatus.CONFLICT;
             case 42301 -> HttpStatus.LOCKED;
             default -> HttpStatus.BAD_REQUEST;
         };
