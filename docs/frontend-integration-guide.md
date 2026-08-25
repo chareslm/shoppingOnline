@@ -74,6 +74,7 @@ export const productModule: AdminModuleContribution = {
 - 路由名称使用模块前缀，例如 `merchant-review`。
 - `meta.permissions` 和菜单 `permissions` 当前采用“任意一个匹配即可”的语义。
 - 页面组件优先使用动态 `import()`，避免继续扩大管理端首屏 bundle。
+- 管理端公共外壳在不超过 760 px 的视口下使用 64 px 图标侧栏并隐藏说明文字；业务页面必须允许主内容收缩，宽表放在自身横向滚动容器中，不得撑出页面级横向滚动。
 - API 封装放在模块自己的 `api/` 或 `services/` 中，并复用公共 `services/http.ts`。
 - 不得在业务模块中重新创建 Axios 实例、Token 刷新器或登录状态存储。
 
