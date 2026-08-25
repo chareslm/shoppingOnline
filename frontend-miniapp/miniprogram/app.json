@@ -10,7 +10,12 @@
     "pages/preferences/index",
     "pages/change-password/index",
     "pages/devices/index",
-    "pages/unauthorized/index"
+    "pages/unauthorized/index",
+    "pages/cart/index",
+    "pages/checkout/index",
+    "pages/payment/index",
+    "pages/orders/index",
+    "pages/order-detail/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",

@@ -1,0 +1,50 @@
+<view class="page detail-page">
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+
+  <view wx:if="{{order}}" class="card status-card">
+    <text class="status-tag big {{statusClass}}">{{statusLabel}}</text>
+    <view class="muted order-no">订单号：{{orderNo}}</view>
+  </view>
+
+  <block wx:if="{{order}}">
+    <view class="card">
+      <view class="section-title">收货信息</view>
+      <view>{{receiverLine}}</view>
+      <view class="muted">{{receiverAddress}}</view>
+      <view wx:if="{{remark}}" class="muted remark-line">备注：{{remark}}</view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">商品明细</view>
+      <view wx:for="{{items}}" wx:key="itemId" class="detail-item">
+        <image wx:if="{{item.image}}" class="thumb" src="{{item.image}}" mode="aspectFill" />
+        <view wx:else class="thumb thumb-placeholder">无图</view>
+        <view class="item-main">
+          <view class="item-name">{{item.name}}</view>
+          <view class="muted">¥{{item.priceText}} × {{item.quantity}}</view>
+        </view>
+        <view class="subtotal">¥{{item.subtotalText}}</view>
+      </view>
+      <view class="amounts">
+        <view wx:for="{{amounts}}" wx:key="label" class="amount-row {{item.label === '实付' ? 'strong' : ''}}">
+          <text>{{item.label}}</text>
+          <text>{{item.value}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{times.length > 0}}" class="card">
+      <view wx:for="{{times}}" wx:key="label" class="time-row muted">
+        <text>{{item.label}}</text>
+        <text>{{item.value}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{canPay || canCancel || canConfirm || canRefund}}" class="action-bar">
+      <button wx:if="{{canRefund}}" class="secondary action-btn" disabled="{{acting}}" bindtap="applyRefund">申请退款</button>
+      <button wx:if="{{canCancel}}" class="danger action-btn" disabled="{{acting}}" bindtap="cancelOrder">取消订单</button>
+      <button wx:if="{{canConfirm}}" class="primary action-btn" disabled="{{acting}}" bindtap="confirmReceipt">确认收货</button>
+      <button wx:if="{{canPay}}" class="primary action-btn" disabled="{{acting}}" bindtap="payNow">去支付</button>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,47 @@
+<view class="page cart-page">
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+  <view wx:if="{{!loading && groups.length === 0}}" class="card empty">购物车还是空的，快去挑选商品吧</view>
+
+  <view wx:for="{{groups}}" wx:key="groupId" wx:for-item="group" class="card">
+    <view class="row">
+      <view class="shop-name">{{group.shopName || '店铺 ' + group.shopId}}</view>
+    </view>
+    <view wx:for="{{group.items}}" wx:key="itemId" wx:for-item="item" class="cart-item">
+      <switch class="item-switch" checked="{{item.checked === 1}}" color="#2563eb" data-id="{{item.itemId}}" bindchange="toggleChecked" />
+      <image wx:if="{{item.skuImage}}" class="thumb" src="{{item.skuImage}}" mode="aspectFill" />
+      <view wx:else class="thumb thumb-placeholder">无图</view>
+      <view class="item-main">
+        <view class="item-name">{{item.skuName || 'SKU ' + item.skuId}}</view>
+        <view class="row item-bottom">
+          <view class="price">¥{{item.price}}</view>
+          <view class="stepper">
+            <view class="step-btn {{item.quantity <= 1 ? 'disabled' : ''}}" data-id="{{item.itemId}}" data-delta="-1" bindtap="changeQuantity">−</view>
+            <view class="step-num">{{item.quantity}}</view>
+            <view class="step-btn" data-id="{{item.itemId}}" data-delta="1" bindtap="changeQuantity">+</view>
+          </view>
+        </view>
+      </view>
+      <text class="delete-link" data-id="{{item.itemId}}" bindtap="removeItem">删除</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="row" bindtap="toggleHelper">
+      <view>联调辅助（暂无商品页）</view>
+      <view class="link">{{helperOpen ? '收起 ▲' : '展开 ▼'}}</view>
+    </view>
+    <view wx:if="{{helperOpen}}" class="helper-form">
+      <view class="hint muted">后端暂未提供小程序商品列表，联调时可手动填 SKU 信息加购（演示数据：SKU 82001 / 店铺 2001 / 价格 6999）。</view>
+      <input class="input" type="number" placeholder="SKU ID" value="{{manual.skuId}}" data-field="skuId" bindinput="onManualInput" />
+      <input class="input" type="number" placeholder="店铺 ID" value="{{manual.shopId}}" data-field="shopId" bindinput="onManualInput" />
+      <input class="input" type="digit" placeholder="单价" value="{{manual.price}}" data-field="price" bindinput="onManualInput" />
+      <input class="input" type="number" placeholder="数量" value="{{manual.quantity}}" data-field="quantity" bindinput="onManualInput" />
+      <button class="secondary" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submitManualAdd">添加到购物车</button>
+    </view>
+  </view>
+
+  <view wx:if="{{groups.length > 0}}" class="bottom-bar">
+    <view class="summary">已选 {{checkedCount}} 件　合计 <text class="total">¥{{checkedAmount}}</text></view>
+    <button class="primary checkout-btn" disabled="{{checkedCount === 0}}" bindtap="goCheckout">去结算</button>
+  </view>
+</view>

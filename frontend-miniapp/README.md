@@ -1,6 +1,6 @@
 # 微信原生小程序
 
-本目录是综合电商平台的微信原生 TypeScript 用户端，当前覆盖统一账号认证、用户中心和设备与会话管理能力。
+本目录是综合电商平台的微信原生 TypeScript 用户端，当前覆盖统一账号认证、用户中心、设备与会话管理，以及交易（购物车/结算/支付/订单）能力。
 
 ## 本地开发
 
@@ -27,6 +27,7 @@ wx.removeStorageSync('shopping.apiBaseUrl.development')
 - Bearer Token 注入、并发 401 单次刷新、刷新失败清理本地会话。
 - `USER` 角色访问限制。
 - 个人资料、收货地址和偏好设置。
-- `account/merchant/product/trade/message` 模块注册机制；后四个模块当前为空注册点。
+- 交易模块：购物车（分组/勾选/数量/删除）、结算下单（地址选择/备注）、收银台模拟支付、订单列表（状态筛选）与订单详情（去支付/取消/确认收货/申请退款）；因小程序暂无商品页，购物车内置"联调辅助"手动加购入口。
+- `account/merchant/product/trade/message` 模块注册机制；merchant/product/message 模块当前为空注册点。
 
 Token 和稳定设备 ID 使用微信小程序本地存储保存，不写日志。小程序没有等同 Android Keystore 的通用安全存储能力，因此服务端仍须依赖短期 Access Token、Refresh Token 轮换和设备撤销控制风险。
