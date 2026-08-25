@@ -23,7 +23,11 @@ export const cartApi = {
     return unwrap((await http.put<ApiResponse<null>>(`/api/cart/items/${itemId}/quantity`, payload)).data)
   },
   async updateChecked(itemId: string, payload: UpdateCheckedRequest) {
-    return unwrap((await http.put<ApiResponse<null>>(`/api/cart/items/${itemId}/checked`, payload)).data)
+    // 后端契约：checked 为 0/1 整数，直接发布尔会反序列化失败（HTTP 500）
+    return unwrap(
+      (await http.put<ApiResponse<null>>(`/api/cart/items/${itemId}/checked`, { checked: payload.checked ? 1 : 0 }))
+        .data,
+    )
   },
   async removeItem(itemId: string) {
     return unwrap((await http.delete<ApiResponse<null>>(`/api/cart/items/${itemId}`)).data)
