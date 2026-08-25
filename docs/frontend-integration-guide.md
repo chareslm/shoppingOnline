@@ -14,7 +14,7 @@
 
 | 模块键 | 负责人 | 主要页面范围 |
 | --- | --- | --- |
-| `system` / `account` | 项目管理员 | 认证、账号安全、用户中心、RBAC、统计基础 |
+| `system` / `account` | 项目管理员 | 认证、账号安全、用户中心、RBAC、平台统计和商家经营统计 |
 | `merchant` | 成员 2 | 商家入驻、店铺、员工、客服及资质 |
 | `product` | 成员 3 | 类目、商品、搜索、评价 |
 | `trade` | 成员 4 | 购物车、结算、订单、支付及退款 |
@@ -67,7 +67,7 @@ export const productModule: AdminModuleContribution = {
 管理端当前约定：
 
 - 登录必须选择身份：系统管理员要求 `SUPER_ADMIN`，平台管理员要求 `ADMIN`（`SUPER_ADMIN` 也可进入平台管理员工作区以便本地审核）。商家与客服角色不能建立管理端会话。
-- 系统管理员菜单：用户与角色、SMTP 配置、系统日志。路由和菜单须带 `roles: ['SUPER_ADMIN']` 与 `adminModes: ['system']`。
+- 系统管理员菜单：用户与角色、SMTP 配置、系统日志、平台统计。路由和菜单须带 `roles: ['SUPER_ADMIN']` 与 `adminModes: ['system']`；平台统计另要求 `statistics:platform:view`。
 - 用户与角色页可手动创建平台账号（邮箱必填，首次登录强制改密）；SMTP 配置页可保存运行时发信参数，查询不回显密码。
 - 平台管理员菜单：商家审核（统合资质与账号）、客服审核、商品类目、商品审核、全部商品、消息发布。路由和菜单须带 `roles: ['ADMIN']` 与 `adminModes: ['platform']`。
 - 业务路由使用模块前缀，例如 `merchant/review`、`product/audit`、`message/publish`。

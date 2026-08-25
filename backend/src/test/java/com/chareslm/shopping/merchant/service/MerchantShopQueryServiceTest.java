@@ -35,6 +35,18 @@ class MerchantShopQueryServiceTest {
     }
 
     @Test
+    void statisticsRequiresOwnedOpenShopAndDoesNotFallBackToStaff() {
+        ShopStaff staff = new ShopStaff();
+        staff.setShopId(8L);
+        when(shopMapper.selectByOwnerUserId(21L)).thenReturn(null);
+        when(shopStaffMapper.selectActiveByUserId(21L)).thenReturn(staff);
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> service.requireOpenOwnedShop(21L));
+        assertEquals(ErrorCode.FORBIDDEN.code(), exception.getCode());
+    }
+
+    @Test
     void activeStaffResolvesShopWhenNotOwner() {
         ShopStaff staff = new ShopStaff();
         staff.setShopId(8L);
