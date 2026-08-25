@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chareslm.shopping.statistics.mapper.StatisticsMapper">
+
+    <select id="selectPlatformOverview"
+            resultType="com.chareslm.shopping.statistics.mapper.model.PlatformOverviewRow">
+        <![CDATA[
+        SELECT user_metrics.new_user_count,
+               user_metrics.active_user_count,
+               payment_metrics.paid_order_count,
+               payment_metrics.paid_buyer_count,
+               payment_metrics.gross_paid_amount,
+               refund_metrics.successful_refund_amount,
+               product_metrics.on_sale_product_count,
+               search_metrics.search_count,
+               review_metrics.displayed_review_count
+        FROM (
+            SELECT COUNT(CASE WHEN u.created_at >= #{startAt} AND u.created_at < #{endAt} THEN 1 END) AS new_user_count,
+                   COUNT(CASE WHEN u.status = 'ACTIVE' THEN 1 END) AS active_user_count
+            FROM `user` u
+            WHERE EXISTS (
+                SELECT 1
+                FROM user_role ur
+                JOIN `role` r ON r.id = ur.role_id
+                WHERE ur.user_id = u.id AND r.code = 'USER' AND r.status = 'ACTIVE'
+            )
+        ) user_metrics
+        CROSS JOIN (
+            SELECT COUNT(*) AS paid_order_count,
+                   COUNT(DISTINCT p.user_id) AS paid_buyer_count,
+                   COALESCE(SUM(p.amount), 0.00) AS gross_paid_amount
+            FROM payment_order p
+            WHERE p.status IN (1, 4)
+              AND p.pay_time >= #{startAt}
+              AND p.pay_time < #{endAt}
+        ) payment_metrics
+        CROSS JOIN (
+            SELECT COALESCE(SUM(rf.amount), 0.00) AS successful_refund_amount
+            FROM refund_order rf
+            WHERE rf.status = 1
+              AND rf.refund_time >= #{startAt}
+              AND rf.refund_time < #{endAt}
+        ) refund_metrics
+        CROSS JOIN (
+            SELECT COUNT(*) AS on_sale_product_count
+            FROM spu s
+            WHERE s.status = 'ON_SALE'
+        ) product_metrics
+        CROSS JOIN (
+            SELECT COUNT(*) AS search_count
+            FROM search_log sl
+            WHERE sl.created_at >= #{startAt}
+              AND sl.created_at < #{endAt}
+        ) search_metrics
+        CROSS JOIN (
+            SELECT COUNT(*) AS displayed_review_count
+            FROM review rv
+            WHERE rv.status = 'DISPLAYED'
+              AND rv.created_at >= #{startAt}
+              AND rv.created_at < #{endAt}
+        ) review_metrics
+        ]]>
+    </select>
+
+    <select id="selectPlatformTrends"
+            resultType="com.chareslm.shopping.statistics.mapper.model.PlatformTrendRow">
+        <![CDATA[
+        SELECT metric_date,
+               SUM(new_user_count) AS new_user_count,
+               SUM(paid_order_count) AS paid_order_count,
+               SUM(paid_buyer_count) AS paid_buyer_count,
+               SUM(gross_paid_amount) AS gross_paid_amount,
+               SUM(successful_refund_amount) AS successful_refund_amount,
+               SUM(search_count) AS search_count
+        FROM (
+            SELECT DATE(u.created_at) AS metric_date,
+                   COUNT(*) AS new_user_count,
+                   0 AS paid_order_count,
+                   0 AS paid_buyer_count,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS gross_paid_amount,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS successful_refund_amount,
+                   0 AS search_count
+            FROM `user` u
+            WHERE u.created_at >= #{startAt}
+              AND u.created_at < #{endAt}
+              AND EXISTS (
+                  SELECT 1
+                  FROM user_role ur
+                  JOIN `role` r ON r.id = ur.role_id
+                  WHERE ur.user_id = u.id AND r.code = 'USER' AND r.status = 'ACTIVE'
+              )
+            GROUP BY DATE(u.created_at)
+
+            UNION ALL
+
+            SELECT DATE(p.pay_time) AS metric_date,
+                   0 AS new_user_count,
+                   COUNT(*) AS paid_order_count,
+                   COUNT(DISTINCT p.user_id) AS paid_buyer_count,
+                   COALESCE(SUM(p.amount), 0.00) AS gross_paid_amount,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS successful_refund_amount,
+                   0 AS search_count
+            FROM payment_order p
+            WHERE p.status IN (1, 4)
+              AND p.pay_time >= #{startAt}
+              AND p.pay_time < #{endAt}
+            GROUP BY DATE(p.pay_time)
+
+            UNION ALL
+
+            SELECT DATE(rf.refund_time) AS metric_date,
+                   0 AS new_user_count,
+                   0 AS paid_order_count,
+                   0 AS paid_buyer_count,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS gross_paid_amount,
+                   COALESCE(SUM(rf.amount), 0.00) AS successful_refund_amount,
+                   0 AS search_count
+            FROM refund_order rf
+            WHERE rf.status = 1
+              AND rf.refund_time >= #{startAt}
+              AND rf.refund_time < #{endAt}
+            GROUP BY DATE(rf.refund_time)
+
+            UNION ALL
+
+            SELECT DATE(sl.created_at) AS metric_date,
+                   0 AS new_user_count,
+                   0 AS paid_order_count,
+                   0 AS paid_buyer_count,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS gross_paid_amount,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS successful_refund_amount,
+                   COUNT(*) AS search_count
+            FROM search_log sl
+            WHERE sl.created_at >= #{startAt}
+              AND sl.created_at < #{endAt}
+            GROUP BY DATE(sl.created_at)
+        ) daily
+        GROUP BY metric_date
+        ORDER BY metric_date
+        ]]>
+    </select>
+
+    <select id="selectShopOverview"
+            resultType="com.chareslm.shopping.statistics.mapper.model.ShopOverviewRow">
+        <![CDATA[
+        SELECT payment_metrics.paid_order_count,
+               payment_metrics.paid_buyer_count,
+               payment_metrics.gross_paid_amount,
+               refund_metrics.successful_refund_amount,
+               sold_metrics.sold_quantity,
+               product_metrics.on_sale_product_count,
+               review_metrics.displayed_review_count,
+               review_metrics.average_rating
+        FROM (
+            SELECT COUNT(*) AS paid_order_count,
+                   COUNT(DISTINCT p.user_id) AS paid_buyer_count,
+                   COALESCE(SUM(p.amount), 0.00) AS gross_paid_amount
+            FROM payment_order p
+            JOIN `order` o ON o.id = p.order_id
+            WHERE o.shop_id = #{shopId}
+              AND p.status IN (1, 4)
+              AND p.pay_time >= #{startAt}
+              AND p.pay_time < #{endAt}
+        ) payment_metrics
+        CROSS JOIN (
+            SELECT COALESCE(SUM(rf.amount), 0.00) AS successful_refund_amount
+            FROM refund_order rf
+            JOIN `order` o ON o.id = rf.order_id
+            WHERE o.shop_id = #{shopId}
+              AND rf.status = 1
+              AND rf.refund_time >= #{startAt}
+              AND rf.refund_time < #{endAt}
+        ) refund_metrics
+        CROSS JOIN (
+            SELECT COALESCE(SUM(oi.quantity), 0) AS sold_quantity
+            FROM payment_order p
+            JOIN `order` o ON o.id = p.order_id
+            JOIN order_item oi ON oi.order_id = o.id
+            WHERE o.shop_id = #{shopId}
+              AND p.status IN (1, 4)
+              AND p.pay_time >= #{startAt}
+              AND p.pay_time < #{endAt}
+        ) sold_metrics
+        CROSS JOIN (
+            SELECT COUNT(*) AS on_sale_product_count
+            FROM spu s
+            WHERE s.shop_id = #{shopId}
+              AND s.status = 'ON_SALE'
+        ) product_metrics
+        CROSS JOIN (
+            SELECT COUNT(*) AS displayed_review_count,
+                   AVG(rv.rating) AS average_rating
+            FROM review rv
+            WHERE rv.shop_id = #{shopId}
+              AND rv.status = 'DISPLAYED'
+        ) review_metrics
+        ]]>
+    </select>
+
+    <select id="selectShopTrends"
+            resultType="com.chareslm.shopping.statistics.mapper.model.ShopTrendRow">
+        <![CDATA[
+        SELECT metric_date,
+               SUM(paid_order_count) AS paid_order_count,
+               SUM(paid_buyer_count) AS paid_buyer_count,
+               SUM(gross_paid_amount) AS gross_paid_amount,
+               SUM(successful_refund_amount) AS successful_refund_amount,
+               SUM(sold_quantity) AS sold_quantity
+        FROM (
+            SELECT DATE(p.pay_time) AS metric_date,
+                   COUNT(*) AS paid_order_count,
+                   COUNT(DISTINCT p.user_id) AS paid_buyer_count,
+                   COALESCE(SUM(p.amount), 0.00) AS gross_paid_amount,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS successful_refund_amount,
+                   0 AS sold_quantity
+            FROM payment_order p
+            JOIN `order` o ON o.id = p.order_id
+            WHERE o.shop_id = #{shopId}
+              AND p.status IN (1, 4)
+              AND p.pay_time >= #{startAt}
+              AND p.pay_time < #{endAt}
+            GROUP BY DATE(p.pay_time)
+
+            UNION ALL
+
+            SELECT DATE(rf.refund_time) AS metric_date,
+                   0 AS paid_order_count,
+                   0 AS paid_buyer_count,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS gross_paid_amount,
+                   COALESCE(SUM(rf.amount), 0.00) AS successful_refund_amount,
+                   0 AS sold_quantity
+            FROM refund_order rf
+            JOIN `order` o ON o.id = rf.order_id
+            WHERE o.shop_id = #{shopId}
+              AND rf.status = 1
+              AND rf.refund_time >= #{startAt}
+              AND rf.refund_time < #{endAt}
+            GROUP BY DATE(rf.refund_time)
+
+            UNION ALL
+
+            SELECT DATE(p.pay_time) AS metric_date,
+                   0 AS paid_order_count,
+                   0 AS paid_buyer_count,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS gross_paid_amount,
+                   CAST(0.00 AS DECIMAL(18, 2)) AS successful_refund_amount,
+                   COALESCE(SUM(oi.quantity), 0) AS sold_quantity
+            FROM payment_order p
+            JOIN `order` o ON o.id = p.order_id
+            JOIN order_item oi ON oi.order_id = o.id
+            WHERE o.shop_id = #{shopId}
+              AND p.status IN (1, 4)
+              AND p.pay_time >= #{startAt}
+              AND p.pay_time < #{endAt}
+            GROUP BY DATE(p.pay_time)
+        ) daily
+        GROUP BY metric_date
+        ORDER BY metric_date
+        ]]>
+    </select>
+</mapper>
