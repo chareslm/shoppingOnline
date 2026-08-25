@@ -85,6 +85,7 @@ describe('module registry', () => {
       'trade',
       'message',
     ])
+    expect(moduleRegistry[0].pages).toContain('/pages/statistics/index')
     expect(moduleRegistry.find((module) => module.key === 'trade')?.pages).toEqual([
       '/pages/cart/index',
       '/pages/checkout/index',

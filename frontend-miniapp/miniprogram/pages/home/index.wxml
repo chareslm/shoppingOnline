@@ -13,6 +13,7 @@
     <view class="menu-item" bindtap="goPreferences"><text>偏好设置</text><text>›</text></view>
     <view class="menu-item" bindtap="goPassword"><text>修改密码</text><text>›</text></view>
     <view class="menu-item" bindtap="goDevices"><text>登录设备</text><text>›</text></view>
+    <view class="menu-item" bindtap="goStatistics"><text>消费统计</text><text>›</text></view>
   </view>
 
   <button class="danger" loading="{{loading}}" disabled="{{loading}}" bindtap="logout">退出当前设备</button>

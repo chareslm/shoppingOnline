@@ -260,4 +260,39 @@
         ORDER BY metric_date
         ]]>
     </select>
+
+    <select id="selectUserOverview"
+            resultType="com.chareslm.shopping.statistics.mapper.model.UserOverviewRow">
+        <![CDATA[
+        SELECT payment_metrics.paid_order_count,
+               payment_metrics.gross_paid_amount,
+               refund_metrics.successful_refund_amount,
+               review_metrics.displayed_review_count
+        FROM (
+            SELECT COUNT(*) AS paid_order_count,
+                   COALESCE(SUM(p.amount), 0.00) AS gross_paid_amount
+            FROM payment_order p
+            WHERE p.user_id = #{userId}
+              AND p.status IN (1, 4)
+              AND p.pay_time >= #{startAt}
+              AND p.pay_time < #{endAt}
+        ) payment_metrics
+        CROSS JOIN (
+            SELECT COALESCE(SUM(rf.amount), 0.00) AS successful_refund_amount
+            FROM refund_order rf
+            WHERE rf.user_id = #{userId}
+              AND rf.status = 1
+              AND rf.refund_time >= #{startAt}
+              AND rf.refund_time < #{endAt}
+        ) refund_metrics
+        CROSS JOIN (
+            SELECT COUNT(*) AS displayed_review_count
+            FROM review rv
+            WHERE rv.user_id = #{userId}
+              AND rv.status = 'DISPLAYED'
+              AND rv.created_at >= #{startAt}
+              AND rv.created_at < #{endAt}
+        ) review_metrics
+        ]]>
+    </select>
 </mapper>

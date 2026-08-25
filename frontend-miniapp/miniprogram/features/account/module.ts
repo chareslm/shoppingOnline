@@ -10,6 +10,7 @@ export const accountModule: AppModuleContribution = {
     '/pages/preferences/index',
     '/pages/change-password/index',
     '/pages/devices/index',
+    '/pages/statistics/index',
   ],
 }
 

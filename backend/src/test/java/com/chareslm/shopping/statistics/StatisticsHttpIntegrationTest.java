@@ -4,6 +4,7 @@ import com.chareslm.shopping.common.exception.BusinessException;
 import com.chareslm.shopping.security.context.LoginUser;
 import com.chareslm.shopping.statistics.controller.MerchantStatisticsController;
 import com.chareslm.shopping.statistics.controller.PlatformStatisticsController;
+import com.chareslm.shopping.statistics.controller.SelfStatisticsController;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,9 @@ class StatisticsHttpIntegrationTest {
 
     @Autowired
     private MerchantStatisticsController merchantStatisticsController;
+
+    @Autowired
+    private SelfStatisticsController selfStatisticsController;
 
     @AfterEach
     void clearSecurityContext() {
@@ -61,6 +65,18 @@ class StatisticsHttpIntegrationTest {
                 () -> platformStatisticsController.trends(START_AT,
                         LocalDateTime.of(2098, 9, 3, 0, 0), "Asia/Shanghai", "DAY"));
         assertEquals(40001, exception.getCode());
+    }
+
+    @Test
+    void selfStatisticsRequireDedicatedAuthorityAndUseCurrentPrincipal() {
+        authenticate(Set.of());
+        assertThrows(AccessDeniedException.class,
+                () -> selfStatisticsController.overview(START_AT, END_AT, "Asia/Shanghai", "DAY"));
+
+        authenticate(Set.of("statistics:self:view"));
+        var response = selfStatisticsController.overview(START_AT, END_AT, "Asia/Shanghai", "DAY");
+        assertEquals("v1", response.data().metricVersion());
+        assertEquals(0, response.data().metrics().paidOrderCount());
     }
 
     private void authenticate(Set<String> permissions) {

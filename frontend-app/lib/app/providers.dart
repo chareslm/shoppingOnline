@@ -9,6 +9,7 @@ import 'package:shopping_app/features/account/data/auth_api.dart';
 import 'package:shopping_app/features/account/data/auth_repository.dart';
 import 'package:shopping_app/features/account/data/user_api.dart';
 import 'package:shopping_app/features/account/data/user_repository.dart';
+import 'package:shopping_app/features/account/data/statistics_api.dart';
 
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (ref) => const FlutterSecureStorage(aOptions: AndroidOptions()),
@@ -48,4 +49,8 @@ final userApiProvider = Provider<UserApi>(
 
 final userRepositoryProvider = Provider<UserRepository>(
   (ref) => UserRepository(ref.watch(userApiProvider)),
+);
+
+final statisticsApiProvider = Provider<StatisticsApi>(
+  (ref) => StatisticsApi(ref.watch(apiClientProvider)),
 );

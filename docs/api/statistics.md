@@ -127,10 +127,44 @@
 
 `points` 每项包含 `date`、`paidOrderCount`、`paidBuyerCount`、`grossPaidAmount`、`successfulRefundAmount`、`netCashflowActivity` 和 `soldQuantity`，缺失日期补零。
 
+## 用户本人统计
+
+权限：`statistics:self:view`，V15 初始授予 `USER`。接口不接受 `userId`，只查询 Access Token 对应的当前用户本人；其他用户、管理员或客户端参数均不能扩大查询范围。
+
+### 本人消费概览
+
+`GET /api/users/me/statistics/overview`
+
+查询参数和统一元数据与平台／商家接口一致，响应指标为：
+
+```json
+{
+  "metricVersion": "v1",
+  "timezone": "Asia/Shanghai",
+  "generatedAt": "2026-08-25T14:30:00+08:00",
+  "dataAsOf": "2026-08-25T14:30:00+08:00",
+  "range": {
+    "startAt": "2026-08-01T00:00:00",
+    "endAt": "2026-08-26T00:00:00"
+  },
+  "metrics": {
+    "paidOrderCount": "3",
+    "grossPaidAmount": "698.80",
+    "successfulRefundAmount": "99.00",
+    "displayedReviewCount": "2"
+  }
+}
+```
+
+- `paidOrderCount` 和 `grossPaidAmount` 按本人支付单成功时间统计；状态 `4` 的全额退款支付单仍保留原支付金额。
+- `successfulRefundAmount` 按本人退款单实际成功时间统计，可能来自更早的支付周期。
+- `displayedReviewCount` 只统计区间内由本人创建且查询时仍为 `DISPLAYED` 的评价。
+- 本人支付总额是消费概览，不代表扣除跨期退款后的最终成本，也不是账单或财务凭证。
+
 ## 错误与边界
 
 - 未认证返回 HTTP `401` / `40101`。
 - 无统计权限返回 HTTP `403` / `40301`。
 - 商家账号无正常营业店铺返回 HTTP `403` / `40301`。
 - 时间范围、时区、粒度或 31 日上限不合法返回 HTTP `400` / `40001`。
-- 本阶段不提供导出、排行、用户本人统计、事件聚合或缓存接口。
+- 本阶段不提供本人趋势、导出、排行、事件聚合或缓存接口。

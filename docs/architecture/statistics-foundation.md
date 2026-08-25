@@ -1,6 +1,6 @@
 # 统计模块指标、权限与聚合边界
 
-> 状态：第一阶段 MySQL 只读精确查询、权限和平台／商家页面已实现；事件、聚合表、缓存、导出和用户本人统计暂缓。
+> 状态：MySQL 只读精确查询、平台／商家统计和用户本人消费概览已实现；事件、聚合表、缓存、导出和平台跨店下钻暂缓。
 >
 > 负责人：项目管理员（`statistics`、统一管理端统计框架与指标口径）。
 
@@ -8,7 +8,7 @@
 
 统计模块为平台治理和商家经营提供统一口径，不替代订单、支付、商品、商家等业务模块，也不修改这些模块的权威数据。
 
-当前 `user`、`shop`、`shop_staff`、`spu`、`sku`、`order`、`payment_order`、`refund_order`、`review` 和 `search_log` 均已落地。商品店铺归属和结算价格由服务端权威数据确定，交易默认使用 MySQL 原子库存并覆盖跨店失败整体回滚；匿名 Mock 回调已移除，支付与退款状态语义已写入共享契约。统计第一阶段现已直接读取这些权威表，提供平台和商家概览、日趋势及缺失日期补零；事件、预聚合、缓存、导出和用户本人统计仍按本文件后续阶段建设。
+当前 `user`、`shop`、`shop_staff`、`spu`、`sku`、`order`、`payment_order`、`refund_order`、`review` 和 `search_log` 均已落地。商品店铺归属和结算价格由服务端权威数据确定，交易默认使用 MySQL 原子库存并覆盖跨店失败整体回滚；匿名 Mock 回调已移除，支付与退款状态语义已写入共享契约。统计模块直接读取这些权威表，提供平台和商家概览／日趋势，以及用户本人消费概览；事件、预聚合、缓存、导出和平台跨店下钻仍按本文件后续阶段建设。
 
 本次准入核对结果：
 
@@ -107,11 +107,11 @@
 
 ## 4. 权限与数据范围
 
-V14 已创建平台和商家查看权限；用户本人统计和导出权限在对应能力实现时再创建：
+V14 已创建平台和商家查看权限，V15 已创建用户本人查看权限；导出权限在对应能力实现时再创建：
 
 | 权限编码 | 数据范围 | 初始授予角色 | 用途 |
 | --- | --- | --- | --- |
-| `statistics:self:view` | `SELF` | `USER` | 暂缓；用户本人消费概览 |
+| `statistics:self:view` | `SELF` | `USER` | V15 已创建；用户本人消费概览 |
 | `statistics:platform:view` | `ALL` | `SUPER_ADMIN` | V14 已创建；平台总览与趋势 |
 | `statistics:shop:view` | `SHOP` | `MERCHANT_OWNER` | V14 已创建；当前账号自有营业店铺经营数据，客服不授予 |
 | `statistics:report:export` | 与基础查看权限取交集 | 首期不默认授予 | 暂缓；导出离线报表并写审计 |
@@ -194,11 +194,12 @@ GET /api/admin/statistics/platform/overview
 GET /api/admin/statistics/platform/trends
 GET /api/merchant/statistics/overview
 GET /api/merchant/statistics/trends
+GET /api/users/me/statistics/overview
 ```
 
 查询参数统一为 `startAt`、`endAt`、`timezone`、`granularity`；服务端校验范围并对缺失日期补零。响应至少包含 `metricVersion`、`timezone`、`generatedAt`、`dataAsOf` 和实际生效的数据范围。
 
-统一管理端由项目管理员在 `system` 模块提供平台统计页；商家经营统计位于用户 Web 的 `account` 商家工作区。页面只展示服务端已经完成权限过滤的数据，不在浏览器中下载平台全量数据后再筛选。平台跨店下钻、商品排行和用户本人概览仍为后续预留，不属于当前 API。
+统一管理端由项目管理员在 `system` 模块提供平台统计页；商家经营统计位于用户 Web 的 `account` 商家工作区；本人消费概览由用户 Web、Flutter Android App 和微信小程序共同提供。页面只展示服务端已经完成权限过滤的数据，不在客户端中下载全量数据后再筛选。平台跨店下钻和商品排行仍为后续预留，不属于当前 API。
 
 ## 8. 开发准入与验收清单
 
