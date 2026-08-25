@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -61,7 +62,8 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.failure(ErrorCode.VALIDATION_ERROR.code(), detail, request.getHeader("X-Trace-Id")));
     }
 
-    @ExceptionHandler({ConstraintViolationException.class, MaxUploadSizeExceededException.class})
+    @ExceptionHandler({ConstraintViolationException.class, MissingServletRequestParameterException.class,
+            MaxUploadSizeExceededException.class})
     public ResponseEntity<ApiResponse<Void>> handleRequestConstraint(Exception exception,
                                                                       HttpServletRequest request) {
         String detail = ErrorCode.VALIDATION_ERROR.message();
@@ -70,6 +72,8 @@ public class GlobalExceptionHandler {
                     .map(violation -> describeField(String.valueOf(violation.getPropertyPath()), violation.getMessage()))
                     .findFirst()
                     .orElse(detail);
+        } else if (exception instanceof MissingServletRequestParameterException missingParameterException) {
+            detail = "缺少必填参数：" + missingParameterException.getParameterName();
         }
         return ResponseEntity.badRequest()
                 .body(ApiResponse.failure(ErrorCode.VALIDATION_ERROR.code(), detail, request.getHeader("X-Trace-Id")));
