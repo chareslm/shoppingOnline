@@ -9,8 +9,8 @@
 ## 当前仓库状态
 
 - GitHub 仓库：`https://github.com/chareslm/shoppingOnline.git`。
-- 当前集成分支：`develop`；认证权限、强密码与本人改密、管理端认证及用户角色管理、Redis/Elasticsearch 本地 Compose、用户资料/地址/偏好、设备与会话、审计日志、商品/搜索/评价、交易后端及用户 Web 商品/交易页面均已集成。`feature/statistics-exact-query` 已完成统计第一阶段 MySQL 权威表精确查询、V14 权限和索引、平台统计页与商家经营统计页，当前等待集成至 `develop`；事件、预聚合、缓存、导出及用户本人统计尚未建设。最新集成提交以远程 `origin/develop` 为准，`main` 尚未包含这些功能。
-- 代表性功能提交：`5e13a13`（管理端认证基础）、`3ffad2d`（Redis/Elasticsearch 本地 Compose）、`eb6f4ba`（用户资料、地址与偏好接口）、`29ea2f9`（管理端用户与角色管理）、`09cc2da`（账号密码安全）、`ba2745e`（前端团队模块接入基础）、`30ffc16`（共享 `AGENTS.md`）；完整集成历史以 `git log origin/develop` 为准。
+- 当前集成分支：`develop`；认证权限、强密码与本人改密、管理端认证及用户角色管理、Redis/Elasticsearch 本地 Compose、用户资料/地址/偏好、设备与会话、审计日志、商品/搜索/评价、交易后端及用户 Web 商品/交易页面均已集成。统计第一阶段 MySQL 权威表精确查询、V14 权限和索引、平台统计页与商家经营统计页也已集成；事件、预聚合、缓存、导出及用户本人统计尚未建设。最新集成提交以远程 `origin/develop` 为准，`main` 尚未包含这些功能。
+- 代表性功能提交：`5e13a13`（管理端认证基础）、`3ffad2d`（Redis/Elasticsearch 本地 Compose）、`eb6f4ba`（用户资料、地址与偏好接口）、`29ea2f9`（管理端用户与角色管理）、`09cc2da`（账号密码安全）、`ba2745e`（前端团队模块接入基础）、`275cc6c`（统计精确查询）；完整集成历史以 `git log origin/develop` 为准。
 - `frontend-admin` 系统管理员可维护运行时 SMTP，并手动创建必须带邮箱、首次登录强制改密的平台账号。
 - 集成修复已恢复用户 Web 设备管理与管理端审计类型，两个 Vue 端生产构建重新通过；V13 提供旧审计 V8 到当前商家迁移序列的无损升级路径。
 - 交易运行时默认使用 MySQL 原子库存并覆盖跨店失败整体回滚；匿名微信 Mock 回调已移除，模拟支付和退款完成均要求当前用户认证。
