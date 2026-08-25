@@ -4,10 +4,11 @@ import com.chareslm.shopping.chat.dto.request.CreateSessionRequest;
 import com.chareslm.shopping.chat.dto.response.SessionResponse;
 import com.chareslm.shopping.chat.service.ChatSessionService;
 import com.chareslm.shopping.common.api.ApiResponse;
+import com.chareslm.shopping.common.api.ErrorCode;
+import com.chareslm.shopping.common.exception.BusinessException;
 import com.chareslm.shopping.security.context.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,8 +42,8 @@ public class ChatSessionController {
     }
 
     @GetMapping("/cs")
-    @PreAuthorize("hasRole('CUSTOMER_SERVICE')")
     public ApiResponse<List<SessionResponse>> listCsSessions() {
+        requireCsRole();
         return ApiResponse.success(sessionService.listCsSessions(CurrentUser.require().userId()));
     }
 
@@ -52,8 +53,8 @@ public class ChatSessionController {
     }
 
     @PutMapping("/{sessionId}/assign")
-    @PreAuthorize("hasRole('CUSTOMER_SERVICE')")
     public ApiResponse<SessionResponse> assignSession(@PathVariable Long sessionId) {
+        requireCsRole();
         return ApiResponse.success(sessionService.assignSession(CurrentUser.require().userId(), sessionId));
     }
 
@@ -66,5 +67,11 @@ public class ChatSessionController {
     @GetMapping("/{sessionId}/unread")
     public ApiResponse<Integer> getUnreadCount(@PathVariable Long sessionId) {
         return ApiResponse.success(sessionService.getUnreadCount(sessionId, CurrentUser.require().userId()));
+    }
+
+    private static void requireCsRole() {
+        if (!CurrentUser.require().roles().contains("CUSTOMER_SERVICE")) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
     }
 }
