@@ -2,7 +2,7 @@
 
 ## 2026-08-25：最新 develop 集成修复与回归结论
 
-- 基线与分支：`codex/fix-integration-regression-20260825` 基于 `develop` / `2fa95e4`；待项目管理员确认后再集成到 `develop`。
+- 基线与集成：`codex/fix-integration-regression-20260825` 基于 `develop` / `2fa95e4`，修复提交 `a991813` 已快进合并并推送到 `develop`。
 - 当前迁移版本为 **V13**：V8 商家、V9 系统 SMTP、V10 商品图片、V11 审计权限、V12 聊天消息、V13 旧审计 V8 无损兼容。下方 2026-08-18～19 的 V10 描述是当时历史状态，不再代表当前 schema。
 - 已修复：旧 V8 Flyway 冲突和定时任务迁移竞态；用户 Web 设备管理与管理端审计类型回归；商品客户端 `shopId`；MySQL 库存默认值、精确释放及跨店整体回滚；匿名 Mock 支付回调；客服跨店数据范围、角色判断和 WebSocket Token URL 暴露。
 - 安全配置：`TRADE_STOCK_MOCK_ENABLED` 默认 `false`；`TRADE_PAYMENT_MOCK_ENABLED` 默认 `false`，仅本地显式开启后注册本人认证的模拟支付／退款完成路由。
