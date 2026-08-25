@@ -1,5 +1,14 @@
 # 本地开发进度
 
+## 2026-08-25：最新 develop 集成修复与回归结论
+
+- 基线与分支：`codex/fix-integration-regression-20260825` 基于 `develop` / `2fa95e4`；待项目管理员确认后再集成到 `develop`。
+- 当前迁移版本为 **V13**：V8 商家、V9 系统 SMTP、V10 商品图片、V11 审计权限、V12 聊天消息、V13 旧审计 V8 无损兼容。下方 2026-08-18～19 的 V10 描述是当时历史状态，不再代表当前 schema。
+- 已修复：旧 V8 Flyway 冲突和定时任务迁移竞态；用户 Web 设备管理与管理端审计类型回归；商品客户端 `shopId`；MySQL 库存默认值、精确释放及跨店整体回滚；匿名 Mock 支付回调；客服跨店数据范围、角色判断和 WebSocket Token URL 暴露。
+- 安全配置：`TRADE_STOCK_MOCK_ENABLED` 默认 `false`；`TRADE_PAYMENT_MOCK_ENABLED` 默认 `false`，仅本地显式开启后注册本人认证的模拟支付／退款完成路由。
+- 最终验证：后端 108 项测试通过；用户 Web、管理端生产构建通过；小程序类型检查和 8 项测试通过；Flutter 静态分析、13 项测试和 Debug APK 构建通过。管理端主 chunk 体积和 Flutter 15 个依赖升级提示为非阻塞维护项。
+- 下一步：统计开发准入已满足，可进入 MySQL 只读精确查询与人工 SQL 对账阶段；真实支付渠道接入、统计事件和预聚合仍是后续工作。
+
 ## 2026-08-19 第一次修改：商家商品与客服审核、SMTP 脱敏与关停、Flyway 合并、店铺数据范围
 
 承接 8/19 00:36「取消登录多余的 163 和后端提示词、合并商家资质与账号审核、资质预览、已通过可撤销/重新授予」。该凌晨交互已按当时要求写入下方「2026-08-18 第二次修改」。本节整理其后至当日晚间未归档内容：商家上架与平台商品审核、公开图与类目、客服须平台审核、SMTP 关闭发信与对外文案脱敏、校验/SKU/店铺开通失败提示、V8–V14 按功能合并，以及审核列表展示店铺、商家只看本店商品。
@@ -27,7 +36,7 @@
 - 管理端类目：`GET/POST/PUT/DELETE /api/admin/categories`（`category:manage`），`level` 按父类目计算。
 - 店铺客服：商家提交 `PENDING_AUDIT`（账号 DISABLED、不发信）；平台 `merchant:staff:audit` 通过后激活、发临时密码（SMTP 关闭则为固定初始密码且 `SKIPPED`）；可驳回、撤销、重新授予、重发邮件。客服仅 `CUSTOMER_SERVICE`，不能登录管理端，用户 Web 只能进「用户沟通」。
 - SMTP `enabled`：关闭后立即停发（含环境变量回退），新账号初始密码 `123456QWERqwer!@`，仍须首次改密。
-- Flyway 当前为 **v10**：V8 入驻+店铺+客服审核表与权限；V9 SMTP 含 `enabled` 与 `SKIPPED`；V10 `product_media` + `uk_spu_sku_code`。
+- 当时 Flyway 为 **v10**：V8 入驻+店铺+客服审核表与权限；V9 SMTP 含 `enabled` 与 `SKIPPED`；V10 `product_media` + `uk_spu_sku_code`。当前版本见本文顶部 2026-08-25 记录。
 - 单测：`SpuServiceImplTest`、`SkuServiceImplTest`、`SkuAttributesTest`、`ShopStaffServiceImplTest`、`MerchantShopQueryServiceTest`、`SmtpMailTransportTest.explainFailureDoesNotExposeProviderInternals` 等。
 
 #### 前端

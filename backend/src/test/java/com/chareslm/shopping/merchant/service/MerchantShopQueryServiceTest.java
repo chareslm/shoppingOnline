@@ -56,6 +56,27 @@ class MerchantShopQueryServiceTest {
         assertEquals("尚未开通店铺。请先完成商家入驻，并等待平台审核通过后再上传商品。", exception.getMessage());
     }
 
+    @Test
+    void openShopCanBeValidatedAsPublicChatTarget() {
+        when(shopMapper.selectById(8L)).thenReturn(openShop(8L));
+
+        assertEquals(8L, service.requireOpenShopById(8L).getId());
+    }
+
+    @Test
+    void closedOrUnknownShopIsHiddenFromPublicChatTarget() {
+        Shop suspended = openShop(8L);
+        suspended.setStatus("SUSPENDED");
+        when(shopMapper.selectById(8L)).thenReturn(suspended);
+
+        BusinessException suspendedError = assertThrows(BusinessException.class,
+                () -> service.requireOpenShopById(8L));
+        BusinessException missingError = assertThrows(BusinessException.class,
+                () -> service.requireOpenShopById(9L));
+        assertEquals(ErrorCode.NOT_FOUND.code(), suspendedError.getCode());
+        assertEquals(ErrorCode.NOT_FOUND.code(), missingError.getCode());
+    }
+
     private static Shop openShop(Long id) {
         Shop shop = new Shop();
         shop.setId(id);

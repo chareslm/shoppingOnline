@@ -1,4 +1,4 @@
-import type { AdminUser, ApiResponse, AuthenticatedUser, CreatedAdminUser, LoginRequest, LoginResponse, PageResponse, Permission, Role } from '../types/auth'
+import type { AdminUser, ApiResponse, AuditLog, AuthenticatedUser, CreatedAdminUser, LoginRequest, LoginResponse, PageResponse, Permission, Role } from '../types/auth'
 import { http } from './http'
 
 function unwrap<T>(response: ApiResponse<T>) {

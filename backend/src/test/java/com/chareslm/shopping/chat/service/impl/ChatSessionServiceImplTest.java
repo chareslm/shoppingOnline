@@ -10,6 +10,8 @@ import com.chareslm.shopping.chat.enums.SessionStatus;
 import com.chareslm.shopping.chat.mapper.ChatMessageMapper;
 import com.chareslm.shopping.chat.mapper.ChatSessionMapper;
 import com.chareslm.shopping.common.exception.BusinessException;
+import com.chareslm.shopping.merchant.entity.Shop;
+import com.chareslm.shopping.merchant.service.MerchantShopQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,13 +34,18 @@ class ChatSessionServiceImplTest {
 
     private ChatSessionMapper sessionMapper;
     private ChatMessageMapper messageMapper;
+    private MerchantShopQueryService merchantShopQueryService;
     private ChatSessionServiceImpl sessionService;
 
     @BeforeEach
     void setUp() {
         sessionMapper = mock(ChatSessionMapper.class);
         messageMapper = mock(ChatMessageMapper.class);
-        sessionService = new ChatSessionServiceImpl(sessionMapper, messageMapper);
+        merchantShopQueryService = mock(MerchantShopQueryService.class);
+        when(merchantShopQueryService.requireOpenShopById(anyLong()))
+                .thenAnswer(invocation -> openShop(invocation.getArgument(0)));
+        when(merchantShopQueryService.requireOpenStaffShop(anyLong())).thenReturn(openShop(100L));
+        sessionService = new ChatSessionServiceImpl(sessionMapper, messageMapper, merchantShopQueryService);
     }
 
     @Test
@@ -161,6 +168,7 @@ class ChatSessionServiceImplTest {
         session.setUserId(1L);
         session.setStatus(SessionStatus.IN_PROGRESS.getCode());
         session.setCsUserId(null); // 未分配
+        session.setShopId(100L);
 
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
         when(messageMapper.selectCount(any())).thenReturn(0L);
@@ -193,6 +201,31 @@ class ChatSessionServiceImplTest {
                 () -> sessionService.assignSession(csUserId, sessionId));
 
         verify(sessionMapper, never()).updateById(any(ChatSession.class));
+    }
+
+    @Test
+    void assignSessionRejectsAnotherShopsSessionWithoutRevealingIt() {
+        ChatSession session = new ChatSession();
+        session.setId(10L);
+        session.setUserId(1L);
+        session.setShopId(200L);
+        session.setStatus(SessionStatus.IN_PROGRESS.getCode());
+        when(sessionMapper.selectById(10L)).thenReturn(session);
+
+        assertThrows(BusinessException.class, () -> sessionService.assignSession(2L, 10L));
+        verify(sessionMapper, never()).updateById(any(ChatSession.class));
+    }
+
+    @Test
+    void unreadCountRejectsNonParticipant() {
+        ChatSession session = new ChatSession();
+        session.setId(10L);
+        session.setUserId(1L);
+        session.setCsUserId(2L);
+        when(sessionMapper.selectById(10L)).thenReturn(session);
+
+        assertThrows(BusinessException.class, () -> sessionService.getUnreadCount(10L, 999L));
+        verify(messageMapper, never()).selectCount(any());
     }
 
     @Test
@@ -232,5 +265,12 @@ class ChatSessionServiceImplTest {
         assertEquals(2, result.size());
         assertEquals(2, result.get(0).getUnreadCount());
         assertEquals(0, result.get(1).getUnreadCount());
+    }
+
+    private static Shop openShop(Long id) {
+        Shop shop = new Shop();
+        shop.setId(id);
+        shop.setStatus("OPEN");
+        return shop;
     }
 }

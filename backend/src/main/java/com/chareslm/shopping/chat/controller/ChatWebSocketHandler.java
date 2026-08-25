@@ -1,9 +1,6 @@
 package com.chareslm.shopping.chat.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.chareslm.shopping.security.context.LoginUser;
-import com.chareslm.shopping.security.jwt.JwtTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -14,7 +11,6 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 负责实时消息推送，不做持久化。
  * 消息持久化由 Service 层负责。
  * <p>
- * 客户端连接时需在 URL 携带 JWT Token：ws://host/ws/chat?token={accessToken}
+ * 客户端先通过认证 HTTP 接口获取一次性票据，再连接 ws://host/ws/chat?ticket={ticket}。
  */
 @Slf4j
 @Component
@@ -35,19 +31,20 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final Map<Long, WebSocketSession> userSessions = new ConcurrentHashMap<>();
 
     private final ObjectMapper objectMapper;
-    private final JwtTokenService jwtTokenService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         Long userId = extractUserId(session);
-        if (userId != null) {
-            userSessions.put(userId, session);
-            MDC.put("userId", String.valueOf(userId));
-            MDC.put("module", "CHAT_WS");
-            MDC.put("action", "connected");
-            log.info("WebSocket connected: userId={}", userId);
-            MDC.clear();
+        if (userId == null) {
+            session.close(CloseStatus.POLICY_VIOLATION);
+            return;
         }
+        userSessions.put(userId, session);
+        MDC.put("userId", String.valueOf(userId));
+        MDC.put("module", "CHAT_WS");
+        MDC.put("action", "connected");
+        log.info("WebSocket connected: userId={}", userId);
+        MDC.clear();
     }
 
     @Override
@@ -55,15 +52,15 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         // WebSocket 仅负责实时消息推送，不处理业务逻辑
         // 业务逻辑（持久化、通知）由 HTTP 接口 → Service 层完成
         // 客户端仅通过 WebSocket 接收推送
-        JsonNode payload = objectMapper.readTree(message.getPayload());
-        log.debug("Received WebSocket message: {}", payload);
+        log.debug("Ignoring client WebSocket frame with {} bytes; chat writes use the authenticated HTTP API",
+                message.getPayloadLength());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         Long userId = extractUserId(session);
         if (userId != null) {
-            userSessions.remove(userId);
+            userSessions.remove(userId, session);
             MDC.put("userId", String.valueOf(userId));
             MDC.put("module", "CHAT_WS");
             MDC.put("action", "disconnected");
@@ -96,27 +93,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * 从 WebSocket 连接的 URL 中通过 JWT Token 解析用户ID。
-     * 客户端连接时需携带 access token：ws://host/ws/chat?token={accessToken}
+     * 用户ID仅由握手拦截器消费一次性票据后写入，不能由客户端直接提交。
      */
     private Long extractUserId(WebSocketSession session) {
-        URI uri = session.getUri();
-        if (uri == null) return null;
-        String query = uri.getQuery();
-        if (query == null) return null;
-        for (String param : query.split("&")) {
-            String[] kv = param.split("=", 2);
-            if (kv.length == 2 && "token".equals(kv[0])) {
-                try {
-                    LoginUser loginUser = jwtTokenService.parseAccessToken(kv[1]);
-                    return loginUser.userId();
-                } catch (Exception e) {
-                    log.warn("Invalid JWT token in WebSocket connection: {}", e.getMessage());
-                    return null;
-                }
-            }
-        }
-        log.warn("WebSocket connection missing token parameter");
-        return null;
+        Object userId = session.getAttributes().get(ChatWebSocketHandshakeInterceptor.USER_ID_ATTRIBUTE);
+        return userId instanceof Long value ? value : null;
     }
 }

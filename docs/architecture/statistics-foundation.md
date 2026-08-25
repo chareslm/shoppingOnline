@@ -1,6 +1,6 @@
 # 统计模块指标、权限与聚合边界
 
-> 状态：准备基线；当前不代表接口已经实现。
+> 状态：开发准入已满足；统计接口、聚合表和管理端页面尚未实现。
 >
 > 负责人：项目管理员（`statistics`、统一管理端统计框架与指标口径）。
 
@@ -8,15 +8,15 @@
 
 统计模块为平台治理和商家经营提供统一口径，不替代订单、支付、商品、商家等业务模块，也不修改这些模块的权威数据。
 
-当前 `user`、`spu`、`sku`、`order`、`payment_order`、`refund_order`、`review` 和 `search_log` 已存在，但商家／店铺主体、账号—店铺关系及服务端店铺数据范围尚未落地；交易模块仍有已记录的价格归属、回调安全和跨店补偿问题。因此本阶段只固定指标、权限、数据范围、事件和聚合边界，不创建统计接口、聚合表或管理端页面，避免把不稳定的数据契约固化为长期口径。
+当前 `user`、`shop`、`shop_staff`、`spu`、`sku`、`order`、`payment_order`、`refund_order`、`review` 和 `search_log` 均已落地。商品店铺归属和结算价格由服务端权威数据确定，交易默认使用 MySQL 原子库存并覆盖跨店失败整体回滚；匿名 Mock 回调已移除，支付与退款状态语义已写入共享契约。综合回归通过后，统计模块已具备进入第一阶段 MySQL 只读精确查询的开发准入条件；事件、预聚合和管理端页面仍按本文件后续阶段建设。
 
-统计功能满足下述准入条件后再进入实现：
+本次准入核对结果：
 
-1. 商家模块提供权威 `shop` 实体、店铺状态和“当前账号可管理店铺”查询契约。
-2. 商品模块不再信任客户端提交的店铺归属，并明确销量字段由哪个模块、在什么时点更新。
-3. 交易模块完成服务端价格与店铺归属校验、支付回调安全边界和跨店下单失败补偿。
-4. 支付与退款模块确认成功状态、成功时间、部分退款及全额退款的最终语义。
-5. 各来源模块确认事件发布时点和重放规则，或接受第一版由统计模块对权威表执行只读精确查询。
+1. 商家模块已提供权威 `shop`、店铺状态及服务端账号—店铺解析服务。
+2. 商品创建不再接收客户端 `shopId`；购物车和结算重新读取服务端 SKU 店铺、可售状态与价格。
+3. MySQL 库存原子预占、扣减和释放已成为默认实现，跨店失败由同一本地事务整体回滚。
+4. 匿名支付回调已关闭；开发 Mock 路由默认不注册且开启后仍校验本人归属，真实渠道接入必须验签。
+5. 第一版采用权威表只读精确查询和人工 SQL 对账，因此不等待消息事件或 Outbox。
 
 ## 2. 统一统计规则
 
@@ -52,14 +52,14 @@
 | --- | --- | --- | --- | --- |
 | `platform.new_users` | 新增注册用户数 | `user.created_at` 落在区间内的用户数，不因后续封禁回删 | `user` | 就绪 |
 | `platform.active_users_snapshot` | 当前有效账号数 | 查询时点 `user.status = ACTIVE` 的账号数，仅为快照 | `user` | 就绪 |
-| `platform.paid_order_count` | 支付订单数 | `pay_time` 落在区间内且曾成功支付的店铺订单数 | `payment_order`、`order` | 待交易契约稳定 |
-| `platform.paid_buyer_count` | 支付买家数 | 上述支付订单对应 `user_id` 去重数 | `payment_order` | 待交易契约稳定 |
-| `platform.gross_paid_amount` | 支付总额（GMV） | 按支付成功时间汇总原始成功支付金额；全额退款后仍保留在原支付日 | `payment_order` | 待支付语义确认 |
-| `platform.successful_refund_amount` | 成功退款金额 | 按 `refund_time` 汇总 `refund_order.status = 1` 的金额 | `refund_order` | 待退款语义确认 |
-| `platform.net_cashflow_activity` | 区间净收款活动额 | 同一区间支付总额减成功退款金额；退款可来自更早支付，因此不得称为收入且可能为负 | 支付、退款 | 待支付语义确认 |
-| `platform.on_sale_product_snapshot` | 当前在售商品数 | 查询时点 `spu.status = ON_SALE` 的 SPU 数，仅为快照 | `spu` | 有条件就绪 |
+| `platform.paid_order_count` | 支付订单数 | `pay_time` 落在区间内且曾成功支付的店铺订单数 | `payment_order`、`order` | 精确查询可实现 |
+| `platform.paid_buyer_count` | 支付买家数 | 上述支付订单对应 `user_id` 去重数 | `payment_order` | 精确查询可实现 |
+| `platform.gross_paid_amount` | 支付总额（GMV） | 按支付成功时间汇总原始成功支付金额；全额退款后仍保留在原支付日 | `payment_order` | 精确查询可实现 |
+| `platform.successful_refund_amount` | 成功退款金额 | 按 `refund_time` 汇总 `refund_order.status = 1` 的金额 | `refund_order` | 精确查询可实现 |
+| `platform.net_cashflow_activity` | 区间净收款活动额 | 同一区间支付总额减成功退款金额；退款可来自更早支付，因此不得称为收入且可能为负 | 支付、退款 | 精确查询可实现 |
+| `platform.on_sale_product_snapshot` | 当前在售商品数 | 查询时点 `spu.status = ON_SALE` 的 SPU 数，仅为快照 | `spu` | 精确查询可实现 |
 | `platform.search_count` | 搜索次数 | 区间内 `search_log` 行数 | `search_log` | 就绪 |
-| `platform.displayed_review_count` | 有效展示评价数 | 区间内创建且当前 `status = DISPLAYED` 的评价数 | `review` | 有条件就绪 |
+| `platform.displayed_review_count` | 有效展示评价数 | 区间内创建且当前 `status = DISPLAYED` 的评价数 | `review` | 精确查询可实现 |
 
 `gross_paid_amount` 不是平台收入：当前系统没有佣金、平台服务费、税费和资金清算模型。平台页面和接口不得使用“营收”命名。
 
@@ -113,7 +113,7 @@
 | --- | --- | --- | --- |
 | `statistics:self:view` | `SELF` | `USER` | 用户本人消费概览 |
 | `statistics:platform:view` | `ALL` | `SUPER_ADMIN` | 平台总览、趋势与跨店排行 |
-| `statistics:shop:view` | `SHOP` | `MERCHANT_OWNER`、经授权的 `MERCHANT_STAFF` | 本人可管理店铺的经营数据 |
+| `statistics:shop:view` | `SHOP` | `MERCHANT_OWNER` | 本人可管理店铺的经营数据；客服角色不默认获得经营统计 |
 | `statistics:report:export` | 与基础查看权限取交集 | 首期不默认授予 | 导出离线报表；属于敏感查询并写审计 |
 
 授权必须同时满足“拥有权限”和“数据范围允许”：
@@ -204,10 +204,10 @@ GET /api/users/me/statistics/overview
 
 ## 8. 开发准入与验收清单
 
-- [ ] 商家模块提供权威店铺和账号—店铺查询服务，并覆盖跨店越权测试。
-- [ ] 商品创建／修改中的店铺归属由服务端认证上下文或商家服务确定。
-- [ ] 交易价格、店铺归属、支付回调和跨店补偿问题关闭。
-- [ ] 支付与退款成功状态、发生时间和部分退款口径写入共享契约。
+- [x] 商家模块提供权威店铺和账号—店铺查询服务，并覆盖跨店越权测试。
+- [x] 商品创建／修改中的店铺归属由服务端认证上下文或商家服务确定。
+- [x] 交易价格、店铺归属、支付回调和跨店补偿问题关闭。
+- [x] 支付与退款成功状态、发生时间和部分退款口径写入共享契约。
 - [ ] 指标 SQL 使用 `[startAt, endAt)`、`Asia/Shanghai` 和 `DECIMAL`，并有边界时刻测试。
 - [ ] 平台、商家、越权店铺和无权限账号的授权测试通过。
 - [ ] 退款、迟到事件、重复事件、空区间和跨日补零测试通过。

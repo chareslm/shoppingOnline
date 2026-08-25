@@ -17,11 +17,13 @@
 **请求体**：
 ```json
 {
-  "shopId": 1001,          // 可选，商家ID
+  "shopId": "1001",        // 必填，目标店铺ID
   "subject": "关于订单问题",  // 可选，会话主题
   "firstMessage": "你好"     // 可选，首条消息
 }
 ```
+
+`shopId` 必须对应正常营业的店铺；不存在、暂停、冻结或关闭的店铺统一返回 `40401`。服务端不会仅凭客户端提交的店铺 ID 授予任何管理权限。
 
 **成功响应**：
 ```json
@@ -60,6 +62,8 @@
 - **GET** `/api/chat/sessions/cs`
 - **描述**：客服查看已分配 + 待分配的会话
 - **权限**：CUSTOMER_SERVICE
+
+服务端先根据当前客服账号解析其 `ACTIVE` 店铺关系，只返回本店会话；不得查看或领取其他店铺的待分配会话。
 
 ---
 
@@ -154,11 +158,29 @@
 
 ## 三、WebSocket 实时推送
 
+### 获取一次性连接票据
+
+- **POST** `/api/chat/websocket-ticket`
+- **鉴权**：Bearer Access Token
+- **说明**：返回 30 秒有效、只能消费一次的随机票据。Access Token 不得放入 WebSocket URL。
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "ticket": "single-use-ticket",
+    "expiresAt": "2026-08-25T12:00:30Z"
+  }
+}
+```
+
 ### 连接
 
-- **URL**：`ws://host/ws/chat`
-- **请求头**：`Authorization: Bearer {jwt}`
+- **URL**：`ws://host/ws/chat?ticket={single-use-ticket}`
 - **描述**：客户端连上后即可接收实时消息推送
+
+缺失、过期、伪造或重复使用的票据在握手阶段返回 `401`。允许的 WebSocket Origin 与 HTTP CORS 白名单一致。客户端写消息仍使用认证 HTTP API，WebSocket 只负责服务端推送。
 
 ### 推送消息格式
 

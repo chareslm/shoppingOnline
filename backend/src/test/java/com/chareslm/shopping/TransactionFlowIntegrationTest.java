@@ -5,6 +5,8 @@ import com.chareslm.shopping.cart.service.CartService;
 import com.chareslm.shopping.common.exception.BusinessException;
 import com.chareslm.shopping.payment.dto.CreatePaymentRequest;
 import com.chareslm.shopping.payment.dto.PaymentOrderDTO;
+import com.chareslm.shopping.payment.dto.RefundOrderDTO;
+import com.chareslm.shopping.payment.dto.RefundRequest;
 import com.chareslm.shopping.payment.entity.PaymentOrder;
 import com.chareslm.shopping.payment.entity.PaymentRecord;
 import com.chareslm.shopping.payment.mapper.PaymentOrderMapper;
@@ -14,7 +16,6 @@ import com.chareslm.shopping.product.entity.Sku;
 import com.chareslm.shopping.product.entity.Spu;
 import com.chareslm.shopping.product.mapper.SkuMapper;
 import com.chareslm.shopping.product.mapper.SpuMapper;
-import com.chareslm.shopping.trade.client.MockStockClient;
 import com.chareslm.shopping.trade.dto.CreateOrderRequest;
 import com.chareslm.shopping.trade.dto.OrderDTO;
 import com.chareslm.shopping.trade.entity.Order;
@@ -41,9 +42,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 交易模块 Service 层集成测试（真实 Spring 上下文 + MySQL）。
  * <p>
  * 覆盖：购物车 → 下单（预占）→ 支付（幂等回调）→ 发货 → 确认收货；取消释放预占；超时关闭。
- * 每个测试方法事务回滚，不污染数据库；MockStockClient 内存状态在 setUp 重置。
+ * 每个测试方法事务回滚，不污染数据库；库存走 MySQL 原子更新。
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+        "trade.stock.mock-enabled=false",
+        "trade.payment.mock-enabled=true"
+})
 @Transactional
 class TransactionFlowIntegrationTest {
 
@@ -58,8 +62,6 @@ class TransactionFlowIntegrationTest {
     private OrderService orderService;
     @Autowired
     private PaymentService paymentService;
-    @Autowired
-    private MockStockClient mockStockClient;
     @Autowired
     private OrderMapper orderMapper;
     @Autowired
@@ -77,7 +79,6 @@ class TransactionFlowIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockStockClient.initStock(SKU_ID, 100);
         // 结算校验要求 SKU 存在且所属 SPU 上架：插入真实商品记录（事务回滚，不污染数据库）
         Spu spu = new Spu();
         spu.setShopId(SHOP_ID);
@@ -117,6 +118,7 @@ class TransactionFlowIntegrationTest {
         assertEquals(1, reservations.size());
         assertEquals(0, reservations.get(0).getStatus());
         assertEquals(2, reservations.get(0).getQuantity());
+        assertStock(SKU_ID, 98, 2, 0);
         // 购物车已清空勾选
         assertTrue(cartService.getCart(USER_ID).getGroups().get(0).getItems().isEmpty());
 
@@ -132,6 +134,7 @@ class TransactionFlowIntegrationTest {
         assertEquals(1, paid.getStatus());
         assertEquals(1, orderMapper.selectById(order.getOrderId()).getStatus());
         assertEquals(1, reservationsOf(order.getOrderId()).get(0).getStatus());
+        assertStock(SKU_ID, 98, 0, 2);
         long payRecords = paymentRecordMapper.selectCount(new LambdaQueryWrapper<PaymentRecord>()
                 .eq(PaymentRecord::getPaymentOrderId, paid.getPaymentOrderId())
                 .eq(PaymentRecord::getStatus, 1));
@@ -165,6 +168,7 @@ class TransactionFlowIntegrationTest {
         orderService.cancelOrder(USER_ID, order.getOrderId());
         assertEquals(4, orderMapper.selectById(order.getOrderId()).getStatus());
         assertEquals(2, reservationsOf(order.getOrderId()).get(0).getStatus());
+        assertStock(SKU_ID, 100, 0, 0);
         // 重复取消应报业务异常
         assertThrows(BusinessException.class, () -> orderService.cancelOrder(USER_ID, order.getOrderId()));
     }
@@ -181,6 +185,26 @@ class TransactionFlowIntegrationTest {
 
         assertEquals(5, orderMapper.selectById(order.getOrderId()).getStatus());
         assertEquals(2, reservationsOf(order.getOrderId()).get(0).getStatus());
+        assertStock(SKU_ID, 100, 0, 0);
+    }
+
+    @Test
+    void mockRefundCompletion_requiresOwnerAndCompletesRefund() {
+        OrderDTO order = createPaidOrder();
+        RefundRequest request = new RefundRequest();
+        request.setOrderId(order.getOrderId());
+        request.setAmount(new BigDecimal("200.00"));
+        request.setReason("集成测试退款");
+        paymentService.refund(USER_ID, request);
+
+        RefundOrderDTO refund = paymentService.listRefunds(USER_ID).get(0);
+        assertThrows(BusinessException.class,
+                () -> paymentService.mockCompleteRefund(USER_ID + 1, refund.getRefundId()));
+
+        paymentService.mockCompleteRefund(USER_ID, refund.getRefundId());
+        RefundOrderDTO completed = paymentService.listRefunds(USER_ID).get(0);
+        assertEquals(1, completed.getStatus());
+        assertEquals(7, orderMapper.selectById(order.getOrderId()).getStatus());
     }
 
     private OrderDTO createPaidOrder() {
@@ -209,5 +233,12 @@ class TransactionFlowIntegrationTest {
     private List<StockReservation> reservationsOf(Long orderId) {
         return stockReservationMapper.selectList(new LambdaQueryWrapper<StockReservation>()
                 .eq(StockReservation::getOrderId, orderId));
+    }
+
+    private void assertStock(Long skuId, int available, int reserved, int sold) {
+        Sku sku = skuMapper.selectById(skuId);
+        assertEquals(available, sku.getAvailableStock());
+        assertEquals(reserved, sku.getReservedStock());
+        assertEquals(sold, sku.getSoldStock());
     }
 }

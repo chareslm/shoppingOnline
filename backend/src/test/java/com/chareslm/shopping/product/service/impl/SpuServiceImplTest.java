@@ -65,7 +65,7 @@ class SpuServiceImplTest {
             return 1;
         });
 
-        var created = service.create(3L, new SpuCreateRequest(99L, "1", "Brand", "Phone", null, null, null, null,
+        var created = service.create(3L, new SpuCreateRequest("1", "Brand", "Phone", null, null, null, null,
                 List.of(new SkuCreateRequest("A", null, null, new BigDecimal("10"), new BigDecimal("5")))));
 
         assertEquals("DRAFT", created.status());

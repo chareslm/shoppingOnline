@@ -69,3 +69,21 @@ export interface CreatedAdminUser {
   mailDeliveryStatus: 'SENT' | 'MAIL_FAILED' | 'SKIPPED'
   roles: Role[]
 }
+
+export interface AuditLog {
+  id: string
+  actorUserId?: string | null
+  actorUsername?: string | null
+  module: string
+  actionCode: string
+  targetType?: string | null
+  targetId?: string | null
+  success: boolean
+  traceId?: string | null
+  requestMethod?: string | null
+  requestPath?: string | null
+  maskedClientIp?: string | null
+  client?: string | null
+  detail?: unknown
+  createdAt: string
+}
