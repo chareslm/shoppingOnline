@@ -12,6 +12,7 @@ h1, h2, p { margin-top: 0; }
 
 .eyebrow { color: #3b82f6; font-size: 12px; font-weight: 700; letter-spacing: .12em; margin-bottom: 10px; }
 .admin-shell { min-height: 100vh; }
+.admin-shell > .el-container { min-width: 0; }
 .sidebar { background: #14213d; padding: 20px 12px; }
 .brand { color: #fff; font-size: 17px; font-weight: 700; margin: 0 12px 30px; white-space: nowrap; }
 .brand span { color: #60a5fa; letter-spacing: .08em; }
@@ -20,7 +21,7 @@ h1, h2, p { margin-top: 0; }
 .sidebar .el-menu-item.is-active { background: #2563eb; }
 .topbar { align-items: center; background: #fff; border-bottom: 1px solid #e5e7eb; color: #64748b; display: flex; justify-content: space-between; }
 .user-menu { align-items: center; color: #334155; cursor: pointer; display: inline-flex; gap: 7px; }
-.main-content { padding: 28px; }
+.main-content { min-width: 0; padding: 28px; }
 .welcome-card { border: 0; background: linear-gradient(120deg, #fff 0%, #eff6ff 100%); }
 .welcome-card h1, .page-heading h1 { font-size: 28px; margin-bottom: 10px; }
 .welcome-card p:last-child, .page-heading p:last-child { color: #64748b; margin-bottom: 0; }
@@ -71,6 +72,14 @@ h1, h2, p { margin-top: 0; }
   .login-page { display: block; padding: 64px 24px; }
   .login-intro { margin-bottom: 36px; }
   .login-intro h1 { font-size: 40px; }
-  .main-content { padding: 18px; }
+  .sidebar { width: 64px !important; padding: 16px 6px; overflow: hidden; }
+  .brand { margin: 0 0 24px; font-size: 13px; text-align: center; }
+  .brand-workspace, .sidebar .el-menu-item > span, .workspace-description { display: none; }
+  .sidebar .el-menu-item { justify-content: center; padding: 0 !important; }
+  .sidebar .el-menu-item .el-icon { margin-right: 0; }
+  .topbar { padding: 0 12px; }
+  .user-menu { max-width: calc(100vw - 88px); }
+  .user-menu .username { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .main-content { padding: 14px; }
   .page-heading { gap: 12px; }
 }
