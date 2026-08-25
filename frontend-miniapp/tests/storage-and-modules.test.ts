@@ -85,8 +85,18 @@ describe('module registry', () => {
       'trade',
       'message',
     ])
-    expect(moduleRegistry.slice(1).every((module) => module.pages.length === 0)).toBe(true)
     expect(moduleRegistry[0].pages).toContain('/pages/statistics/index')
+    expect(moduleRegistry.find((module) => module.key === 'trade')?.pages).toEqual([
+      '/pages/cart/index',
+      '/pages/checkout/index',
+      '/pages/payment/index',
+      '/pages/orders/index',
+      '/pages/order-detail/index',
+    ])
+    const pendingModules = moduleRegistry.filter((module) =>
+      ['merchant', 'product', 'message'].includes(module.key),
+    )
+    expect(pendingModules.every((module) => module.pages.length === 0)).toBe(true)
   })
 })
 

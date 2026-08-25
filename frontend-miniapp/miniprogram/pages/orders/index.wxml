@@ -1,0 +1,20 @@
+<view class="page">
+  <scroll-view class="tabs" scroll-x>
+    <view wx:for="{{tabs}}" wx:key="key" class="tab {{activeTab === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="selectTab">{{item.label}}</view>
+  </scroll-view>
+
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+  <view wx:if="{{!loading && orders.length === 0}}" class="card empty">暂无相关订单</view>
+
+  <view wx:for="{{orders}}" wx:key="orderId" class="card order-card" data-id="{{item.orderId}}" bindtap="goDetail">
+    <view class="row">
+      <view class="muted order-no">{{item.orderNo}}</view>
+      <text class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text>
+    </view>
+    <view class="order-summary">{{item.summary}}</view>
+    <view class="row order-bottom">
+      <view class="amount">实付 ¥{{item.amountText}}<text class="muted count">（{{item.itemCount}} 件）</text></view>
+      <button wx:if="{{item.canPay}}" class="primary pay-mini" size="mini" data-id="{{item.orderId}}" catchtap="goPay">去支付</button>
+    </view>
+  </view>
+</view>

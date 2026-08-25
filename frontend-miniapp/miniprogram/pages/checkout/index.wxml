@@ -1,0 +1,40 @@
+<view class="page checkout-page">
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+
+  <view class="card">
+    <view class="section-title">收货地址</view>
+    <view wx:if="{{addresses.length === 0}}" class="empty-inline">
+      <view class="muted">还没有收货地址，请先添加</view>
+      <text class="link" bindtap="goAddresses">去添加地址 ›</text>
+    </view>
+    <radio-group wx:else bindchange="selectAddress">
+      <label wx:for="{{addresses}}" wx:key="id" class="address-option">
+        <radio value="{{item.id}}" checked="{{item.id === selectedAddressId}}" color="#2563eb" />
+        <view class="address-info">
+          <view>{{item.recipientName}}　{{item.recipientPhone}} <text wx:if="{{item.isDefault}}" class="default-tag">默认</text></view>
+          <view class="muted address-text">{{item.provinceName}}{{item.cityName}}{{item.districtName}}{{item.detailAddress}}</view>
+        </view>
+      </label>
+    </radio-group>
+  </view>
+
+  <view class="card">
+    <view class="section-title">商品清单</view>
+    <view wx:if="{{items.length === 0}}" class="empty">没有勾选的商品，请先回购物车勾选</view>
+    <view wx:for="{{items}}" wx:key="itemId" class="order-line">
+      <view class="line-name">{{item.name}}</view>
+      <view class="muted">× {{item.quantity}}</view>
+      <view class="line-subtotal">¥{{item.subtotalText}}</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="label">备注</view>
+    <textarea class="textarea remark" placeholder="选填，给商家留言" value="{{remark}}" maxlength="200" bindinput="onRemarkInput" />
+  </view>
+
+  <view class="bottom-bar">
+    <view class="summary">共 {{itemCount}} 件　合计 <text class="total">¥{{totalAmount}}</text></view>
+    <button class="primary submit-btn" loading="{{submitting}}" disabled="{{submitting || items.length === 0}}" bindtap="submit">提交订单</button>
+  </view>
+</view>

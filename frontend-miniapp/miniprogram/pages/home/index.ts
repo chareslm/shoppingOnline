@@ -33,6 +33,8 @@ Page({
     }
   },
 
+  goCart() { wx.navigateTo({ url: '/pages/cart/index' }) },
+  goOrders() { wx.navigateTo({ url: '/pages/orders/index' }) },
   goProfile() { wx.navigateTo({ url: '/pages/profile/index' }) },
   goAddresses() { wx.navigateTo({ url: '/pages/addresses/index' }) },
   goPreferences() { wx.navigateTo({ url: '/pages/preferences/index' }) },
