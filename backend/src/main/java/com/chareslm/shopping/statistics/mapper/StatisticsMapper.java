@@ -4,6 +4,7 @@ import com.chareslm.shopping.statistics.mapper.model.PlatformOverviewRow;
 import com.chareslm.shopping.statistics.mapper.model.PlatformTrendRow;
 import com.chareslm.shopping.statistics.mapper.model.ShopOverviewRow;
 import com.chareslm.shopping.statistics.mapper.model.ShopTrendRow;
+import com.chareslm.shopping.statistics.mapper.model.UserOverviewRow;
 import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDateTime;
@@ -23,4 +24,8 @@ public interface StatisticsMapper {
     List<ShopTrendRow> selectShopTrends(@Param("shopId") Long shopId,
                                         @Param("startAt") LocalDateTime startAt,
                                         @Param("endAt") LocalDateTime endAt);
+
+    UserOverviewRow selectUserOverview(@Param("userId") Long userId,
+                                       @Param("startAt") LocalDateTime startAt,
+                                       @Param("endAt") LocalDateTime endAt);
 }

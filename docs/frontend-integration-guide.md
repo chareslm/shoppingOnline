@@ -14,7 +14,7 @@
 
 | 模块键 | 负责人 | 主要页面范围 |
 | --- | --- | --- |
-| `system` / `account` | 项目管理员 | 认证、账号安全、用户中心、RBAC、平台统计和商家经营统计 |
+| `system` / `account` | 项目管理员 | 认证、账号安全、用户中心、RBAC、平台／商家统计和用户本人统计 |
 | `merchant` | 成员 2 | 商家入驻、店铺、员工、客服及资质 |
 | `product` | 成员 3 | 类目、商品、搜索、评价 |
 | `trade` | 成员 4 | 购物车、结算、订单、支付及退款 |
@@ -111,7 +111,7 @@ export const tradeModule: WebModuleContribution = {
 用户 Web 当前约定：
 
 - 登录必须选择身份：用户身份要求 `USER`，商家身份要求 `MERCHANT_OWNER` / `MERCHANT_STAFF` / `CUSTOMER_SERVICE`。
-- 用户身份菜单：概览、个人资料、收货地址、偏好设置，以及已接入的商品、购物车和订单。
+- 用户身份菜单：概览、个人资料、收货地址、偏好设置、登录设备、消费统计，以及已接入的商品、购物车和订单。
 - 商家身份菜单：添加商品（含主图/详情图上传）、商品浏览已接入，接口只返回本店商品；客服账号仅 `MERCHANT_OWNER` 可见，提交后由平台审核通过才可登录；用户沟通对商家主账号与客服开放。订单仍为占位。客服账号（仅 `CUSTOMER_SERVICE`）登录后只能看到用户沟通。
 - `/register` 提供个人账号与商家入驻切换；商家申请使用公开 multipart 接口，不提前创建账号或授予商家角色。
 - 管理台 `/merchant/review` 由 merchant 模块注册，待审核 / 已通过 / 已撤销三个队列共用同一权限 `merchant:qualification:audit`，并限定平台管理员身份。资质审核通过即开通账号；资质图片在详情中预览。
@@ -135,7 +135,7 @@ features/
 
 公共网络层、Token 安全存储、刷新队列、路由守卫和通用响应解析放在 `core/`，业务模块不得复制。Flutter 使用 Riverpod、go_router 和 Dio；微信小程序使用 TypeScript，并由统一请求封装注入 Bearer Token。
 
-Flutter 当前公共基础位于 `frontend-app/lib/core/`，认证、修改密码、个人资料、收货地址、偏好设置和登录设备管理位于 `frontend-app/lib/features/account/`。登录固定提交 `deviceType: ANDROID`，用户端路由要求账号包含 `USER` 角色；API 地址通过 `--dart-define=API_BASE_URL=...` 配置，Android 模拟器访问宿主机时默认使用 `http://10.0.2.2:8080`。Debug 构建仅为本地联调允许明文 HTTP，Release 构建必须使用 HTTPS。
+Flutter 当前公共基础位于 `frontend-app/lib/core/`，认证、修改密码、个人资料、收货地址、偏好设置、登录设备管理和本人消费统计位于 `frontend-app/lib/features/account/`。登录固定提交 `deviceType: ANDROID`，用户端路由要求账号包含 `USER` 角色；API 地址通过 `--dart-define=API_BASE_URL=...` 配置，Android 模拟器访问宿主机时默认使用 `http://10.0.2.2:8080`。Debug 构建仅为本地联调允许明文 HTTP，Release 构建必须使用 HTTPS。
 
 Flutter 模块注册约定：
 
@@ -154,6 +154,7 @@ Flutter 模块注册约定：
 - 登录固定提交 `deviceType: MINIAPP`；启动会话和用户页面要求账号包含 `USER` 角色，但客户端角色判断不替代后端授权。
 - 开发 API 默认由 `config/environment.ts` 指向 `http://127.0.0.1:8080`；其他本机端口通过小程序存储键 `shopping.apiBaseUrl.development` 覆盖，不修改源码。公共 `project.config.json` 固定使用 `touristappid`，成员在被 Git 忽略的 `project.private.config.json` 配置个人测试 AppID。正式版必须使用 HTTPS，并在微信公众平台登记 `request` 合法域名。
 - 用户 Web、Flutter 与小程序均提供本人登录设备列表、指定设备退出和其他设备退出；当前设备只能依据服务端签发的 Access Token 设备标识判断。撤销当前设备成功后，各端只清理本地会话，不再重复调用普通退出接口。
+- 用户 Web、Flutter 与小程序均提供最多 31 个自然日的本人消费概览；请求不得携带 `userId`，金额与计数字段保持服务端字符串，不在客户端自行计算财务口径。
 
 ## 6. API 与类型约定
 

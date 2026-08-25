@@ -16,4 +16,7 @@ public interface StatisticsQueryService {
 
     StatisticsResponses.ShopTrends getShopTrends(Long userId, LocalDateTime startAt, LocalDateTime endAt,
                                                   String timezone, String granularity);
+
+    StatisticsResponses.UserOverview getUserOverview(Long userId, LocalDateTime startAt, LocalDateTime endAt,
+                                                      String timezone, String granularity);
 }

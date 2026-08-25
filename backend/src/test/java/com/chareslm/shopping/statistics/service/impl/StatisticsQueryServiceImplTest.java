@@ -7,6 +7,7 @@ import com.chareslm.shopping.statistics.mapper.StatisticsMapper;
 import com.chareslm.shopping.statistics.mapper.model.PlatformOverviewRow;
 import com.chareslm.shopping.statistics.mapper.model.PlatformTrendRow;
 import com.chareslm.shopping.statistics.mapper.model.ShopOverviewRow;
+import com.chareslm.shopping.statistics.mapper.model.UserOverviewRow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -104,5 +105,23 @@ class StatisticsQueryServiceImplTest {
                 () -> service.getPlatformOverview(startAt, startAt, "Asia/Shanghai", "DAY"));
         assertThrows(BusinessException.class,
                 () -> service.getPlatformOverview(startAt, startAt.plusDays(32), "Asia/Shanghai", "DAY"));
+    }
+
+    @Test
+    void userOverviewOnlyUsesAuthenticatedUserScopeAndPreservesCrossPeriodRefund() {
+        UserOverviewRow row = new UserOverviewRow();
+        row.setPaidOrderCount(2L);
+        row.setGrossPaidAmount(new BigDecimal("150.00"));
+        row.setSuccessfulRefundAmount(new BigDecimal("180.00"));
+        row.setDisplayedReviewCount(1L);
+        when(mapper.selectUserOverview(7L, startAt, endAt)).thenReturn(row);
+
+        var result = service.getUserOverview(7L, startAt, endAt, "Asia/Shanghai", "DAY");
+
+        assertEquals(2, result.metrics().paidOrderCount());
+        assertEquals("150.00", result.metrics().grossPaidAmount());
+        assertEquals("180.00", result.metrics().successfulRefundAmount());
+        assertEquals(1, result.metrics().displayedReviewCount());
+        verify(mapper).selectUserOverview(7L, startAt, endAt);
     }
 }

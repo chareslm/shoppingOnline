@@ -82,9 +82,16 @@ class StatisticsMapperIntegrationTest {
         assertEquals(2, shopTrends.get(0).getSoldQuantity());
         assertMoney(new BigDecimal("130.00"), shopTrends.get(1).getSuccessfulRefundAmount());
 
+        var user = statisticsMapper.selectUserOverview(USER_ONE, START, END);
+        assertEquals(1, user.getPaidOrderCount());
+        assertMoney(new BigDecimal("100.00"), user.getGrossPaidAmount());
+        assertMoney(new BigDecimal("130.00"), user.getSuccessfulRefundAmount());
+        assertEquals(1, user.getDisplayedReviewCount());
+
         assertEquals(1, permissionGrantCount("statistics:platform:view", "SUPER_ADMIN"));
         assertEquals(1, permissionGrantCount("statistics:shop:view", "MERCHANT_OWNER"));
         assertEquals(0, permissionGrantCount("statistics:shop:view", "CUSTOMER_SERVICE"));
+        assertEquals(1, permissionGrantCount("statistics:self:view", "USER"));
     }
 
     private void seedUsers() {

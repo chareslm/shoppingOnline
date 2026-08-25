@@ -10,6 +10,7 @@ import com.chareslm.shopping.statistics.mapper.model.PlatformOverviewRow;
 import com.chareslm.shopping.statistics.mapper.model.PlatformTrendRow;
 import com.chareslm.shopping.statistics.mapper.model.ShopOverviewRow;
 import com.chareslm.shopping.statistics.mapper.model.ShopTrendRow;
+import com.chareslm.shopping.statistics.mapper.model.UserOverviewRow;
 import com.chareslm.shopping.statistics.service.StatisticsQueryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -138,6 +139,22 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
         OffsetDateTime now = OffsetDateTime.now(BUSINESS_ZONE);
         return new StatisticsResponses.ShopTrends(METRIC_VERSION, BUSINESS_TIMEZONE, now, now,
                 responseRange(range), shop.getId(), shop.getName(), points);
+    }
+
+    @Override
+    public StatisticsResponses.UserOverview getUserOverview(Long userId, LocalDateTime startAt,
+                                                             LocalDateTime endAt, String timezone,
+                                                             String granularity) {
+        QueryRange range = validate(startAt, endAt, timezone, granularity);
+        UserOverviewRow row = statisticsMapper.selectUserOverview(userId, range.startAt(), range.endAt());
+        var metrics = new StatisticsResponses.UserMetrics(
+                value(row == null ? null : row.getPaidOrderCount()),
+                amount(row == null ? null : row.getGrossPaidAmount()),
+                amount(row == null ? null : row.getSuccessfulRefundAmount()),
+                value(row == null ? null : row.getDisplayedReviewCount()));
+        OffsetDateTime now = OffsetDateTime.now(BUSINESS_ZONE);
+        return new StatisticsResponses.UserOverview(METRIC_VERSION, BUSINESS_TIMEZONE, now, now,
+                responseRange(range), metrics);
     }
 
     private QueryRange validate(LocalDateTime startAt, LocalDateTime endAt,

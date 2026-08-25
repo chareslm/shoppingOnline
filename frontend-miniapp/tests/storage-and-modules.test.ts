@@ -86,6 +86,7 @@ describe('module registry', () => {
       'message',
     ])
     expect(moduleRegistry.slice(1).every((module) => module.pages.length === 0)).toBe(true)
+    expect(moduleRegistry[0].pages).toContain('/pages/statistics/index')
   })
 })
 

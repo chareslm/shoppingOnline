@@ -47,6 +47,22 @@ export interface ShopTrends extends ShopStatisticsMetadata {
   points: ShopTrendPoint[]
 }
 
+export interface UserMetrics {
+  paidOrderCount: string
+  grossPaidAmount: string
+  successfulRefundAmount: string
+  displayedReviewCount: string
+}
+
+export interface UserOverview {
+  metricVersion: string
+  timezone: string
+  generatedAt: string
+  dataAsOf: string
+  range: StatisticsRange
+  metrics: UserMetrics
+}
+
 export const shopStatisticsApi = {
   async overview(startAt: string, endAt: string) {
     return unwrap((await http.get<ApiResponse<ShopOverview>>('/api/merchant/statistics/overview', {
@@ -55,6 +71,14 @@ export const shopStatisticsApi = {
   },
   async trends(startAt: string, endAt: string) {
     return unwrap((await http.get<ApiResponse<ShopTrends>>('/api/merchant/statistics/trends', {
+      params: { startAt, endAt, timezone: 'Asia/Shanghai', granularity: 'DAY' },
+    })).data)
+  },
+}
+
+export const userStatisticsApi = {
+  async overview(startAt: string, endAt: string) {
+    return unwrap((await http.get<ApiResponse<UserOverview>>('/api/users/me/statistics/overview', {
       params: { startAt, endAt, timezone: 'Asia/Shanghai', granularity: 'DAY' },
     })).data)
   },

@@ -55,4 +55,12 @@ public final class StatisticsResponses {
                                  String grossPaidAmount, String successfulRefundAmount,
                                  String netCashflowActivity, long soldQuantity) {
     }
+
+    public record UserOverview(String metricVersion, String timezone, OffsetDateTime generatedAt,
+                               OffsetDateTime dataAsOf, Range range, UserMetrics metrics) {
+    }
+
+    public record UserMetrics(long paidOrderCount, String grossPaidAmount,
+                              String successfulRefundAmount, long displayedReviewCount) {
+    }
 }

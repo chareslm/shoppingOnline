@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shopping_app/app/module_registry.dart';
 
 void main() {
@@ -15,5 +16,11 @@ void main() {
     )) {
       expect(module.routes, isEmpty, reason: '${module.key} 不应提前注册业务页面');
     }
+    expect(
+      appModules.first.routes.any(
+        (route) => route is GoRoute && route.path == '/statistics',
+      ),
+      isTrue,
+    );
   });
 }
