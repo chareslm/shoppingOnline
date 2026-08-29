@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { readApiError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
-import { isCustomerServiceOnly } from '@/types/auth'
 import { chatMessageApi, chatSessionApi } from '../services/message'
 import { useChatWebSocket } from '../composables/useChatWebSocket'
 import {
@@ -13,7 +12,6 @@ import {
 } from '../types'
 
 const auth = useAuthStore()
-const forCustomerService = computed(() => isCustomerServiceOnly(auth.session?.roles ?? []))
 
 // ---------- 状态 ----------
 const sessions = ref<ChatSession[]>([])
@@ -24,28 +22,42 @@ const loadingSessions = ref(true)
 const loadingMessages = ref(false)
 const sending = ref(false)
 const messageError = ref('')
+const showNewSessionDialog = ref(false)
+const newSessionSubject = ref('')
+const newSessionFirstMessage = ref('')
 const wsConnected = ref(false)
+const wsReconnecting = ref(false)
 
 // ---------- WebSocket ----------
-const { connected, connect, disconnect, onMessage } = useChatWebSocket()
+const { connected, reconnecting, connect, disconnect, onMessage } = useChatWebSocket()
 let offMessage: (() => void) | null = null
 
 watch(connected, (val) => { wsConnected.value = val })
+watch(reconnecting, (val) => { wsReconnecting.value = val })
 
 function handleWsMessage(msg: ChatMessage) {
+  // 如果消息属于当前会话，追加到消息列表
   if (activeSessionId.value && msg.sessionId === activeSessionId.value) {
     const exists = messages.value.some((m) => m.id === msg.id)
     if (!exists) {
       messages.value.push(msg)
       scrollToBottom()
+      // 自动标记为已读
       markMessagesAsRead([msg.id])
     }
   }
-  // 更新会话列表
+  // 更新会话列表中的最后消息和未读数
+  updateSessionFromMessage(msg)
+}
+
+function updateSessionFromMessage(msg: ChatMessage) {
   const session = sessions.value.find((s) => s.sessionId === msg.sessionId)
   if (session) {
     session.lastMessage = msg.content
     session.lastMessageTime = msg.createdAt
+    if (msg.senderId !== auth.session?.userId) {
+      session.unreadCount = (session.unreadCount ?? 0) + 1
+    }
   }
 }
 
@@ -54,9 +66,7 @@ async function loadSessions() {
   loadingSessions.value = true
   messageError.value = ''
   try {
-    sessions.value = forCustomerService.value
-      ? await chatSessionApi.listCs()
-      : await chatSessionApi.listMy()
+    sessions.value = await chatSessionApi.listMy()
   } catch (error) {
     messageError.value = readApiError(error, '会话加载失败')
   } finally {
@@ -68,11 +78,12 @@ async function selectSession(sessionId: string) {
   activeSessionId.value = sessionId
   messages.value = []
   await loadMessages(sessionId)
-  // 标记已读
-  const unread = messages.value.filter((m) => m.isRead === 0 && m.senderId !== auth.session?.userId)
-  if (unread.length > 0) {
-    await markMessagesAsRead(unread.map((m) => m.id))
+  // 标记该会话所有消息为已读
+  const unreadMessages = messages.value.filter((m) => m.isRead === 0 && m.senderId !== auth.session?.userId)
+  if (unreadMessages.length > 0) {
+    await markMessagesAsRead(unreadMessages.map((m) => m.id))
   }
+  // 更新会话未读数
   const session = sessions.value.find((s) => s.sessionId === sessionId)
   if (session) session.unreadCount = 0
 }
@@ -98,7 +109,26 @@ async function markMessagesAsRead(messageIds: string[]) {
       if (messageIds.includes(msg.id)) msg.isRead = 1
     }
   } catch {
-    // ignore
+    // 已读标记失败不阻断
+  }
+}
+
+async function createSession() {
+  if (!newSessionFirstMessage.value.trim()) return
+  try {
+    const session = await chatSessionApi.create({
+      subject: newSessionSubject.value.trim() || '客服咨询',
+      firstMessage: newSessionFirstMessage.value.trim(),
+    })
+    showNewSessionDialog.value = false
+    newSessionSubject.value = ''
+    newSessionFirstMessage.value = ''
+    await loadSessions()
+    if (session?.sessionId) {
+      await selectSession(session.sessionId)
+    }
+  } catch (error) {
+    messageError.value = readApiError(error, '创建会话失败')
   }
 }
 
@@ -112,6 +142,8 @@ async function sendMessage() {
     if (msg) {
       messages.value.push(msg)
       scrollToBottom()
+      // 更新会话列表
+      updateSessionFromMessage(msg)
     }
     inputText.value = ''
   } catch (error) {
@@ -121,19 +153,8 @@ async function sendMessage() {
   }
 }
 
-async function assignSession(sessionId: string) {
-  try {
-    const updated = await chatSessionApi.assign(sessionId)
-    if (updated) {
-      await loadSessions()
-    }
-  } catch (error) {
-    messageError.value = readApiError(error, '领取会话失败')
-  }
-}
-
 async function closeSession(sessionId: string) {
-  if (!window.confirm('确定要结束本次对话吗？')) return
+  if (!window.confirm('确定要结束本次客服对话吗？')) return
   try {
     await chatSessionApi.close(sessionId)
     if (activeSessionId.value === sessionId) {
@@ -143,6 +164,16 @@ async function closeSession(sessionId: string) {
     await loadSessions()
   } catch (error) {
     messageError.value = readApiError(error, '关闭会话失败')
+  }
+}
+
+async function recallMessage(messageId: string) {
+  if (!window.confirm('确定要撤回这条消息吗？')) return
+  try {
+    await chatMessageApi.recall(messageId)
+    messages.value = messages.value.filter((m) => m.id !== messageId)
+  } catch (error) {
+    messageError.value = readApiError(error, '撤回失败')
   }
 }
 
@@ -168,6 +199,7 @@ const activeSession = computed(() =>
 
 onMounted(async () => {
   await loadSessions()
+  // 自动连接 WebSocket
   connect()
   offMessage = onMessage(handleWsMessage)
 })
@@ -182,14 +214,15 @@ onUnmounted(() => {
   <section class="page-stack">
     <div class="page-heading">
       <div>
-        <p class="eyebrow">CS INBOX</p>
-        <h1>客服工作台</h1>
-        <p>{{ forCustomerService ? '处理用户咨询，保持在线以接收新会话。' : '与用户的沟通会话、转接和处理记录。' }}</p>
+        <p class="eyebrow">CHAT</p>
+        <h1>客服聊天</h1>
+        <p>如有疑问，请联系在线客服为您解答。</p>
       </div>
       <div class="page-actions">
-        <span v-if="wsConnected" class="ws-status connected">● 在线</span>
+        <span v-if="wsReconnecting" class="ws-status reconnecting">WebSocket 重连中…</span>
+        <span v-else-if="wsConnected" class="ws-status connected">● 在线</span>
         <span v-else class="ws-status disconnected">○ 离线</span>
-        <button class="secondary-button" type="button" @click="loadSessions">刷新</button>
+        <button class="primary-button" type="button" @click="showNewSessionDialog = true">发起咨询</button>
       </div>
     </div>
 
@@ -201,8 +234,8 @@ onUnmounted(() => {
         <div v-if="loadingSessions" class="loading-card">加载会话…</div>
         <div v-else-if="!sessions.length" class="empty-state">
           <span>💬</span>
-          <h2>暂无待处理会话</h2>
-          <p>{{ forCustomerService ? '当前没有用户咨询。请保持在线。' : '您还没有进行中的对话。' }}</p>
+          <h2>暂无会话</h2>
+          <p>点击右上角「发起咨询」联系客服</p>
         </div>
         <template v-else>
           <button
@@ -221,10 +254,6 @@ onUnmounted(() => {
               <span v-if="s.unreadCount > 0" class="unread-badge">{{ s.unreadCount }}</span>
             </div>
             <div class="session-time muted">{{ formatTime(s.lastMessageTime) }}</div>
-            <div v-if="forCustomerService && s.csUserId == null && s.status === 0" class="session-actions">
-              <span class="pending-tag">待领取</span>
-              <button class="text-button small" type="button" @click.stop="assignSession(s.sessionId)">领取</button>
-            </div>
           </button>
         </template>
       </aside>
@@ -234,8 +263,8 @@ onUnmounted(() => {
         <template v-if="!activeSession">
           <div class="empty-state chat-empty">
             <span>💬</span>
-            <h2>选择一个会话</h2>
-            <p>从左侧选择会话开始处理。</p>
+            <h2>选择或创建一个会话</h2>
+            <p>从左侧选择已有会话，或点击「发起咨询」开始新对话。</p>
           </div>
         </template>
 
@@ -258,7 +287,7 @@ onUnmounted(() => {
           <div v-else class="chat-messages">
             <div v-if="!messages.length" class="empty-state">
               <span>💭</span>
-              <p>暂无消息。</p>
+              <p>暂无消息，开始对话吧。</p>
             </div>
             <div
               v-for="msg in messages"
@@ -273,7 +302,13 @@ onUnmounted(() => {
                   <span class="sender-name">{{ msg.senderName || SENDER_TYPE_LABELS[msg.senderType] }}</span>
                   <span class="muted">{{ formatTime(msg.createdAt) }}</span>
                 </div>
-                <div class="message-bubble">{{ msg.content }}</div>
+                <div class="message-bubble" :data-type="msg.msgType">
+                  {{ msg.content }}
+                </div>
+                <div v-if="isOwnMessage(msg)" class="message-actions">
+                  <span class="muted">{{ msg.isRead === 1 ? '已读' : '未读' }}</span>
+                  <button class="text-button small" type="button" @click="recallMessage(msg.id)">撤回</button>
+                </div>
               </div>
             </div>
           </div>
@@ -283,7 +318,7 @@ onUnmounted(() => {
               v-model="inputText"
               class="chat-input-field"
               type="text"
-              placeholder="输入回复，Enter 发送"
+              placeholder="输入消息，Enter 发送"
               :disabled="activeSession.status === 1"
               @keyup.enter="sendMessage"
             />
@@ -295,6 +330,25 @@ onUnmounted(() => {
             >{{ sending ? '发送中…' : '发送' }}</button>
           </div>
         </template>
+      </div>
+    </div>
+
+    <!-- 新建会话弹窗 -->
+    <div v-if="showNewSessionDialog" class="dialog-overlay" @click.self="showNewSessionDialog = false">
+      <div class="dialog-card">
+        <h2>发起客服咨询</h2>
+        <div class="dialog-field">
+          <label>咨询主题（可选）</label>
+          <input v-model="newSessionSubject" type="text" placeholder="例：订单问题、商品咨询" />
+        </div>
+        <div class="dialog-field">
+          <label>咨询内容</label>
+          <textarea v-model="newSessionFirstMessage" placeholder="请描述您的问题…" rows="4"></textarea>
+        </div>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" @click="showNewSessionDialog = false">取消</button>
+          <button class="primary-button" type="button" :disabled="!newSessionFirstMessage.trim()" @click="createSession">开始咨询</button>
+        </div>
       </div>
     </div>
   </section>
@@ -312,6 +366,7 @@ onUnmounted(() => {
   font-weight: 600;
 }
 .ws-status.connected { color: #2b8a3e; }
+.ws-status.reconnecting { color: #e67700; }
 .ws-status.disconnected { color: #868e96; }
 
 .chat-layout {
@@ -321,6 +376,7 @@ onUnmounted(() => {
   min-height: 500px;
 }
 
+/* 会话列表 */
 .chat-sessions {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -403,19 +459,7 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
-.session-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 6px;
-}
-
-.pending-tag {
-  font-size: 12px;
-  color: #e67700;
-  font-weight: 600;
-}
-
+/* 聊天区域 */
 .chat-main {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -519,6 +563,14 @@ onUnmounted(() => {
   border-top-right-radius: 4px;
 }
 
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+/* 输入区 */
 .chat-input {
   display: flex;
   gap: 10px;
@@ -540,6 +592,65 @@ onUnmounted(() => {
 .chat-input-field:focus {
   outline: none;
   border-color: var(--green);
+}
+
+/* 弹窗 */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+}
+
+.dialog-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  width: 420px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dialog-card h2 {
+  margin: 0;
+}
+
+.dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dialog-field label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dialog-field input,
+.dialog-field textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.dialog-field input:focus,
+.dialog-field textarea:focus {
+  outline: none;
+  border-color: var(--green);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 @media (max-width: 720px) {
