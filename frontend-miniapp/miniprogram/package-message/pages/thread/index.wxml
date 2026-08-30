@@ -1,0 +1,15 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+  <view wx:if="{{loading}}" class="card empty">正在加载消息…</view>
+  <view wx:for="{{messages}}" wx:key="id" class="card">
+    <view class="row">
+      <text>{{item.senderName || (item.senderType === 2 ? '客服' : item.senderType === 3 ? '系统' : '用户')}}</text>
+      <text class="muted">{{item.createdAt}}</text>
+    </view>
+    <view>{{item.content}}</view>
+  </view>
+  <view class="card">
+    <textarea class="textarea" value="{{content}}" bindinput="onContentInput" placeholder="输入消息" />
+    <button class="primary" loading="{{sending}}" bindtap="send">发送</button>
+  </view>
+</view>

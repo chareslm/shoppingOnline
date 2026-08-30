@@ -1,8 +1,9 @@
 <view class="page">
   <view class="card">
-    <view class="subtitle">修改成功后，所有设备的 Refresh Token 都会失效，需要使用新密码重新登录。</view>
+    <view class="title">{{forced ? '首次登录请修改密码' : '修改密码'}}</view>
+    <view class="subtitle">{{forced ? '临时密码仅用于首次登录。修改成功后需使用新密码重新登录。' : '修改成功后，所有设备的 Refresh Token 都会失效，需要使用新密码重新登录。'}}</view>
     <view class="field">
-      <text class="label">当前密码</text>
+      <text class="label">{{forced ? '当前临时密码' : '当前密码'}}</text>
       <input class="input" value="{{currentPassword}}" bindinput="onCurrentInput" password />
     </view>
     <view class="field">

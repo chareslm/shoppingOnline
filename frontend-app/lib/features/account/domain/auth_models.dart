@@ -22,10 +22,11 @@ class LoginResult {
   final String refreshToken;
   final AuthenticatedUser user;
 
-  AuthSession toSession() => AuthSession(
+  AuthSession toSession(PortalMode portalMode) => AuthSession(
     accessToken: accessToken,
     refreshToken: refreshToken,
     user: user,
+    portalMode: portalMode,
   );
 }
 

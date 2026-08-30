@@ -18,6 +18,27 @@
     "pages/orders/index",
     "pages/order-detail/index"
   ],
+  "subPackages": [
+    {
+      "root": "package-product",
+      "pages": ["pages/list/index", "pages/detail/index"]
+    },
+    {
+      "root": "package-merchant",
+      "pages": [
+        "pages/home/index",
+        "pages/products/index",
+        "pages/add-product/index",
+        "pages/staff/index",
+        "pages/stats/index",
+        "pages/inbox/index"
+      ]
+    },
+    {
+      "root": "package-message",
+      "pages": ["pages/chat/index", "pages/thread/index", "pages/notifications/index"]
+    }
+  ],
   "window": {
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",

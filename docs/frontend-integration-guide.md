@@ -135,13 +135,13 @@ features/
 
 公共网络层、Token 安全存储、刷新队列、路由守卫和通用响应解析放在 `core/`，业务模块不得复制。Flutter 使用 Riverpod、go_router 和 Dio；微信小程序使用 TypeScript，并由统一请求封装注入 Bearer Token。
 
-Flutter 当前公共基础位于 `frontend-app/lib/core/`，认证、修改密码、个人资料、收货地址、偏好设置、登录设备管理和本人消费统计位于 `frontend-app/lib/features/account/`。登录固定提交 `deviceType: ANDROID`，用户端路由要求账号包含 `USER` 角色；API 地址通过 `--dart-define=API_BASE_URL=...` 配置，Android 模拟器访问宿主机时默认使用 `http://10.0.2.2:8080`。Debug 构建仅为本地联调允许明文 HTTP，Release 构建必须使用 HTTPS。
+Flutter 当前公共基础位于 `frontend-app/lib/core/`，认证、修改密码、个人资料、收货地址、偏好设置、登录设备管理和本人消费统计位于 `frontend-app/lib/features/account/`。登录固定提交 `deviceType: ANDROID`，登录时选择用户或商家身份：用户门户要求 `USER`，商家门户要求 `MERCHANT_OWNER` / `MERCHANT_STAFF` / `CUSTOMER_SERVICE`；`mustChangePassword` 时仅允许强制改密页。商品、交易、商家入驻/店铺员工/经营统计与客服聊天/通知已在对应 `features/*` 模块注册路由，网络请求必须复用 `apiClientProvider`。API 地址通过 `--dart-define=API_BASE_URL=...` 配置，Android 模拟器访问宿主机时默认使用 `http://10.0.2.2:8080`。Debug 构建仅为本地联调允许明文 HTTP，Release 构建必须使用 HTTPS。
 
 Flutter 模块注册约定：
 
 - `frontend-app/lib/app/module_registry.dart` 是中央注册表，已接入五个模块，成员无需修改。
 - 每个 `features/<module>/module.dart` 导出一个 `AppModuleContribution`，包含模块键、负责人和本模块 `GoRoute`。
-- `merchant`、`product`、`trade` 和 `message` 当前均为空路由注册点，不向用户展示入口，也不提前定义业务模型。
+- `merchant`、`product`、`trade` 和 `message` 在各自 `module.dart` 中注册业务路由；成员只在本人模块下增加 `domain/data/presentation` 和路由。
 - 成员只在本人模块下增加 `domain/data/presentation` 和路由，网络请求必须复用 `apiClientProvider`。
 - Flutter 的角色菜单或路由限制不构成安全边界，业务数据范围仍由后端认证主体和权限校验决定。
 
@@ -149,9 +149,9 @@ Flutter 模块注册约定：
 
 - `frontend-miniapp/miniprogram/app/module-registry.ts` 是中央注册表，已接入五个模块，成员无需修改。
 - 每个 `features/<module>/module.ts` 导出一个 `AppModuleContribution`，包含模块键、负责人和本模块页面路径。
-- `merchant`、`product`、`trade` 和 `message` 当前均为空页面注册点，不提前定义业务模型或展示入口。
+- `product` / `merchant` / `message` 使用分包页面（`package-product`、`package-merchant`、`package-message`）；`trade` 仍在主包。登录选择用户或商家身份，与 Web 相同角色校验。
 - 公共请求必须复用 `core/http/api-client.ts`，不得在业务模块中重复实现 Token 注入、刷新队列或统一响应解析。
-- 登录固定提交 `deviceType: MINIAPP`；启动会话和用户页面要求账号包含 `USER` 角色，但客户端角色判断不替代后端授权。
+- 登录固定提交 `deviceType: MINIAPP`；用户门户要求 `USER`，商家门户要求商家三角色；`mustChangePassword` 进入强制改密。客户端角色判断不替代后端授权。
 - 开发 API 默认由 `config/environment.ts` 指向 `http://127.0.0.1:8080`；其他本机端口通过小程序存储键 `shopping.apiBaseUrl.development` 覆盖，不修改源码。公共 `project.config.json` 固定使用 `touristappid`，成员在被 Git 忽略的 `project.private.config.json` 配置个人测试 AppID。正式版必须使用 HTTPS，并在微信公众平台登记 `request` 合法域名。
 - 用户 Web、Flutter 与小程序均提供本人登录设备列表、指定设备退出和其他设备退出；当前设备只能依据服务端签发的 Access Token 设备标识判断。撤销当前设备成功后，各端只清理本地会话，不再重复调用普通退出接口。
 - 用户 Web、Flutter 与小程序均提供最多 31 个自然日的本人消费概览；请求不得携带 `userId`，金额与计数字段保持服务端字符串，不在客户端自行计算财务口径。

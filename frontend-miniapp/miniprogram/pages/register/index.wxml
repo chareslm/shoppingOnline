@@ -1,20 +1,81 @@
 <view class="page">
   <view class="card">
-    <view class="title">注册平台账号</view>
-    <view class="subtitle">密码需为 12–64 位，并同时包含大小写字母、数字和特殊字符</view>
-    <view class="field">
-      <text class="label">用户名</text>
-      <input class="input" value="{{username}}" bindinput="onUsernameInput" placeholder="字母开头，3–64 位" />
+    <view class="title">{{accountType === 'merchant' ? '申请商家入驻' : '注册平台账号'}}</view>
+    <view class="subtitle">{{accountType === 'merchant' ? '提交主体身份与经营资质。审核通过后开通商家账号。' : '密码需为 12–64 位，并同时包含大小写字母、数字和特殊字符'}}</view>
+
+    <view class="tabs">
+      <view class="tab {{accountType === 'user' ? 'active' : ''}}" bindtap="selectUser">个人</view>
+      <view class="tab {{accountType === 'merchant' ? 'active' : ''}}" bindtap="selectMerchant">商家入驻</view>
     </view>
-    <view class="field">
-      <text class="label">密码</text>
-      <input class="input" value="{{password}}" bindinput="onPasswordInput" password placeholder="请输入强密码" />
-    </view>
-    <view class="field">
-      <text class="label">确认密码</text>
-      <input class="input" value="{{confirmation}}" bindinput="onConfirmationInput" password placeholder="请再次输入密码" />
-    </view>
+
+    <block wx:if="{{accountType === 'user'}}">
+      <view class="field">
+        <text class="label">用户名</text>
+        <input class="input" value="{{username}}" bindinput="onUsernameInput" placeholder="字母开头，3–64 位" />
+      </view>
+      <view class="field">
+        <text class="label">密码</text>
+        <input class="input" value="{{password}}" bindinput="onPasswordInput" password placeholder="请输入强密码" />
+      </view>
+      <view class="field">
+        <text class="label">确认密码</text>
+        <input class="input" value="{{confirmation}}" bindinput="onConfirmationInput" password placeholder="请再次输入密码" />
+      </view>
+    </block>
+
+    <block wx:else>
+      <view class="field">
+        <text class="label">商家类型</text>
+        <picker range="{{merchantTypeLabels}}" value="{{merchantTypeIndex}}" bindchange="onMerchantTypeChange">
+          <view class="input">{{merchantTypeLabels[merchantTypeIndex]}}</view>
+        </picker>
+      </view>
+      <view class="field">
+        <text class="label">店铺名称</text>
+        <input class="input" value="{{shopName}}" bindinput="onShopNameInput" placeholder="请输入店铺名称" />
+      </view>
+      <view class="field">
+        <text class="label">经营主体名称</text>
+        <input class="input" value="{{subjectName}}" bindinput="onSubjectNameInput" placeholder="企业/个体必填" />
+      </view>
+      <view class="field">
+        <text class="label">统一社会信用代码</text>
+        <input class="input" value="{{unifiedSocialCreditCode}}" bindinput="onCreditCodeInput" placeholder="企业/个体 18 位" />
+      </view>
+      <view class="field">
+        <text class="label">负责人姓名</text>
+        <input class="input" value="{{responsiblePersonName}}" bindinput="onPersonInput" placeholder="请输入负责人姓名" />
+      </view>
+      <view class="field">
+        <text class="label">证件类型</text>
+        <picker range="{{identityTypeLabels}}" value="{{identityTypeIndex}}" bindchange="onIdentityTypeChange">
+          <view class="input">{{identityTypeLabels[identityTypeIndex]}}</view>
+        </picker>
+      </view>
+      <view class="field">
+        <text class="label">证件号码</text>
+        <input class="input" value="{{identityDocumentNumber}}" bindinput="onIdNumberInput" placeholder="请输入证件号码" />
+      </view>
+      <view class="field">
+        <text class="label">联系电话</text>
+        <input class="input" value="{{contactPhone}}" bindinput="onPhoneInput" placeholder="11 位手机号" />
+      </view>
+      <view class="field">
+        <text class="label">联系邮箱</text>
+        <input class="input" value="{{contactEmail}}" bindinput="onEmailInput" placeholder="审核通过后用于开通通知" />
+      </view>
+      <view class="field">
+        <text class="label">资质文件（1–5 份 PDF/JPEG/PNG）</text>
+        <button class="secondary" bindtap="chooseFiles">选择文件</button>
+        <view wx:for="{{files}}" wx:key="path" class="menu-item">
+          <text>{{item.name}}</text>
+          <text class="link" data-index="{{index}}" bindtap="removeFile">移除</text>
+        </view>
+      </view>
+    </block>
+
     <view wx:if="{{error}}" class="error">{{error}}</view>
-    <button class="primary" loading="{{loading}}" disabled="{{loading}}" bindtap="submit">注册</button>
+    <view wx:if="{{success}}" class="muted">{{success}}</view>
+    <button class="primary" loading="{{loading}}" disabled="{{loading}}" bindtap="submit">{{accountType === 'merchant' ? '提交入驻申请' : '注册'}}</button>
   </view>
 </view>
