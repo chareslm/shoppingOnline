@@ -1,0 +1,31 @@
+<view class="page">
+  <view class="card">
+    <view class="title">商品浏览</view>
+    <view class="tabs">
+      <view class="tab {{shelf === 'ALL' ? 'active' : ''}}" bindtap="selectAll">全部</view>
+      <view class="tab {{shelf === 'LISTED' ? 'active' : ''}}" bindtap="selectListed">已上架</view>
+      <view class="tab {{shelf === 'UNLISTED' ? 'active' : ''}}" bindtap="selectUnlisted">未上架</view>
+    </view>
+  </view>
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+  <view wx:if="{{!loading && items.length === 0}}" class="card empty">暂无商品</view>
+  <view wx:for="{{items}}" wx:key="id" class="card">
+    <view class="name">{{item.name}}</view>
+    <view class="muted">{{item.brand || '未填品牌'}} · {{item.statusLabel}}</view>
+    <view class="price">{{item.priceText}}</view>
+    <view class="chip-row">
+      <view wx:if="{{item.status === 'DRAFT' || item.status === 'AUDIT_REJECTED'}}" class="chip" data-index="{{index}}" data-action="SUBMIT" bindtap="changeStatus">提交审核</view>
+      <view wx:if="{{item.status === 'AUDIT_APPROVED' || item.status === 'OFF_SALE'}}" class="chip" data-index="{{index}}" data-action="PUBLISH" bindtap="changeStatus">上架</view>
+      <view wx:if="{{item.status === 'ON_SALE'}}" class="chip" data-index="{{index}}" data-action="OFF_SHELF" bindtap="changeStatus">下架</view>
+      <view class="chip" data-index="{{index}}" bindtap="openStock">库存</view>
+    </view>
+  </view>
+  <view wx:if="{{selected}}" class="card">
+    <view class="subtitle">{{selected.name}} · 库存</view>
+    <view wx:for="{{stockSkus}}" wx:key="id" class="field">
+      <text class="label">{{item.attrText}} · 当前 {{item.availableStock}}</text>
+      <input class="input" type="number" value="{{item.draft}}" data-index="{{index}}" bindinput="onStockInput" />
+      <button class="secondary" data-index="{{index}}" bindtap="saveStock">保存</button>
+    </view>
+  </view>
+</view>

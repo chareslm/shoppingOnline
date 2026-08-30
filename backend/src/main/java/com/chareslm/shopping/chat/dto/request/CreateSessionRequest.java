@@ -1,6 +1,7 @@
 package com.chareslm.shopping.chat.dto.request;
 
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +12,8 @@ import lombok.Setter;
 @Setter
 public class CreateSessionRequest {
 
-    /** 商家ID（可为空=平台客服） */
+    /** 目标店铺ID；服务端会校验店铺存在且正常营业。 */
+    @NotNull
     private Long shopId;
 
     /** 会话主题/关联订单号 */

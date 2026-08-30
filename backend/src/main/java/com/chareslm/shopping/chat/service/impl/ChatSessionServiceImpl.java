@@ -15,6 +15,8 @@ import com.chareslm.shopping.chat.mapper.ChatSessionMapper;
 import com.chareslm.shopping.chat.service.ChatSessionService;
 import com.chareslm.shopping.common.api.ErrorCode;
 import com.chareslm.shopping.common.exception.BusinessException;
+import com.chareslm.shopping.merchant.entity.Shop;
+import com.chareslm.shopping.merchant.service.MerchantShopQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -34,20 +36,22 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     private final ChatSessionMapper sessionMapper;
     private final ChatMessageMapper messageMapper;
+    private final MerchantShopQueryService merchantShopQueryService;
 
     @Override
     @Transactional
     public SessionResponse createSession(Long userId, CreateSessionRequest request) {
+        Shop targetShop = merchantShopQueryService.requireOpenShopById(request.getShopId());
         // 结构化日志
         MDC.put("userId", String.valueOf(userId));
         MDC.put("module", "CHAT");
         MDC.put("action", "createSession");
-        log.info("Creating chat session for userId={}, shopId={}", userId, request.getShopId());
+        log.info("Creating chat session for userId={}, shopId={}", userId, targetShop.getId());
 
         // 查询是否已有进行中的会话（同一用户+同一商家）
         ChatSession existing = sessionMapper.selectOne(new LambdaQueryWrapper<ChatSession>()
                 .eq(ChatSession::getUserId, userId)
-                .eq(request.getShopId() != null, ChatSession::getShopId, request.getShopId())
+                .eq(ChatSession::getShopId, targetShop.getId())
                 .eq(ChatSession::getStatus, SessionStatus.IN_PROGRESS.getCode())
                 .last("LIMIT 1"));
         if (existing != null) {
@@ -58,7 +62,7 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
         ChatSession session = new ChatSession();
         session.setUserId(userId);
-        session.setShopId(request.getShopId());
+        session.setShopId(targetShop.getId());
         session.setSubject(request.getSubject());
         session.setStatus(SessionStatus.IN_PROGRESS.getCode());
         session.setPriority(0);
@@ -119,13 +123,17 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         MDC.put("module", "CHAT");
         MDC.put("action", "listCsSessions");
 
-        // 客服可看到已分配给自己的会话 + 待分配的会话
+        Shop staffShop = merchantShopQueryService.requireOpenStaffShop(csUserId);
+
+        // 客服只能看到本店内已分配给自己的会话和待分配会话。
         List<ChatSession> assigned = sessionMapper.selectList(new LambdaQueryWrapper<ChatSession>()
                 .eq(ChatSession::getCsUserId, csUserId)
+                .eq(ChatSession::getShopId, staffShop.getId())
                 .eq(ChatSession::getStatus, SessionStatus.IN_PROGRESS.getCode())
                 .orderByDesc(ChatSession::getLastMessageTime));
         List<ChatSession> unassigned = sessionMapper.selectList(new LambdaQueryWrapper<ChatSession>()
                 .isNull(ChatSession::getCsUserId)
+                .eq(ChatSession::getShopId, staffShop.getId())
                 .eq(ChatSession::getStatus, SessionStatus.IN_PROGRESS.getCode())
                 .orderByAsc(ChatSession::getPriority)
                 .orderByAsc(ChatSession::getCreatedAt)
@@ -171,6 +179,10 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         if (session == null || SessionStatus.IN_PROGRESS.getCode() != session.getStatus()) {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
+        Shop staffShop = merchantShopQueryService.requireOpenStaffShop(csUserId);
+        if (!staffShop.getId().equals(session.getShopId())) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
         if (session.getCsUserId() != null && !session.getCsUserId().equals(csUserId)) {
             throw new BusinessException(ErrorCode.SESSION_ALLOCATION_CONFLICT);
         }
@@ -206,6 +218,7 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     @Override
     public int getUnreadCount(Long sessionId, Long userId) {
+        requireAccessibleSession(userId, sessionId);
         return computeUnreadCount(sessionId, userId);
     }
 

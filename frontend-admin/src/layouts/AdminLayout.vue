@@ -65,9 +65,9 @@ async function handlePasswordChanged() {
 <template>
   <el-container class="admin-shell">
     <el-aside width="232px" class="sidebar">
-      <div class="brand"><span>SHOP</span> {{ workspaceLabel }}</div>
+      <div class="brand"><span>SHOP</span><span class="brand-workspace"> {{ workspaceLabel }}</span></div>
       <el-menu router :default-active="$route.path" background-color="transparent" text-color="#b8c4d9" active-text-color="#ffffff">
-        <el-menu-item index="/dashboard">
+        <el-menu-item index="/dashboard" title="工作台">
           <el-icon><Monitor /></el-icon>
           <span>工作台</span>
         </el-menu-item>
@@ -76,6 +76,7 @@ async function handlePasswordChanged() {
           :key="item.index"
           :index="item.index"
           :disabled="item.disabled"
+          :title="item.label"
         >
           <el-icon><component :is="item.icon" /></el-icon>
           <span>{{ item.label }}</span>
@@ -84,9 +85,9 @@ async function handlePasswordChanged() {
     </el-aside>
     <el-container>
       <el-header class="topbar">
-        <span>{{ isSystemMode ? '系统管理员工作区：用户角色与系统日志' : '平台管理员工作区：审核、商品与消息发布' }}</span>
+        <span class="workspace-description">{{ isSystemMode ? '系统管理员工作区：用户角色与系统日志' : '平台管理员工作区：审核、商品与消息发布' }}</span>
         <el-dropdown @command="handleCommand">
-          <span class="user-menu"><el-icon><UserFilled /></el-icon>{{ auth.session?.username }}<el-icon><ArrowDown /></el-icon></span>
+          <span class="user-menu"><el-icon><UserFilled /></el-icon><span class="username">{{ auth.session?.username }}</span><el-icon><ArrowDown /></el-icon></span>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="change-password">修改密码</el-dropdown-item>

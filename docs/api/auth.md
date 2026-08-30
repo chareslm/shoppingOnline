@@ -151,7 +151,7 @@
 
 ## 修改本人密码
 
-`PUT /api/auth/password`
+`PUT /api/auth/password`（微信小程序使用 `POST /api/auth/password`，请求体与校验相同）
 
 该接口需要 Access Token。调用者必须提交当前密码和符合强密码策略的新密码；新密码不得与当前密码相同。
 

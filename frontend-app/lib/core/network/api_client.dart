@@ -44,8 +44,24 @@ class ApiClient {
   }) =>
       _request(() => _dio.get<dynamic>(path, queryParameters: queryParameters));
 
-  Future<Response<dynamic>> post(String path, {Object? data}) =>
-      _request(() => _dio.post<dynamic>(path, data: data));
+  Future<Response<dynamic>> post(
+    String path, {
+    Object? data,
+    Options? options,
+  }) => _request(() => _dio.post<dynamic>(path, data: data, options: options));
+
+  Future<Response<dynamic>> postMultipart(String path, FormData data) =>
+      _request(
+        () => _dio.post<dynamic>(
+          path,
+          data: data,
+          options: Options(
+            contentType: Headers.multipartFormDataContentType,
+            sendTimeout: const Duration(seconds: 30),
+            receiveTimeout: const Duration(seconds: 30),
+          ),
+        ),
+      );
 
   Future<Response<dynamic>> put(String path, {Object? data}) =>
       _request(() => _dio.put<dynamic>(path, data: data));

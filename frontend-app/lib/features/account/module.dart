@@ -6,6 +6,7 @@ import 'package:shopping_app/features/account/presentation/device_sessions_page.
 import 'package:shopping_app/features/account/presentation/home_page.dart';
 import 'package:shopping_app/features/account/presentation/preference_page.dart';
 import 'package:shopping_app/features/account/presentation/profile_page.dart';
+import 'package:shopping_app/features/account/presentation/statistics_page.dart';
 
 final accountModule = AppModuleContribution(
   key: 'account',
@@ -23,11 +24,17 @@ final accountModule = AppModuleContribution(
     ),
     GoRoute(
       path: '/change-password',
-      builder: (context, state) => const ChangePasswordPage(),
+      builder: (context, state) => ChangePasswordPage(
+        forced: state.uri.queryParameters['forced'] == '1',
+      ),
     ),
     GoRoute(
       path: '/devices',
       builder: (context, state) => const DeviceSessionsPage(),
+    ),
+    GoRoute(
+      path: '/statistics',
+      builder: (context, state) => const StatisticsPage(),
     ),
   ],
 );

@@ -1,0 +1,16 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+
+  <view wx:if="{{payment}}" class="card pay-card">
+    <view class="muted">支付金额</view>
+    <view class="amount">¥{{amountText}}</view>
+    <view class="status-row">
+      <text class="status-tag {{paid ? 'success' : ''}}">{{statusLabel}}</text>
+    </view>
+    <view class="meta">支付单号：{{paymentNo}}</view>
+    <view wx:if="{{expireTime && !paid}}" class="meta muted">支付截止：{{expireTime}}</view>
+    <view wx:if="{{payTime}}" class="meta muted">支付时间：{{payTime}}</view>
+    <button wx:if="{{!paid}}" class="primary wide-btn" loading="{{paying}}" disabled="{{paying}}" bindtap="mockPay">模拟支付</button>
+    <view wx:else class="paid-tip">✓ 支付成功，可在订单详情查看</view>
+  </view>
+</view>

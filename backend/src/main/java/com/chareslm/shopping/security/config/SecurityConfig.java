@@ -34,7 +34,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login/password",
                                 "/api/auth/refresh", "/api/merchant/applications").permitAll()
-                        .requestMatchers("/api/mock/wechat/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/ws/chat/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/spu/**",

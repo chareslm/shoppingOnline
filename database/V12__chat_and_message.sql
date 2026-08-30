@@ -124,4 +124,11 @@ INSERT INTO `message_template` (`id`, `template_code`, `title`, `content`, `cate
 (5, 'REFUND_PROCESSED', '退款已到账', '您的订单 {orderNo} 退款 {amount} 元已到账, 请注意查收。', 2, 1, 1),
 (6, 'SYSTEM_MAINTENANCE', '系统维护通知', '尊敬的用户, 系统将于 {time} 进行维护, 届时部分功能可能无法使用。', 1, 1, 1),
 (7, 'CS_MESSAGE', '客服消息', '您有一条新的客服消息, 请及时查看。', 4, 1, 1),
-(8, 'MARKETING_PROMOTION', '限时优惠', '{content}', 3, 1, 1);
+(8, 'MARKETING_PROMOTION', '限时优惠', '{content}', 3, 1, 1)
+ON DUPLICATE KEY UPDATE
+    template_code = VALUES(template_code),
+    title = VALUES(title),
+    content = VALUES(content),
+    category = VALUES(category),
+    push_enabled = VALUES(push_enabled),
+    status = VALUES(status);

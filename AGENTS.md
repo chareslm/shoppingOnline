@@ -6,7 +6,7 @@
 
 - 项目名称：综合电商平台课程设计。
 - 仓库：`https://github.com/chareslm/shoppingOnline.git`。
-- 当前阶段：身份认证与 RBAC、强密码与本人改密、统一管理端认证及用户角色管理、Redis/Elasticsearch 本地基础设施、用户资料/地址/偏好接口、用户 Web 用户中心，以及管理端/用户 Web 团队模块接入基础均已集成至 `develop`；Flutter Android App 与微信原生 TypeScript 小程序的统一认证、用户中心和模块注册基础均已完成真实接口联调。成员 2 的商家入驻、私有资质文件、资质审核通过即开通、店铺建档、撤销与重新授予、店铺客服平台审核、SMTP 开通通知与首次强制改密已落地（V8）；系统管理员可在管理端维护运行时 SMTP（含关闭发信），并手动创建必须带邮箱、首次登录强制改密的平台账号（V9）；成员 3 的商品（类目/SPU/SKU/库存/上下架/审核、商品公开图 V10）、搜索（ES 索引/同步/MySQL 降级检索/热词/建议）与评价（资格校验/评价/回复/评分聚合）后端已集成（V5~V7、V10）；成员 4 的购物车/订单/支付/退款后端已集成（V4）。成员 5 客服聊天与消息中心后端已合入（Flyway V12）；审计查询权限为 V11（V8 已用于商家表）。
+- 当前阶段：身份认证与 RBAC、强密码与本人改密、统一管理端认证及用户角色管理、Redis/Elasticsearch 本地基础设施、用户资料/地址/偏好接口、用户 Web 用户中心，以及管理端/用户 Web 团队模块接入基础均已集成至 `develop`；Flutter Android App 与微信原生 TypeScript 小程序的统一认证、用户中心和模块注册基础均已完成真实接口联调。成员 2 的商家入驻、私有资质文件、资质审核通过即开通、店铺建档、撤销与重新授予、店铺客服平台审核、SMTP 开通通知与首次强制改密已落地（V8）；系统管理员可在管理端维护运行时 SMTP（含关闭发信），并手动创建必须带邮箱、首次登录强制改密的平台账号（V9）；成员 3 的商品（类目/SPU/SKU/库存/上下架/审核、商品公开图 V10）、搜索（ES 索引/同步/MySQL 降级检索/热词/建议）与评价后端已集成；成员 4 的购物车/订单/支付/退款后端已集成并默认使用 MySQL 原子库存，匿名 Mock 回调已移除；成员 5 客服聊天与消息中心后端已合入并完成店铺数据隔离及 WebSocket 一次性票据修复（V12）。审计查询权限为 V11；V13 兼容曾执行旧审计 V8 的数据库，无需清库升级。统计第一阶段的 MySQL 权威表精确查询、V14 权限与索引、平台统计页和商家经营统计页已集成至 `develop`，桌面／移动运行时验收与 20 万订单级本地容量基线已通过；V15 用户本人统计权限、精确查询和 Web／Flutter／微信小程序消费概览已完成；事件、预聚合、缓存、导出和平台跨店下钻尚未建设。
 - 开发策略：先采用模块化单体，后端使用 Java 21 + Spring Boot 4.1；本地 Compose 已提供 MySQL、Redis 和 Elasticsearch，消息队列在后期确有异步需求时再接入；Web 端使用 Vue 3 + TypeScript。
 - 终端范围：一期建设用户 Web、Android Flutter App、微信原生小程序和统一管理端；三端共用同一后端 API、账号与业务规则。
 
@@ -65,6 +65,7 @@ docs/             需求、接口、架构和协作文档
 - `docs/api/product.md`：商品（类目/SPU/SKU/库存/上下架）接口契约。
 - `docs/api/search.md`：商品搜索、建议与热词接口契约。
 - `docs/api/review.md`：评价、回复与评分聚合接口契约。
+- `docs/api/statistics.md`：平台与商家统计精确查询、指标字段、权限和错误边界。
 - `docs/api/merchant.md`：商家入驻、资质文件、资质审核与账号开通、撤销/重新授予接口契约。
 - `docs/auth-bootstrap.md`：本地首次超级管理员初始化说明；不得用于生产环境。
 - `docs/database/V1-identity-and-user.md`：身份、用户、设备、Token、角色与审计相关数据库迁移说明。
@@ -74,6 +75,9 @@ docs/             需求、接口、架构和协作文档
 - `docs/database/merchant-module.md`：成员 2 商家入驻、店铺、资质、客服审核数据库设计（V8）。
 - `docs/database/V9-system-smtp-and-admin-user.md`：系统 SMTP 运行时配置、发信开关与手动建号权限（V9）。
 - `docs/database/V11-audit-log-view-permission.md`：管理端审计日志查询权限迁移说明（V11；V8 已用于商家表）。
+- `docs/database/V13-legacy-v8-merchant-compatibility.md`：旧审计 V8 数据库无损升级到当前商家迁移序列的兼容说明。
+- `docs/database/V14-statistics-exact-query.md`：统计查看权限与权威表查询索引迁移说明。
+- `docs/database/V15-user-self-statistics.md`：用户本人统计权限与按用户精确查询索引迁移说明。
 - `database/V12__chat_and_message.sql`：成员 5 客服聊天与消息中心表（V12）。
 - `docs/api/system.md`：系统管理员 SMTP 配置接口契约。
 

@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public record SpuCreateRequest(
-        Long shopId,
         @NotBlank String categoryId,
         @Size(max = 64) String brand,
         @NotBlank @Size(max = 255) String name,

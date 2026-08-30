@@ -1,4 +1,4 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 const STARTUP_RETRY_LIMIT = 45
 const STARTUP_RETRY_DELAY_MS = 2000

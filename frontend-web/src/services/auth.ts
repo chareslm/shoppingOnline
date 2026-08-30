@@ -15,6 +15,15 @@ export const authApi = {
   async currentUser() {
     return unwrap((await http.get<ApiResponse<AuthenticatedUser>>('/api/auth/me')).data)
   },
+  async devices() {
+    return unwrap((await http.get<ApiResponse<DeviceSession[]>>('/api/auth/devices')).data)
+  },
+  async revokeDevice(deviceId: string) {
+    return unwrap((await http.post<ApiResponse<null>>(`/api/auth/devices/${deviceId}/revoke`)).data)
+  },
+  async revokeOtherDevices() {
+    return unwrap((await http.post<ApiResponse<null>>('/api/auth/devices/revoke-others')).data)
+  },
   async changePassword(currentPassword: string, newPassword: string) {
     return unwrap((await http.put<ApiResponse<null>>('/api/auth/password', { currentPassword, newPassword })).data)
   },

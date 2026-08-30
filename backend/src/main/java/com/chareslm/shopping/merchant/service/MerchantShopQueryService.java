@@ -39,4 +39,31 @@ public class MerchantShopQueryService {
         }
         return shop;
     }
+
+    /** Resolves only a shop owned by the current account; staff membership is not sufficient. */
+    public Shop requireOpenOwnedShop(Long userId) {
+        Shop shop = shopMapper.selectByOwnerUserId(userId);
+        if (shop == null || !"OPEN".equals(shop.getStatus())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return shop;
+    }
+
+    /** Resolves an active customer-service account to its open shop. */
+    public Shop requireOpenStaffShop(Long userId) {
+        ShopStaff staff = shopStaffMapper.selectActiveByUserId(userId);
+        if (staff == null) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return requireOpenShopById(staff.getShopId());
+    }
+
+    /** Validates a public shop target without granting any management permission. */
+    public Shop requireOpenShopById(Long shopId) {
+        Shop shop = shopId == null ? null : shopMapper.selectById(shopId);
+        if (shop == null || !"OPEN".equals(shop.getStatus())) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+        return shop;
+    }
 }

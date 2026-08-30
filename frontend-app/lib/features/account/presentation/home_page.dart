@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shopping_app/app/providers.dart';
+import 'package:shopping_app/core/auth/session.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -12,6 +13,7 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   bool _loggingOut = false;
+  bool _switching = false;
 
   Future<void> _logout() async {
     setState(() => _loggingOut = true);
@@ -28,9 +30,29 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  Future<void> _enterMerchant() async {
+    setState(() => _switching = true);
+    try {
+      await ref.read(authRepositoryProvider).switchPortal(PortalMode.merchant);
+      if (mounted) {
+        final roles = ref.read(authSessionProvider).user?.roles ?? const [];
+        context.go(portalHomePath(PortalMode.merchant, roles));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _switching = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authSessionProvider).user;
+    final canEnterMerchant = hasMerchantPortalRole(user?.roles ?? const []);
     return Scaffold(
       appBar: AppBar(
         title: const Text('综合电商平台'),
@@ -66,11 +88,44 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           const SizedBox(height: 16),
-          const Card(
-            child: ListTile(
-              leading: Icon(Icons.verified_user_outlined),
-              title: Text('Android 统一认证已接入'),
-              subtitle: Text('商品、交易和消息模块将在接口契约稳定后接入。'),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.storefront_outlined),
+                  title: const Text('商品'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/products'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.shopping_cart_outlined),
+                  title: const Text('购物车'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/cart'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.receipt_long_outlined),
+                  title: const Text('订单'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/orders'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.support_agent_outlined),
+                  title: const Text('客服沟通'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/chat'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.notifications_outlined),
+                  title: const Text('消息通知'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/notifications'),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -112,6 +167,29 @@ class _HomePageState extends ConsumerState<HomePage> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/devices'),
                 ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.query_stats_outlined),
+                  title: const Text('消费统计'),
+                  subtitle: const Text('查看本人支付、退款与评价概览'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/statistics'),
+                ),
+                if (canEnterMerchant) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.swap_horiz_outlined),
+                    title: const Text('进入商家工作台'),
+                    subtitle: const Text('切换为商家或客服身份'),
+                    trailing: _switching
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.chevron_right),
+                    onTap: _switching ? null : _enterMerchant,
+                  ),
+                ],
               ],
             ),
           ),

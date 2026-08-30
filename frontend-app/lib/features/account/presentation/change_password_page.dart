@@ -5,7 +5,9 @@ import 'package:shopping_app/app/providers.dart';
 import 'package:shopping_app/core/validation/password_validator.dart';
 
 class ChangePasswordPage extends ConsumerStatefulWidget {
-  const ChangePasswordPage({super.key});
+  const ChangePasswordPage({super.key, this.forced = false});
+
+  final bool forced;
 
   @override
   ConsumerState<ChangePasswordPage> createState() => _ChangePasswordPageState();
@@ -51,7 +53,10 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('修改密码')),
+    appBar: AppBar(
+      title: Text(widget.forced ? '首次登录修改密码' : '修改密码'),
+      automaticallyImplyLeading: !widget.forced,
+    ),
     body: SafeArea(
       child: Center(
         child: SingleChildScrollView(
@@ -63,7 +68,11 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('修改成功后，所有设备的 Refresh Token 将失效，需要重新登录。'),
+                  Text(
+                    widget.forced
+                        ? '新商家账号须先修改临时密码后才能继续使用。修改成功后所有设备会话将失效。'
+                        : '修改成功后，所有设备的 Refresh Token 将失效，需要重新登录。',
+                  ),
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _currentController,

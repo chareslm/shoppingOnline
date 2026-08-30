@@ -31,11 +31,6 @@ public class PaymentController {
         return ApiResponse.success(paymentService.createPaymentOrder(CurrentUser.require().userId(), request));
     }
 
-    @PostMapping("/{paymentOrderId}/mock-pay")
-    public ApiResponse<PaymentOrderDTO> mockPay(@PathVariable Long paymentOrderId) {
-        return ApiResponse.success(paymentService.mockPay(CurrentUser.require().userId(), paymentOrderId));
-    }
-
     @GetMapping("/{paymentOrderId}")
     public ApiResponse<PaymentOrderDTO> getPayment(@PathVariable Long paymentOrderId) {
         return ApiResponse.success(paymentService.getPaymentOrder(CurrentUser.require().userId(), paymentOrderId));

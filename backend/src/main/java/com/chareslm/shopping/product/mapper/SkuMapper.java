@@ -26,9 +26,10 @@ public interface SkuMapper extends BaseMapper<Sku> {
      */
     @Update("""
             UPDATE sku
-            SET reserved_stock = GREATEST(reserved_stock - #{quantity}, 0),
+            SET reserved_stock = reserved_stock - #{quantity},
                 available_stock = available_stock + #{quantity}
             WHERE id = #{skuId}
+              AND reserved_stock >= #{quantity}
             """)
     int releaseStock(@Param("skuId") Long skuId, @Param("quantity") int quantity);
 

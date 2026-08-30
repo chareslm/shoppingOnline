@@ -233,6 +233,16 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional
+    public void mockCompleteRefund(Long userId, Long refundId) {
+        RefundOrder refundOrder = refundOrderMapper.selectById(refundId);
+        if (refundOrder == null || !refundOrder.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND);
+        }
+        completeRefund(refundId);
+    }
+
+    @Override
     public PaymentOrderDTO getPaymentOrder(Long userId, Long paymentOrderId) {
         return toDTO(requireOwnedPaymentOrder(userId, paymentOrderId));
     }

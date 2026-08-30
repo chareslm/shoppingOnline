@@ -1,0 +1,143 @@
+.detail-page {
+  padding-bottom: 180rpx;
+}
+
+.status-card {
+  text-align: center;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
+
+.status-tag.big {
+  padding: 10rpx 28rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.status-tag.warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-tag.info {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-tag.success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-tag.refund {
+  background: #fae8ff;
+  color: #a21caf;
+}
+
+.status-tag.closed {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.order-no {
+  margin-top: 20rpx;
+  word-break: break-all;
+}
+
+.section-title {
+  margin-bottom: 20rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.remark-line {
+  margin-top: 12rpx;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+
+.thumb {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 16rpx;
+  background: #eef2f7;
+  flex-shrink: 0;
+}
+
+.thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 24rpx;
+}
+
+.item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-name {
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.subtotal {
+  font-weight: 600;
+}
+
+.amounts {
+  margin-top: 28rpx;
+  padding-top: 22rpx;
+  border-top: 2rpx solid #eef2f7;
+}
+
+.amount-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14rpx;
+  color: #64748b;
+}
+
+.amount-row.strong {
+  margin-top: 22rpx;
+  color: #dc2626;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+}
+
+.action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 20rpx;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  box-shadow: 0 -8rpx 28rpx rgba(15, 23, 42, 0.08);
+}
+
+.action-btn {
+  margin-top: 0;
+  width: 220rpx;
+}

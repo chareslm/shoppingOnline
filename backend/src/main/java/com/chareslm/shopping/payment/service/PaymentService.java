@@ -39,6 +39,9 @@ public interface PaymentService {
      */
     void completeRefund(Long refundId);
 
+    /** Completes a mock refund after verifying that it belongs to the authenticated user. */
+    void mockCompleteRefund(Long userId, Long refundId);
+
     /**
      * 查询支付单（校验归属当前用户）。
      */

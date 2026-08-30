@@ -18,11 +18,11 @@ security:
   jwt:
     secret: replace-with-a-random-secret-of-at-least-32-bytes
   bootstrap-super-admin:
-    # [OPTIONAL] One-time local SUPER_ADMIN. Prefer deploy/.env BOOTSTRAP_SUPER_ADMIN_*
-    # when using Compose. Enable here only for a host-run backend.
-    enabled: false
-    username: admin_local
-    password: replace-with-a-strong-one-time-bootstrap-password
+    # [OPTIONAL] One-time local SUPER_ADMIN. Prefer deploy/.env BOOTSTRAP_SUPER_ADMIN_*.
+    # Hard-coding enabled: false here would ignore Compose environment variables.
+    enabled: ${BOOTSTRAP_SUPER_ADMIN_ENABLED:false}
+    username: ${BOOTSTRAP_SUPER_ADMIN_USERNAME:admin_local}
+    password: ${BOOTSTRAP_SUPER_ADMIN_PASSWORD:}
 
 app:
   cors:

@@ -23,7 +23,6 @@ import com.chareslm.shopping.product.entity.Sku;
 import com.chareslm.shopping.product.entity.Spu;
 import com.chareslm.shopping.product.mapper.SkuMapper;
 import com.chareslm.shopping.product.mapper.SpuMapper;
-import com.chareslm.shopping.trade.client.MockStockClient;
 import com.chareslm.shopping.trade.dto.CreateOrderRequest;
 import com.chareslm.shopping.trade.dto.OrderDTO;
 import com.chareslm.shopping.trade.entity.Order;
@@ -61,16 +60,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 注意：本测试类不使用 @Transactional（并发子线程读不到主线程未提交数据），
  * 每个测试使用独立用户并在 tearDown 中清理数据。
  */
-@SpringBootTest
+@SpringBootTest(properties = "trade.stock.mock-enabled=false")
 class TransactionConcurrencyTest {
 
     private static final Long USER_ID = 999011L;
     private static final Long SHOP_ID = 2011L;
     private static final Long SKU_ID = 3011L;
+    private static final Long SECOND_SHOP_ID = 2012L;
+    private static final Long SECOND_SKU_ID = 3012L;
     private static final BigDecimal PRICE = new BigDecimal("100.00");
 
     private final ExecutorService executor = Executors.newFixedThreadPool(8);
     private Long spuId;
+    private Long secondSpuId;
 
     @Autowired
     private CartService cartService;
@@ -78,8 +80,6 @@ class TransactionConcurrencyTest {
     private OrderService orderService;
     @Autowired
     private PaymentService paymentService;
-    @Autowired
-    private MockStockClient mockStockClient;
     @Autowired
     private OrderMapper orderMapper;
     @Autowired
@@ -109,8 +109,6 @@ class TransactionConcurrencyTest {
 
     @BeforeEach
     void setUp() {
-        mockStockClient.reset();
-        mockStockClient.initStock(SKU_ID, 100);
         // 结算校验要求 SKU 存在且所属 SPU 上架：插入真实商品记录（tearDown 清理）
         Spu spu = new Spu();
         spu.setShopId(SHOP_ID);
@@ -137,6 +135,10 @@ class TransactionConcurrencyTest {
         skuMapper.deleteById(SKU_ID);
         if (spuId != null) {
             spuMapper.deleteById(spuId);
+        }
+        skuMapper.deleteById(SECOND_SKU_ID);
+        if (secondSpuId != null) {
+            spuMapper.deleteById(secondSpuId);
         }
         executor.shutdownNow();
     }
@@ -175,7 +177,10 @@ class TransactionConcurrencyTest {
         // 订单只被支付一次（status=1）
         assertEquals(1, orderMapper.selectById(order.getOrderId()).getStatus());
         // 库存只扣减一次（100 - 2 = 98 可用）
-        assertEquals(98, mockStockClient.getAvailable(SKU_ID), "库存应只扣减一次");
+        Sku stock = skuMapper.selectById(SKU_ID);
+        assertEquals(98, stock.getAvailableStock(), "可售库存应只扣减一次");
+        assertEquals(0, stock.getReservedStock(), "支付后预占库存应转为已售");
+        assertEquals(2, stock.getSoldStock(), "已售库存应只增加一次");
     }
 
     @Test
@@ -264,6 +269,40 @@ class TransactionConcurrencyTest {
         assertEquals(1, refunds, "只能存在一条退款单");
     }
 
+    @Test
+    void multiShopFailure_rollsBackEarlierShopsMysqlReservation() {
+        Spu secondSpu = new Spu();
+        secondSpu.setShopId(SECOND_SHOP_ID);
+        secondSpu.setCategoryId(1L);
+        secondSpu.setName("跨店失败商品");
+        secondSpu.setStatus("ON_SALE");
+        spuMapper.insert(secondSpu);
+        secondSpuId = secondSpu.getId();
+
+        Sku secondSku = new Sku();
+        secondSku.setId(SECOND_SKU_ID);
+        secondSku.setSpuId(secondSpuId);
+        secondSku.setSkuCode("SKU-" + SECOND_SKU_ID);
+        secondSku.setPrice(PRICE);
+        secondSku.setAvailableStock(0);
+        secondSku.setReservedStock(0);
+        secondSku.setSoldStock(0);
+        secondSku.setStatus(1);
+        skuMapper.insert(secondSku);
+
+        cartService.addItem(USER_ID, SKU_ID, 2, SHOP_ID, PRICE);
+        cartService.addItem(USER_ID, SECOND_SKU_ID, 1, SECOND_SHOP_ID, PRICE);
+
+        org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
+                () -> orderService.createOrder(USER_ID, newRequest()));
+
+        Sku firstStock = skuMapper.selectById(SKU_ID);
+        assertEquals(100, firstStock.getAvailableStock(), "前一店铺可售库存必须随整笔事务回滚");
+        assertEquals(0, firstStock.getReservedStock(), "前一店铺不得遗留预占库存");
+        assertEquals(0L, orderMapper.selectCount(new LambdaQueryWrapper<Order>()
+                .eq(Order::getUserId, USER_ID)), "跨店失败不得留下半完成订单");
+    }
+
     private OrderDTO createOrderFor(Long userId) {
         cartService.addItem(userId, SKU_ID, 2, SHOP_ID, PRICE);
         return orderService.createOrder(userId, newRequest()).get(0);
@@ -328,6 +367,5 @@ class TransactionConcurrencyTest {
                     .eq(CartGroup::getCartId, cart.getId()));
             cartMapper.deleteById(cart.getId());
         }
-        mockStockClient.reset();
     }
 }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shopping_app/app/providers.dart';
 import 'package:shopping_app/app/module_registry.dart';
+import 'package:shopping_app/core/auth/session.dart';
 import 'package:shopping_app/core/auth/session_controller.dart';
 import 'package:shopping_app/features/account/presentation/forbidden_page.dart';
 import 'package:shopping_app/features/account/presentation/login_page.dart';
@@ -16,6 +17,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final location = state.matchedLocation;
       final isAuthPage = location == '/login' || location == '/register';
+      final isForcedPassword =
+          location == '/change-password' &&
+          state.uri.queryParameters['forced'] == '1';
 
       if (session.status == AuthStatus.restoring) {
         return location == '/splash' ? null : '/splash';
@@ -25,14 +29,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         final redirect = Uri.encodeQueryComponent(state.uri.toString());
         return '/login?redirect=$redirect';
       }
-      final hasUserRole = session.user?.roles.contains('USER') ?? false;
-      if (!hasUserRole) {
+
+      final user = session.user!;
+      final portal = session.portalMode;
+      final home = portalHomePath(portal, user.roles);
+
+      if (user.mustChangePassword) {
+        return isForcedPassword ? null : '/change-password?forced=1';
+      }
+      if (isForcedPassword) return home;
+
+      if (!allowsPortal(portal, user.roles)) {
         return location == '/forbidden' ? null : '/forbidden';
       }
-      if (location == '/forbidden') return '/';
+      if (location == '/forbidden') return home;
       if (isAuthPage || location == '/splash') {
-        return _safeRedirect(state.uri.queryParameters['redirect']) ?? '/';
+        return _safeRedirect(state.uri.queryParameters['redirect']) ?? home;
       }
+      if (portal == PortalMode.merchant && location == '/') return home;
       return null;
     },
     routes: [

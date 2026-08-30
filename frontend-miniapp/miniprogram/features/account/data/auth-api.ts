@@ -41,7 +41,7 @@ export const authApi = {
     writeSession({
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
-      expiresInSeconds: data.expiresInSeconds,
+      expiresInSeconds: Number(data.expiresInSeconds),
     })
     return data
   },
@@ -84,7 +84,7 @@ export const authApi = {
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     await apiRequest<void>({
       path: '/api/auth/password',
-      method: 'PUT',
+      method: 'POST',
       data: { currentPassword, newPassword },
     })
     clearSession()

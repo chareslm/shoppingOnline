@@ -9,6 +9,11 @@ import 'package:shopping_app/features/account/data/auth_api.dart';
 import 'package:shopping_app/features/account/data/auth_repository.dart';
 import 'package:shopping_app/features/account/data/user_api.dart';
 import 'package:shopping_app/features/account/data/user_repository.dart';
+import 'package:shopping_app/features/account/data/statistics_api.dart';
+import 'package:shopping_app/features/merchant/data/merchant_api.dart';
+import 'package:shopping_app/features/message/data/message_api.dart';
+import 'package:shopping_app/features/product/data/product_api.dart';
+import 'package:shopping_app/features/trade/data/trade_api.dart';
 
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (ref) => const FlutterSecureStorage(aOptions: AndroidOptions()),
@@ -48,4 +53,24 @@ final userApiProvider = Provider<UserApi>(
 
 final userRepositoryProvider = Provider<UserRepository>(
   (ref) => UserRepository(ref.watch(userApiProvider)),
+);
+
+final statisticsApiProvider = Provider<StatisticsApi>(
+  (ref) => StatisticsApi(ref.watch(apiClientProvider)),
+);
+
+final productApiProvider = Provider<ProductApi>(
+  (ref) => ProductApi(ref.watch(apiClientProvider)),
+);
+
+final tradeApiProvider = Provider<TradeApi>(
+  (ref) => TradeApi(ref.watch(apiClientProvider)),
+);
+
+final merchantApiProvider = Provider<MerchantApi>(
+  (ref) => MerchantApi(ref.watch(apiClientProvider)),
+);
+
+final messageApiProvider = Provider<MessageApi>(
+  (ref) => MessageApi(ref.watch(apiClientProvider)),
 );

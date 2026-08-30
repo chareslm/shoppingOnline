@@ -23,7 +23,6 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
 
 // ---------- 创建商品 ----------
 const createForm = reactive({
-  shopId: '100',
   categoryId: '',
   brand: '',
   name: '',
@@ -114,7 +113,6 @@ async function submitCreate() {
   submitting.value = true
   try {
     await spuApi.create({
-      shopId: createForm.shopId.trim() || '1',
       categoryId: createForm.categoryId,
       brand: createForm.brand.trim() || undefined,
       name: createForm.name.trim(),
@@ -280,7 +278,6 @@ function formatMoney(value: number | null) {
         <p class="eyebrow">NEW PRODUCT</p>
         <h2>创建商品</h2>
         <div class="form-grid">
-          <label>店铺 ID<input v-model="createForm.shopId" placeholder="100" /></label>
           <label>类目
             <select v-model="createForm.categoryId">
               <option value="" disabled>请选择类目</option>

@@ -14,6 +14,7 @@ class AuthSessionController extends ChangeNotifier {
   AuthStatus get status => _status;
   AuthSession? get session => _session;
   AuthenticatedUser? get user => _session?.user;
+  PortalMode get portalMode => _session?.portalMode ?? PortalMode.user;
   String? get accessToken => _session?.accessToken;
   String? get refreshToken => _session?.refreshToken;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
@@ -52,6 +53,12 @@ class AuthSessionController extends ChangeNotifier {
     final current = _session;
     if (current == null) return;
     await establish(current.copyWith(user: user));
+  }
+
+  Future<void> setPortalMode(PortalMode portalMode) async {
+    final current = _session;
+    if (current == null) return;
+    await establish(current.copyWith(portalMode: portalMode));
   }
 
   Future<void> clear() async {

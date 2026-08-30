@@ -49,6 +49,12 @@ app:
     # Compose always overrides with /data/uploads.
     upload-dir: ${MERCHANT_UPLOAD_DIR:${user.home}/shopping-data/uploads}
 
+trade:
+  stock:
+    mock-enabled: ${TRADE_STOCK_MOCK_ENABLED:false}
+  payment:
+    mock-enabled: ${TRADE_PAYMENT_MOCK_ENABLED:false}
+
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
   configuration:
