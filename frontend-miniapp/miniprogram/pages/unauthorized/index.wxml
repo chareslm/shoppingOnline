@@ -1,7 +1,7 @@
 <view class="page">
   <view class="card">
-    <view class="title">当前账号无法进入用户端</view>
-    <view class="subtitle">微信小程序用户功能要求账号包含 USER 角色。</view>
+    <view class="title">当前账号无法进入所选身份</view>
+    <view class="subtitle">用户身份需要 USER 角色；商家身份需要 MERCHANT_OWNER、MERCHANT_STAFF 或 CUSTOMER_SERVICE。</view>
     <button class="secondary" bindtap="backToLogin">返回登录</button>
   </view>
 </view>

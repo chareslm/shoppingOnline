@@ -109,3 +109,86 @@ button {
   text-align: center;
   color: #94a3b8;
 }
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 28rpx 0;
+  border-bottom: 2rpx solid #eef2f7;
+}
+
+.menu-item:last-child {
+  border-bottom: 0;
+}
+
+.tabs {
+  display: flex;
+  overflow: hidden;
+  margin-top: 8rpx;
+  border: 2rpx solid #dbe2ea;
+  border-radius: 16rpx;
+}
+
+.tab {
+  flex: 1;
+  padding: 20rpx 12rpx;
+  text-align: center;
+  color: #475569;
+}
+
+.tab.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.chip {
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  background: #eef2ff;
+  color: #2563eb;
+  font-size: 24rpx;
+}
+
+.chip.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.price {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.thumb {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 16rpx;
+  background: #eef2f7;
+  flex-shrink: 0;
+}
+
+.product-card {
+  display: flex;
+  gap: 20rpx;
+}
+
+.product-card .name {
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  background: #eef2f7;
+  color: #475569;
+  font-size: 22rpx;
+}

@@ -40,6 +40,26 @@ void main() {
     expect(store.value?.accessToken, 'access-2');
   });
 
+  test('解析登录用户时默认 mustChangePassword 为 false', () {
+    const user = AuthenticatedUser(
+      userId: '7',
+      username: 'alice_1',
+      roles: ['USER'],
+      permissions: [],
+    );
+    expect(user.mustChangePassword, isFalse);
+
+    final parsed = AuthenticatedUser.fromJson({
+      'userId': '9',
+      'username': 'bob',
+      'roles': ['MERCHANT_OWNER'],
+      'permissions': [],
+      'mustChangePassword': true,
+    });
+    expect(parsed.mustChangePassword, isTrue);
+    expect(parsed.toJson()['mustChangePassword'], isTrue);
+  });
+
   test('清除会话后进入未登录状态', () async {
     final store = _MemoryStore(session);
     final controller = AuthSessionController(store);

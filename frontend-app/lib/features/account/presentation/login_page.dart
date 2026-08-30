@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shopping_app/app/providers.dart';
+import 'package:shopping_app/core/auth/session.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key, this.passwordChanged = false});
@@ -18,15 +19,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _passwordController = TextEditingController();
   bool _submitting = false;
   bool _obscurePassword = true;
+  PortalMode _portalMode = PortalMode.user;
 
   @override
   void initState() {
     super.initState();
-    if (widget.passwordChanged) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _showError('密码修改成功，请使用新密码重新登录');
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final query = GoRouterState.of(context).uri.queryParameters;
+      if (query['portal'] == 'merchant') {
+        setState(() => _portalMode = PortalMode.merchant);
+      }
+      if (widget.passwordChanged) _showError('密码修改成功，请使用新密码重新登录');
+    });
   }
 
   @override
@@ -45,6 +50,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           .login(
             identifier: _identifierController.text.trim(),
             password: _passwordController.text,
+            portalMode: _portalMode,
           );
     } catch (error) {
       if (mounted) _showError(error.toString());
@@ -84,8 +90,34 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
-                  const Text('使用用户名、邮箱或手机号登录', textAlign: TextAlign.center),
-                  const SizedBox(height: 28),
+                  const Text('使用用户名、邮箱或手机号登录，并选择本次进入的身份', textAlign: TextAlign.center),
+                  const SizedBox(height: 20),
+                  SegmentedButton<PortalMode>(
+                    segments: const [
+                      ButtonSegment(
+                        value: PortalMode.user,
+                        label: Text('用户身份'),
+                        icon: Icon(Icons.person_outline),
+                      ),
+                      ButtonSegment(
+                        value: PortalMode.merchant,
+                        label: Text('商家身份'),
+                        icon: Icon(Icons.storefront_outlined),
+                      ),
+                    ],
+                    selected: {_portalMode},
+                    onSelectionChanged: _submitting
+                        ? null
+                        : (value) => setState(() => _portalMode = value.first),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _portalMode == PortalMode.merchant
+                        ? '商家主账号管理店铺。客服账号也请选择商家身份，登录后只能进入用户沟通。'
+                        : '购物与个人中心。商家与客服请切换到商家身份。',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
                   TextFormField(
                     controller: _identifierController,
                     enabled: !_submitting,
@@ -137,7 +169,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   TextButton(
                     onPressed: _submitting
                         ? null
-                        : () => context.go('/register'),
+                        : () => context.go(
+                            _portalMode == PortalMode.merchant
+                                ? '/register?account=merchant'
+                                : '/register',
+                          ),
                     child: const Text('没有账号？立即注册'),
                   ),
                 ],

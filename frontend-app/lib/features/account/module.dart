@@ -24,7 +24,9 @@ final accountModule = AppModuleContribution(
     ),
     GoRoute(
       path: '/change-password',
-      builder: (context, state) => const ChangePasswordPage(),
+      builder: (context, state) => ChangePasswordPage(
+        forced: state.uri.queryParameters['forced'] == '1',
+      ),
     ),
     GoRoute(
       path: '/devices',

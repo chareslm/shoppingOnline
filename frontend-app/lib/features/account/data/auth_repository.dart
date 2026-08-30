@@ -1,3 +1,4 @@
+import 'package:shopping_app/core/auth/session.dart';
 import 'package:shopping_app/core/auth/session_controller.dart';
 import 'package:shopping_app/core/device/device_identity.dart';
 import 'package:shopping_app/core/network/api_exception.dart';
@@ -17,6 +18,11 @@ class AuthRepository {
 
     try {
       final user = await _api.currentUser();
+      final portal = _sessionController.portalMode;
+      if (!allowsPortal(portal, user.roles)) {
+        await _sessionController.clear();
+        return;
+      }
       await _sessionController.updateUser(user);
     } on ApiException catch (error) {
       if (error.isUnauthorized) await _sessionController.clear();
@@ -31,6 +37,7 @@ class AuthRepository {
   Future<void> login({
     required String identifier,
     required String password,
+    required PortalMode portalMode,
   }) async {
     final deviceId = await _deviceIdentity.getDeviceId();
     final deviceName = await _deviceIdentity.getDeviceName();
@@ -40,7 +47,25 @@ class AuthRepository {
       deviceId: deviceId,
       deviceName: deviceName,
     );
-    await _sessionController.establish(result.toSession());
+    if (!allowsPortal(portalMode, result.user.roles)) {
+      throw ApiException(
+        message: portalMode == PortalMode.user ? '该账号不具备用户身份' : '该账号不具备商家身份',
+      );
+    }
+    await _sessionController.establish(result.toSession(portalMode));
+  }
+
+  Future<void> switchPortal(PortalMode portalMode) async {
+    final user = _sessionController.user;
+    if (user == null) {
+      throw const ApiException(message: '登录会话不存在');
+    }
+    if (!allowsPortal(portalMode, user.roles)) {
+      throw ApiException(
+        message: portalMode == PortalMode.user ? '该账号不具备用户身份' : '该账号不具备商家身份',
+      );
+    }
+    await _sessionController.setPortalMode(portalMode);
   }
 
   Future<void> logout() async {

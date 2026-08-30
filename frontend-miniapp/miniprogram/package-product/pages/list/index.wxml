@@ -1,0 +1,27 @@
+<view class="page">
+  <view class="card">
+    <view class="title">商品</view>
+    <view class="field">
+      <input class="input" value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="search" placeholder="搜索商品名称" />
+    </view>
+    <button class="primary" loading="{{loading}}" bindtap="search">搜索</button>
+    <view wx:if="{{hotWords.length}}" class="chip-row">
+      <view wx:for="{{hotWords}}" wx:key="keyword" class="chip" data-word="{{item.keyword}}" bindtap="applyHotWord">{{item.keyword}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="error card">{{error}}</view>
+  <view wx:if="{{!loading && items.length === 0}}" class="card empty">暂无商品</view>
+
+  <view wx:for="{{items}}" wx:key="spuId" class="card product-card" data-index="{{index}}" bindtap="openDetail">
+    <image wx:if="{{item.imageUrl}}" class="thumb" src="{{item.imageUrl}}" mode="aspectFill" />
+    <view wx:else class="thumb empty">无图</view>
+    <view>
+      <view class="name">{{item.name}}</view>
+      <view class="muted">{{item.brand || '未填品牌'}} · 已售 {{item.sales}}</view>
+      <view class="price">{{item.priceText}}</view>
+    </view>
+  </view>
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{finished && items.length}}" class="empty">没有更多了</view>
+</view>

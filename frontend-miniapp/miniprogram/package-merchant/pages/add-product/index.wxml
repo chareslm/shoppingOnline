@@ -1,0 +1,70 @@
+<view class="page">
+  <view class="card">
+    <view class="title">添加商品</view>
+    <view class="field">
+      <text class="label">类目</text>
+      <picker range="{{categoryLabels}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="input">{{categoryLabels[categoryIndex] || '请选择类目'}}</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="label">商品名称</text>
+      <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入名称" />
+    </view>
+    <view class="field">
+      <text class="label">品牌</text>
+      <input class="input" value="{{brand}}" bindinput="onBrandInput" placeholder="选填" />
+    </view>
+    <view class="field">
+      <text class="label">主图（选填）</text>
+      <view wx:if="{{mainImage}}" class="muted">{{mainImage}}</view>
+      <button class="secondary" loading="{{uploading}}" bindtap="chooseImage">上传图片</button>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="subtitle">规格属性</view>
+    <view class="muted">与用户 Web 相同：自定义颜色、内存、尺码等，再按取值组合生成 SKU。</view>
+    <view class="chip-row">
+      <view wx:for="{{presets}}" wx:key="name" class="chip" data-index="{{index}}" bindtap="addPreset">+ {{item.name}}</view>
+    </view>
+    <view wx:for="{{dimensions}}" wx:key="id" class="spec-row">
+      <input class="input" value="{{item.name}}" data-index="{{index}}" bindinput="onDimNameInput" placeholder="属性名，如颜色" />
+      <input class="input" value="{{item.values}}" data-index="{{index}}" bindinput="onDimValuesInput" placeholder="取值，逗号分隔" />
+      <button class="icon-button" size="mini" data-index="{{index}}" bindtap="removeDimension" disabled="{{dimensions.length <= 1}}">−</button>
+    </view>
+    <button class="secondary" bindtap="addDimension">＋ 添加规格属性</button>
+    <view class="row" style="margin-top: 24rpx;">
+      <view class="field" style="flex: 1; margin-top: 0;">
+        <text class="label">起步价</text>
+        <input class="input" type="digit" value="{{basePrice}}" bindinput="onBasePriceInput" />
+      </view>
+      <view class="field" style="flex: 1; margin-top: 0;">
+        <text class="label">各规格库存</text>
+        <input class="input" type="number" value="{{baseStock}}" bindinput="onBaseStockInput" />
+      </view>
+    </view>
+    <button class="primary" bindtap="generateSkus">按属性组合生成 SKU</button>
+    <view class="muted" style="margin-top: 16rpx;">{{hint}}</view>
+  </view>
+
+  <view class="card">
+    <view class="subtitle">SKU 与库存</view>
+    <view wx:for="{{skus}}" wx:key="key" class="sku-card">
+      <view class="muted">{{item.attrText}}</view>
+      <input class="input" value="{{item.skuCode}}" data-index="{{index}}" bindinput="onSkuCodeInput" placeholder="SKU 编码" />
+      <view class="row">
+        <input class="input" type="digit" value="{{item.price}}" data-index="{{index}}" bindinput="onSkuPriceInput" placeholder="价格" />
+        <input class="input" type="number" value="{{item.stock}}" data-index="{{index}}" bindinput="onSkuStockInput" placeholder="库存" />
+        <button class="icon-button" size="mini" data-index="{{index}}" bindtap="removeSku" disabled="{{skus.length <= 1}}">−</button>
+      </view>
+    </view>
+    <button class="secondary" bindtap="addSku">＋ 添加 SKU</button>
+  </view>
+
+  <view class="card">
+    <view wx:if="{{error}}" class="error">{{error}}</view>
+    <button class="primary" loading="{{submitting}}" disabled="{{submitting}}" bindtap="saveDraft">保存草稿</button>
+    <button class="secondary" loading="{{submitting}}" disabled="{{submitting}}" bindtap="saveAndSubmit">保存并提交审核</button>
+  </view>
+</view>

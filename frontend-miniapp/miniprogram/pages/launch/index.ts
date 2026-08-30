@@ -1,5 +1,8 @@
 import {
+  enterAuthenticatedPortal,
+  hasMerchantRole,
   hasUserRole,
+  readPortalMode,
   redirectToLogin,
   redirectToUnauthorized,
   restoreUser,
@@ -14,11 +17,12 @@ Page({
       redirectToLogin()
       return
     }
-    if (!hasUserRole(user)) {
+    const mode = readPortalMode()
+    const allowed = mode === 'merchant' ? hasMerchantRole(user) : hasUserRole(user)
+    if (!allowed) {
       redirectToUnauthorized()
       return
     }
-    wx.reLaunch({ url: '/pages/home/index' })
+    enterAuthenticatedPortal(user, mode)
   },
 })
-

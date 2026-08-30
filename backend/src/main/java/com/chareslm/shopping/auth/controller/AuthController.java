@@ -21,9 +21,9 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -55,7 +55,7 @@ public class AuthController {
         return ApiResponse.success(authService.refresh(request));
     }
 
-    @PutMapping("/password")
+    @RequestMapping(path = "/password", method = {RequestMethod.PUT, RequestMethod.POST})
     @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(CurrentUser.require().userId(), request);

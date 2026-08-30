@@ -30,3 +30,27 @@ List<String> readStringList(Object? value) {
   if (value is! List) return const [];
   return value.map((item) => item.toString()).toList(growable: false);
 }
+
+int readInt(Object? value, {int fallback = 0}) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
+double readDouble(Object? value, {double fallback = 0}) {
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
+bool readBool(Object? value) =>
+    value == true || value == 1 || value == 'true' || value == '1';
+
+List<T> readObjectList<T>(
+  Object? value,
+  T Function(Object? item) parse, {
+  String message = '服务端响应格式错误',
+}) {
+  if (value == null) return <T>[];
+  if (value is! List) throw ApiException(message: message);
+  return value.map(parse).toList(growable: false);
+}

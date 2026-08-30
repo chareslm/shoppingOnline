@@ -1,6 +1,6 @@
 # Flutter Android App
 
-综合电商平台 Android 客户端，Android 包名为 `com.chareslm.shopping`，使用 Flutter、Riverpod、go_router 和 Dio。当前已完成统一认证、账号安全、用户中心、设备与会话管理和本人消费统计；商品、交易、商家和消息功能等待对应模块提供稳定接口契约后接入。
+综合电商平台 Android 客户端，Android 包名为 `com.chareslm.shopping`，使用 Flutter、Riverpod、go_router 和 Dio。当前已完成统一认证、用户/商家门户、账号安全、用户中心，以及商品、交易、商家和消息的 REST 页面。
 
 ## 本地运行
 
@@ -30,22 +30,23 @@ lib/
 ├── app/                         # 应用装配、依赖、路由和中央模块注册表
 ├── core/                        # 配置、网络、安全会话、设备标识
 └── features/
-    ├── account/                 # 认证、账号安全、设备、资料、地址与偏好
-    ├── merchant/                # 成员 2，当前仅空注册点
-    ├── product/                 # 成员 3，当前仅空注册点
-    ├── trade/                   # 成员 4，当前仅空注册点
-    └── message/                 # 成员 5，当前仅空注册点
+    ├── account/                 # 认证、账号安全、设备、资料、地址、偏好与消费统计
+    ├── merchant/                # 入驻申请、店铺首页、客服账号、经营统计
+    ├── product/                 # 搜索/详情、商家商品列表与创建
+    ├── trade/                   # 购物车、结算、订单、模拟支付与退款
+    └── message/                 # 客服会话、通知、商家收件箱（REST）
 ```
 
-`app/module_registry.dart` 已统一注册五个模块，各模块在自己的 `module.dart` 中贡献路由。四个业务模块目前保持空路由，不显示无效入口，也不提前定义请求字段或业务页面。业务模块必须复用 `apiClientProvider` 和 `core` 认证能力，不得自行创建 Dio 客户端或信任客户端提交的数据范围。
+`app/module_registry.dart` 已统一注册五个模块，各模块在自己的 `module.dart` 中贡献路由。业务模块必须复用 `apiClientProvider` 和 `core` 认证能力，不得自行创建 Dio 客户端或信任客户端提交的数据范围。
 
 ## 认证行为
 
-- 登录固定提交 `deviceType: ANDROID`，稳定设备 ID 存放于 Android 安全存储。
+- 登录固定提交 `deviceType: ANDROID`，稳定设备 ID 存放于 Android 安全存储。登录须选择用户或商家身份。
 - Access Token 自动注入 Bearer 请求头；并发 401 共用一次 Refresh Token 轮换。
 - 刷新失败会清除本地会话并跳转登录页。
-- Android 用户端要求登录账号包含 `USER` 角色；不满足时进入无权限页。该限制用于改善客户端交互，服务端鉴权仍是安全边界。
-- 注册和修改密码遵循后端 12–64 位强密码规则；修改成功后立即清除本地会话并要求使用新密码登录。
+- 用户门户要求 `USER`；商家门户要求 `MERCHANT_OWNER` / `MERCHANT_STAFF` / `CUSTOMER_SERVICE`（客服仅用户沟通）。不满足所选身份时进入无权限页。该限制用于改善客户端交互，服务端鉴权仍是安全边界。
+- `mustChangePassword` 时仅允许 `/change-password?forced=1`。
+- 注册和修改密码遵循后端 12–64 位强密码规则；修改成功后立即清除本地会话并要求使用新密码登录。注册页可切换商家入驻（multipart 申请）。
 - 登录、注册、当前用户、改密、设备列表、会话撤销和退出接口以 `docs/api/auth.md` 为准。
 - Token、密码和完整隐私数据不得写入日志或测试文件。
 

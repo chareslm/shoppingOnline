@@ -1,0 +1,27 @@
+.spec-row,
+.sku-card .row {
+  display: flex;
+  gap: 12rpx;
+  align-items: center;
+  margin-top: 16rpx;
+}
+
+.spec-row .input,
+.sku-card .row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sku-card {
+  margin-top: 20rpx;
+  padding-top: 16rpx;
+  border-top: 2rpx solid #eef2f7;
+}
+
+.icon-button {
+  width: 72rpx;
+  min-width: 72rpx;
+  padding: 0;
+  margin: 0;
+  line-height: 72rpx;
+}
