@@ -3,7 +3,7 @@
     <div class="page-heading">
       <div>
         <p class="eyebrow">NOTIFICATIONS</p>
-        <h1>消息.通知</h1>
+        <h1>消息通知</h1>
         <p class="subtle">查看系统、订单、营销和客服消息</p>
       </div>
       <div class="heading-actions">
