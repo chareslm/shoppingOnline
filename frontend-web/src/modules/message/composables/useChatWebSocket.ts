@@ -1,88 +1,58 @@
 import { ref, onUnmounted } from 'vue'
 import { getSession } from '@/utils/session'
-import type { ChatMessage } from '../types'
 
-/**
- * 客服聊天 WebSocket composable。
- * 连接后端 ws://host:port/ws/chat?token={accessToken}
- * 后端直接推送 MessageResponse JSON（无外层 envelope）。
- */
-export function useChatWebSocket() {
+const baseURL = import.meta.env.VITE_API_BASE_URL?.replace(/^http/, 'ws') || 'ws://localhost:8080'
+
+export type MessageHandler = (data: unknown) => void
+
+export function useChatWebSocket(autoDisconnect = true) {
   const connected = ref(false)
-  const reconnecting = ref(false)
-  const error = ref<string | null>(null)
-
+  const handlers = new Set<MessageHandler>()
   let ws: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  let reconnectDelay = 1000
-  let manualClose = false
-  const messageHandlers = new Set<(msg: ChatMessage) => void>()
-
-  const baseURL = import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:8080'
-  const wsURL = baseURL.replace('http://', 'ws://').replace('https://', 'wss://')
+  let reconnectAttempts = 0
+  const MAX_RECONNECT_ATTEMPTS = 10
 
   function connect() {
     const session = getSession()
     if (!session?.accessToken) {
-      error.value = '未登录，无法建立 WebSocket 连接'
+      connected.value = false
       return
     }
 
-    manualClose = false
-    error.value = null
+    const token = encodeURIComponent(session.accessToken)
+    ws = new WebSocket(`${baseURL}/ws/chat?token=${token}`)
 
-    try {
-      ws = new WebSocket(`${wsURL}/ws/chat?token=${encodeURIComponent(session.accessToken)}`)
+    ws.onopen = () => {
+      connected.value = true
+      reconnectAttempts = 0
+    }
 
-      ws.onopen = () => {
-        connected.value = true
-        reconnecting.value = false
-        reconnectDelay = 1000
+    ws.onmessage = (event) => {
+      try {
+        // 后端直接推送 MessageResponse 或 NotificationResponse 对象
+        const data = JSON.parse(event.data)
+        handlers.forEach((handler) => handler(data))
+      } catch {
+        // 忽略非 JSON 消息
       }
+    }
 
-      ws.onmessage = (event) => {
-        try {
-          const msg: ChatMessage = JSON.parse(event.data)
-          for (const handler of messageHandlers) {
-            try {
-              handler(msg)
-            } catch {
-              // ignore handler errors
-            }
-          }
-        } catch {
-          console.warn('Failed to parse WebSocket message:', event.data)
-        }
+    ws.onclose = () => {
+      connected.value = false
+      ws = null
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++
+        reconnectTimer = setTimeout(connect, Math.min(1000 * reconnectAttempts, 10000))
       }
+    }
 
-      ws.onclose = () => {
-        connected.value = false
-        ws = null
-        if (!manualClose) {
-          scheduleReconnect()
-        }
-      }
-
-      ws.onerror = () => {
-        error.value = 'WebSocket 连接错误'
-      }
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : 'WebSocket 创建失败'
+    ws.onerror = () => {
+      ws?.close()
     }
   }
 
-  function scheduleReconnect() {
-    if (manualClose) return
-    reconnecting.value = true
-    if (reconnectTimer) clearTimeout(reconnectTimer)
-    reconnectTimer = setTimeout(() => {
-      reconnectDelay = Math.min(reconnectDelay * 2, 30_000)
-      connect()
-    }, reconnectDelay)
-  }
-
   function disconnect() {
-    manualClose = true
     if (reconnectTimer) {
       clearTimeout(reconnectTimer)
       reconnectTimer = null
@@ -92,30 +62,53 @@ export function useChatWebSocket() {
       ws = null
     }
     connected.value = false
-    reconnecting.value = false
+    reconnectAttempts = 0
   }
 
-  function onMessage(handler: (msg: ChatMessage) => void) {
-    messageHandlers.add(handler)
-    return () => messageHandlers.delete(handler)
+  function onMessage(handler: MessageHandler) {
+    handlers.add(handler)
+    return () => handlers.delete(handler)
   }
 
-  // Auto-connect on first use
-  if (!ws && !manualClose) {
+  function reconnect() {
+    disconnect()
+    reconnectAttempts = 0
     connect()
   }
 
-  onUnmounted(() => {
-    disconnect()
-    messageHandlers.clear()
-  })
+  if (autoDisconnect) {
+    onUnmounted(() => {
+      disconnect()
+    })
+  }
 
   return {
     connected,
-    reconnecting,
-    error,
     connect,
     disconnect,
     onMessage,
+    reconnect,
+  }
+}
+
+/** 全局单例 WebSocket（避免多次连接） */
+let globalWs: ReturnType<typeof useChatWebSocket> | null = null
+let globalRefCount = 0
+export function useGlobalChatWebSocket() {
+  globalRefCount++
+  if (!globalWs) {
+    globalWs = useChatWebSocket(false) // 全局实例不自动断开
+    globalWs.connect()
+  }
+  return {
+    ...globalWs,
+    disconnect: () => {
+      globalRefCount--
+      if (globalRefCount <= 0) {
+        globalRefCount = 0
+        globalWs?.disconnect()
+        globalWs = null
+      }
+    },
   }
 }

@@ -1,86 +1,133 @@
 import { http, unwrap } from '@/services/http'
-import type { ApiResponse } from '@/types/api'
+import { MessageType } from '@/modules/message/types'
 import type {
-  ChatMessage,
   ChatSession,
+  ChatMessage,
   CreateSessionRequest,
-  MarkBatchReadRequest,
-  NotificationItem,
-  NotificationPreference,
   SendMessageRequest,
-  UpdatePreferenceRequest,
-} from '../types'
+  UserNotification,
+  NotificationPreference,
+} from '@/modules/message/types'
 
-// ---------- 会话管理 ----------
-
+/** 聊天会话 API */
 export const chatSessionApi = {
-  async create(payload: CreateSessionRequest) {
-    return unwrap((await http.post<ApiResponse<ChatSession>>('/api/chat/sessions', payload)).data)
+  /** 创建会话（买家发起） */
+  create: async (shopId: string, subject?: string, firstMessage?: string) => {
+    const data: CreateSessionRequest = {
+      shopId: Number(shopId),
+      subject,
+      firstMessage,
+    }
+    const resp = await http.post('/api/chat/sessions', data)
+    return unwrap<ChatSession>(resp.data)
   },
-  async listMy() {
-    return unwrap((await http.get<ApiResponse<ChatSession[]>>('/api/chat/sessions')).data)
+
+  /** 买家：获取我的会话列表 */
+  listMy: async () => {
+    const resp = await http.get('/api/chat/sessions')
+    return unwrap<ChatSession[]>(resp.data)
   },
-  async listCs() {
-    return unwrap((await http.get<ApiResponse<ChatSession[]>>('/api/chat/sessions/cs')).data)
+
+  /** 客服：获取我的会话列表（含未分配） */
+  listCs: async () => {
+    const resp = await http.get('/api/chat/sessions/cs')
+    return unwrap<ChatSession[]>(resp.data)
   },
-  async get(sessionId: string) {
-    return unwrap((await http.get<ApiResponse<ChatSession>>(`/api/chat/sessions/${sessionId}`)).data)
+
+  /** 获取会话详情 */
+  get: async (sessionId: string) => {
+    const resp = await http.get(`/api/chat/sessions/${sessionId}`)
+    return unwrap<ChatSession>(resp.data)
   },
-  async assign(sessionId: string) {
-    return unwrap((await http.put<ApiResponse<ChatSession>>(`/api/chat/sessions/${sessionId}/assign`)).data)
+
+  /** 客服领取/分配会话（当前客服自动成为处理人） */
+  assign: async (sessionId: string) => {
+    const resp = await http.put(`/api/chat/sessions/${sessionId}/assign`)
+    return unwrap<ChatSession>(resp.data)
   },
-  async close(sessionId: string) {
-    return unwrap((await http.put<ApiResponse<null>>(`/api/chat/sessions/${sessionId}/close`)).data)
-  },
-  async getUnread(sessionId: string) {
-    return unwrap((await http.get<ApiResponse<number>>(`/api/chat/sessions/${sessionId}/unread`)).data)
+
+  /** 关闭会话 */
+  close: async (sessionId: string) => {
+    const resp = await http.put(`/api/chat/sessions/${sessionId}/close`)
+    return unwrap<void>(resp.data)
   },
 }
 
-// ---------- 消息收发 ----------
-
+/** 聊天消息 API */
 export const chatMessageApi = {
-  async send(sessionId: string, payload: SendMessageRequest) {
-    return unwrap((await http.post<ApiResponse<ChatMessage>>(`/api/chat/messages/${sessionId}`, payload)).data)
+  /** 发送消息 */
+  send: async (sessionId: string, content: string, msgType: number = MessageType.TEXT) => {
+    const data: SendMessageRequest = { content, msgType }
+    const resp = await http.post(`/api/chat/messages/${sessionId}`, data)
+    return unwrap<ChatMessage>(resp.data)
   },
-  async list(sessionId: string, page = 1, pageSize = 50) {
-    return unwrap((await http.get<ApiResponse<ChatMessage[]>>(`/api/chat/messages/${sessionId}`, { params: { page, pageSize } })).data)
+
+  /** 获取消息历史 */
+  list: async (sessionId: string, page = 1, pageSize = 50) => {
+    const resp = await http.get(`/api/chat/messages/${sessionId}`, { params: { page, pageSize } })
+    return unwrap<ChatMessage[]>(resp.data)
   },
-  async pullOffline(sessionId: string, lastMessageId?: string) {
-    return unwrap((await http.get<ApiResponse<ChatMessage[]>>(`/api/chat/messages/${sessionId}/offline`, { params: lastMessageId ? { lastMessageId } : {} })).data)
+
+  /** 离线补拉（拉取指定 ID 之后的消息） */
+  pullOffline: async (sessionId: string, lastMessageId?: string) => {
+    const params = lastMessageId ? { lastMessageId: Number(lastMessageId) } : {}
+    const resp = await http.get(`/api/chat/messages/${sessionId}/offline`, { params })
+    return unwrap<ChatMessage[]>(resp.data)
   },
-  async markAsRead(sessionId: string, messageIds: string[]) {
-    return unwrap((await http.put<ApiResponse<null>>(`/api/chat/messages/${sessionId}/read`, messageIds)).data)
-  },
-  async recall(messageId: string) {
-    return unwrap((await http.delete<ApiResponse<null>>(`/api/chat/messages/${messageId}`)).data)
+
+  /** 批量标记已读 */
+  markBatchRead: async (sessionId: string, messageIds: string[]) => {
+    const ids = messageIds.map(Number)
+    const resp = await http.put(`/api/chat/messages/${sessionId}/read`, ids)
+    return unwrap<void>(resp.data)
   },
 }
 
-// ---------- 站内信通知 ----------
-
+/** 通知 API */
 export const notificationApi = {
-  async list(category?: number, page = 1, pageSize = 20) {
-    const params: Record<string, unknown> = { page, pageSize }
-    if (category != null) params.category = category
-    return unwrap((await http.get<ApiResponse<NotificationItem[]>>('/api/message/notifications', { params })).data)
+  /** 获取我的通知列表 */
+  list: async (category?: number, page = 1, pageSize = 20) => {
+    const params: Record<string, number> = { page, pageSize }
+    if (category !== undefined && category !== null) {
+      params.category = category
+    }
+    const resp = await http.get('/api/message/notifications', { params })
+    return unwrap<UserNotification[]>(resp.data)
   },
-  async getUnreadCount() {
-    return unwrap((await http.get<ApiResponse<number>>('/api/message/notifications/unread-count')).data)
+
+  /** 获取未读数 */
+  getUnreadCount: async () => {
+    const resp = await http.get('/api/message/notifications/unread-count')
+    return unwrap<number>(resp.data)
   },
-  async markRead(notificationId: string) {
-    return unwrap((await http.put<ApiResponse<null>>(`/api/message/notifications/${notificationId}/read`)).data)
+
+  /** 标记单条已读 */
+  markRead: async (notificationId: string) => {
+    const resp = await http.put(`/api/message/notifications/${notificationId}/read`)
+    return unwrap<void>(resp.data)
   },
-  async markBatchRead(payload: MarkBatchReadRequest) {
-    return unwrap((await http.put<ApiResponse<null>>('/api/message/notifications/read-batch', payload)).data)
+
+  /** 全部标记已读 */
+  markAllRead: async () => {
+    const resp = await http.put('/api/message/notifications/read-all')
+    return unwrap<void>(resp.data)
   },
-  async markAllRead() {
-    return unwrap((await http.put<ApiResponse<null>>('/api/message/notifications/read-all')).data)
+
+  /** 获取通知偏好 */
+  getPreference: async () => {
+    const resp = await http.get('/api/message/notifications/preference')
+    return unwrap<NotificationPreference>(resp.data)
   },
-  async getPreference() {
-    return unwrap((await http.get<ApiResponse<NotificationPreference>>('/api/message/notifications/preference')).data)
-  },
-  async updatePreference(payload: UpdatePreferenceRequest) {
-    return unwrap((await http.put<ApiResponse<NotificationPreference>>('/api/message/notifications/preference', payload)).data)
+
+  /** 更新通知偏好 */
+  updatePreference: async (pref: Partial<NotificationPreference>) => {
+    const body = {
+      systemEnabled: pref.systemEnabled ?? 1,
+      orderEnabled: pref.orderEnabled ?? 1,
+      marketingEnabled: pref.marketingEnabled ?? 0,
+      serviceEnabled: pref.serviceEnabled ?? 1,
+    }
+    const resp = await http.put('/api/message/notifications/preference', body)
+    return unwrap<NotificationPreference>(resp.data)
   },
 }

@@ -1,297 +1,174 @@
-<script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { readApiError } from '@/services/http'
-import { notificationApi } from '../services/message'
-import { NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORY_LABELS, type NotificationItem } from '../types'
-
-const notifications = ref<NotificationItem[]>([])
-const unreadCount = ref(0)
-const loading = ref(true)
-const message = ref('')
-const isError = ref(false)
-const activeCategory = ref<number | 'all'>('all')
-const actingId = ref<string | null>(null)
-
-function showMessage(text: string, error = false) {
-  message.value = text
-  isError.value = error
-}
-
-const filteredNotifications = computed(() =>
-  activeCategory.value === 'all'
-    ? notifications.value
-    : notifications.value.filter((n) => n.category === activeCategory.value),
-)
-
-async function loadUnreadCount() {
-  try {
-    unreadCount.value = await notificationApi.getUnreadCount()
-  } catch {
-    // ignore
-  }
-}
-
-async function loadNotifications() {
-  loading.value = true
-  message.value = ''
-  try {
-    notifications.value = await notificationApi.list(
-      activeCategory.value === 'all' ? undefined : activeCategory.value,
-    )
-    await loadUnreadCount()
-  } catch (error) {
-    showMessage(readApiError(error, '通知加载失败'), true)
-  } finally {
-    loading.value = false
-  }
-}
-
-function changeCategory(cat: number | 'all') {
-  activeCategory.value = cat
-  void loadNotifications()
-}
-
-async function markAsRead(id: string) {
-  if (actingId.value) return
-  actingId.value = id
-  try {
-    await notificationApi.markRead(id)
-    const n = notifications.value.find((x) => x.id === id)
-    if (n) n.isRead = 1
-    unreadCount.value = Math.max(0, unreadCount.value - 1)
-  } catch (error) {
-    showMessage(readApiError(error, '标记已读失败'), true)
-  } finally {
-    actingId.value = null
-  }
-}
-
-async function markAllRead() {
-  if (!unreadCount.value) return
-  try {
-    await notificationApi.markAllRead()
-    for (const n of notifications.value) n.isRead = 1
-    unreadCount.value = 0
-    showMessage('已全部标记为已读')
-  } catch (error) {
-    showMessage(readApiError(error, '操作失败'), true)
-  }
-}
-
-function formatTime(value: string | null | undefined) {
-  if (!value) return ''
-  return value.replace('T', ' ').slice(0, 16)
-}
-
-const unreadCategories = computed(() => {
-  const map = new Map<number, number>()
-  for (const n of notifications.value) {
-    if (n.isRead === 0) {
-      map.set(n.category, (map.get(n.category) ?? 0) + 1)
-    }
-  }
-  return map
-})
-
-onMounted(async () => {
-  await Promise.all([loadNotifications(), loadUnreadCount()])
-})
-</script>
-
 <template>
   <section class="page-stack">
     <div class="page-heading">
       <div>
         <p class="eyebrow">NOTIFICATIONS</p>
         <h1>消息通知</h1>
-        <p>查看系统通知、订单动态和客服消息。</p>
+        <p class="subtle">查看系统、订单、营销和客服消息</p>
       </div>
-      <div class="page-actions">
+      <div class="heading-actions">
         <span v-if="unreadCount > 0" class="unread-summary">{{ unreadCount }} 条未读</span>
-        <button class="secondary-button" type="button" :disabled="!unreadCount" @click="markAllRead">全部已读</button>
-        <router-link class="text-button" to="/notifications/preference">通知偏好 →</router-link>
+        <button class="btn-ghost" :disabled="!unreadCount" @click="handleMarkAllRead">全部已读</button>
       </div>
     </div>
 
-    <p v-if="message" :class="['notice', isError ? 'error' : 'success']">{{ message }}</p>
-
-    <div class="filter-tabs">
+    <div class="tabs">
       <button
-        v-for="cat in NOTIFICATION_CATEGORIES"
-        :key="String(cat.value)"
-        type="button"
-        :class="['filter-tab', { active: activeCategory === cat.value }]"
-        @click="changeCategory(cat.value)"
+        v-for="tab in tabs"
+        :key="tab.value"
+        class="tab"
+        :class="{ active: activeTab === tab.value }"
+        @click="handleTabChange(tab.value)"
       >
-        {{ cat.label }}
-        <span v-if="cat.value !== 'all' && (unreadCategories.get(cat.value as number) ?? 0) > 0" class="tab-badge">
-          {{ unreadCategories.get(cat.value as number) }}
-        </span>
+        {{ tab.label }}
+        <span v-if="tab.count > 0" class="tab-badge">{{ tab.count }}</span>
       </button>
     </div>
 
-    <div v-if="loading" class="loading-card">加载通知…</div>
-
-    <div v-else-if="!filteredNotifications.length" class="section-card empty-state">
-      <span>📭</span>
-      <h2>暂无通知</h2>
-      <p>目前没有{{ activeCategory === 'all' ? '' : NOTIFICATION_CATEGORY_LABELS[activeCategory as number] }}通知。</p>
-    </div>
-
-    <div v-else class="notification-list">
-      <article
-        v-for="n in filteredNotifications"
-        :key="n.id"
-        :class="['section-card notification-item', { unread: n.isRead === 0 }]"
-        @click="n.isRead === 0 && markAsRead(n.id)"
+    <div class="notification-list">
+      <div
+        v-for="item in filteredNotifications"
+        :key="item.id"
+        class="notification-item"
+        :class="{ unread: !isReadFlag(item.isRead) }"
+        @click="handleMarkRead(item)"
       >
-        <div class="notif-icon" :data-category="n.category">
-          {{ n.category === 1 ? '⚙️' : n.category === 2 ? '📦' : n.category === 3 ? '🎁' : '💬' }}
-        </div>
-        <div class="notif-body">
-          <div class="notif-head">
-            <strong>{{ n.title }}</strong>
-            <span :class="['status-dot', { unread: n.isRead === 0 }]"></span>
+        <div class="notif-indicator" v-if="!isReadFlag(item.isRead)"></div>
+        <div class="notif-content">
+          <div class="notif-header">
+            <span class="notif-category">{{ getCategoryLabel(item.category) }}</span>
+            <span class="notif-time">{{ formatTime(item.createdAt) }}</span>
           </div>
-          <p class="notif-content">{{ n.content }}</p>
-          <div class="notif-foot">
-            <span class="muted">{{ n.categoryDesc }}</span>
-            <span class="muted">{{ formatTime(n.createdAt) }}</span>
-            <button
-              v-if="n.isRead === 0"
-              class="text-button small"
-              type="button"
-              :disabled="actingId === n.id"
-              @click.stop="markAsRead(n.id)"
-            >标记已读</button>
-          </div>
+          <div class="notif-title">{{ item.title }}</div>
+          <div class="notif-body">{{ item.content }}</div>
         </div>
-      </article>
+        <div v-if="!isReadFlag(item.isRead)" class="notif-actions">
+          <button class="btn-link" @click.stop="handleMarkRead(item)">标记已读</button>
+        </div>
+      </div>
+      <div v-if="!filteredNotifications.length && !loading" class="empty-state">
+        <span>📭</span>
+        <p>暂无{{ activeTab === -1 ? '' : getCategoryLabel(activeTab) }}通知</p>
+      </div>
+      <div v-if="loading" class="loading">加载中...</div>
     </div>
   </section>
 </template>
 
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { notificationApi } from '@/modules/message/services/message'
+import {
+  NotificationCategory,
+  NOTIFICATION_CATEGORY_LABELS,
+  getCategoryLabel,
+  isReadFlag,
+} from '@/modules/message/types'
+import type { UserNotification } from '@/modules/message/types'
+import { readApiError } from '@/services/http'
+
+const notifications = ref<UserNotification[]>([])
+const unreadCount = ref(0)
+const loading = ref(false)
+const activeTab = ref<-1 | number>(-1) // -1 = ALL
+
+const tabs = computed(() => {
+  const categories: number[] = [
+    NotificationCategory.SYSTEM,
+    NotificationCategory.ORDER,
+    NotificationCategory.MARKETING,
+    NotificationCategory.SERVICE,
+  ]
+  const result: { value: -1 | number; label: string; count: number }[] = [
+    { value: -1, label: '全部', count: unreadCount.value },
+  ]
+  for (const cat of categories) {
+    const count = notifications.value.filter((n) => n.category === cat && !isReadFlag(n.isRead)).length
+    result.push({ value: cat, label: NOTIFICATION_CATEGORY_LABELS[cat] || '未知', count })
+  }
+  return result
+})
+
+const filteredNotifications = computed(() => {
+  if (activeTab.value === -1) return notifications.value
+  return notifications.value.filter((n) => n.category === activeTab.value)
+})
+
+function handleTabChange(value: -1 | number) {
+  activeTab.value = value
+  loadData()
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso)
+  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+async function loadData() {
+  loading.value = true
+  try {
+    const category = activeTab.value === -1 ? undefined : activeTab.value
+    const [list, count] = await Promise.all([
+      notificationApi.list(category),
+      notificationApi.getUnreadCount(),
+    ])
+    notifications.value = list
+    unreadCount.value = count
+  } catch (err) {
+    console.error('加载通知失败:', readApiError(err))
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleMarkRead(item: UserNotification) {
+  if (isReadFlag(item.isRead)) return
+  try {
+    await notificationApi.markRead(item.id)
+    item.isRead = 1
+    unreadCount.value = Math.max(0, unreadCount.value - 1)
+  } catch (err) {
+    console.error('标记已读失败:', readApiError(err))
+  }
+}
+
+async function handleMarkAllRead() {
+  try {
+    await notificationApi.markAllRead()
+    notifications.value.forEach((n) => (n.isRead = 1))
+    unreadCount.value = 0
+  } catch (err) {
+    console.error('全部已读失败:', readApiError(err))
+  }
+}
+
+onMounted(loadData)
+</script>
+
 <style scoped>
-.page-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.unread-summary {
-  font-weight: 700;
-  color: var(--green-dark);
-}
-
-.filter-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.filter-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: white;
-  color: #526059;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.filter-tab.active {
-  background: var(--green);
-  border-color: var(--green);
-  color: white;
-}
-
-.tab-badge {
-  background: #e03131;
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 1px 7px;
-  border-radius: 999px;
-}
-
-.notification-list {
-  display: grid;
-  gap: 12px;
-}
-
-.notification-item {
-  display: flex;
-  gap: 16px;
-  padding: 18px 22px;
-  cursor: pointer;
-  transition: background .15s;
-}
-
-.notification-item:hover {
-  background: #f6f8f6;
-}
-
-.notification-item.unread {
-  background: #f0f7f2;
-  border-color: #b2d3c2;
-}
-
-.notif-icon {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  font-size: 22px;
-  flex-shrink: 0;
-}
-
-.notif-icon[data-category="1"] { background: #e7f5ff; }
-.notif-icon[data-category="2"] { background: #fff3e6; }
-.notif-icon[data-category="3"] { background: #fdf0f7; }
-.notif-icon[data-category="4"] { background: #e9f5ef; }
-
-.notif-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.notif-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: transparent;
-}
-
-.status-dot.unread {
-  background: #e03131;
-}
-
-.notif-content {
-  margin: 0;
-  color: #495057;
-  line-height: 1.55;
-  font-size: 14px;
-}
-
-.notif-foot {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 13px;
-}
+.heading-actions { display: flex; align-items: center; gap: 12px; }
+.unread-summary { font-size: 13px; color: #ff6b35; font-weight: 500; }
+.btn-ghost { background: transparent; border: 1px solid var(--line, #e8e8e8); border-radius: 8px; padding: 6px 16px; cursor: pointer; font-size: 13px; }
+.btn-ghost:hover { background: #f5f5f5; }
+.btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--line); padding-bottom: 0; }
+.tab { display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-size: 14px; color: #666; }
+.tab.active { color: var(--green, #00843d); border-bottom-color: var(--green); font-weight: 600; }
+.tab-badge { background: #ff6b35; color: #fff; border-radius: 10px; padding: 0 6px; font-size: 11px; min-width: 18px; text-align: center; }
+.notification-list { display: flex; flex-direction: column; gap: 1px; }
+.notification-item { display: flex; gap: 12px; padding: 16px; background: var(--paper, #fff); border-radius: 8px; cursor: pointer; transition: background 0.15s; position: relative; }
+.notification-item:hover { background: #f9f9f9; }
+.notification-item.unread { background: #f0f9f4; }
+.notif-indicator { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--green); border-radius: 8px 0 0 8px; }
+.notif-content { flex: 1; }
+.notif-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.notif-category { font-size: 12px; color: var(--green); background: #e6f4ea; padding: 2px 8px; border-radius: 4px; }
+.notif-time { font-size: 12px; color: #999; }
+.notif-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.notif-body { font-size: 13px; color: #666; line-height: 1.5; }
+.notif-actions { display: flex; align-items: flex-start; }
+.btn-link { background: transparent; border: none; color: var(--green); cursor: pointer; font-size: 13px; padding: 4px 8px; }
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+.empty-state span { font-size: 48px; display: block; margin-bottom: 12px; }
+.loading { text-align: center; padding: 40px; color: #999; }
 </style>
